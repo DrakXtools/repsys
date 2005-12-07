@@ -67,7 +67,7 @@ def get_srpm(pkgdirurl,
             packager = " --define 'packager %s'" % packager
         execcmd("rpm -bs --nodeps --define '_topdir %s'%s %s" %
                 (tmpdir, packager, spec))
-        if revname:
+        if revision:
             srpm = glob.glob(os.path.join(srpmsdir, "*.src.rpm"))[0]
             srpmbase = os.path.basename(srpm)
             os.rename(srpm, "%s/@%i:%s" % (srpmsdir, revision, srpmbase))
