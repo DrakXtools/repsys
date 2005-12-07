@@ -1,0 +1,2 @@
+recursive-include RepSys *.py
+include repsys repsys.conf MANIFEST.in
