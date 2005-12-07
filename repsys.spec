@@ -5,23 +5,18 @@
 %define py_libdir  %{py_prefix}/%{_lib}/python%{py_ver}
 %define py_sitedir %{py_libdir}/site-packages
 
-%define repsys_version 1.5.3
+%define repsys_version 1.5.4
 
 Name: repsys
-Version: 1.5.3.1
-Release: 4mdk
+Version: 1.5.4
+Release: 1mdk
 Summary: Tools for Mandriva Linux repository access and management
 Group: Development/Other
-Source: %{name}-%{repsys_version}.tar.gz
-Source1: mdk-repsys.conf
-Source2: mdk-rebrand-mdk
-# Direct wrapper for get srpm with release based on svn number
-Source3: getsrpm-mdk
-Patch0: repsys-mdk.patch
-Patch1: mdk-changelog-repsys-1.5.3.patch
+Source: %{name}-%{repsys_version}.tar.bz2
 License: GPL
 URL: http://qa.mandriva.com/twiki/bin/view/Main/RepositorySystem
 Prefix: %{_prefix}
+BuildArch: noarch
 Buildrequires: python-devel
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: python 
@@ -32,8 +27,6 @@ Tools for Mandriva Linux repository access and management.
 
 %prep
 %setup -q -n %{name}-%{repsys_version}
-%patch0 -p1
-%patch1 -p1
 
 %build
 python setup.py build
@@ -50,9 +43,10 @@ python -c "import sys, os, compileall; br='%{buildroot}'; compileall.compile_dir
 mkdir -p %{buildroot}%{_sysconfdir}
 mkdir -p %{buildroot}%{_datadir}/repsys/
 mkdir -p %{buildroot}%{_bindir}/
-cp %{SOURCE1} %{buildroot}%{_sysconfdir}/repsys.conf
-cp %{SOURCE2} %{buildroot}%{_datadir}/repsys/rebrand-mdk
-cp %{SOURCE3} %{buildroot}%{_bindir}/getsrpm-mdk
+install -m 0644 repsys.conf %{buildroot}%{_sysconfdir}/repsys.conf
+install -m 0755 rebrand-mdk %{buildroot}%{_datadir}/repsys/rebrand-mdk
+install -m 0755 getsrpm-mdk %{buildroot}%{_bindir}/getsrpm-mdk
+install -m 0755 create-srpm %{buildroot}%{_datadir}/repsys/create-srpm
 
 %clean
 rm -rf %{buildroot}
@@ -65,11 +59,18 @@ rm -rf %{buildroot}
 %{_bindir}/repsys
 %{_bindir}/getsrpm-mdk
 %{_datadir}/repsys/rebrand-mdk
+%{_datadir}/repsys/create-srpm
 %{py_sitedir}/RepSys
 
-
+# MAKE THE CHANGES IN CVS: NO PATCH OR SOURCE ALLOWED
 
 %changelog
+* Wed Dec  7 2005 Frederic Lepied <flepied@mandriva.com> 1.5.4-1mdk
+- switch to cvs
+
+* Fri Oct 21 2005 Frederic Lepied <flepied@mandriva.com> 1.5.3.1-4.1mdk
+- add svn+ssh access method
+
 * Fri Sep 30 2005 Andreas Hasenack <andreas@mandriva.com>
 + 2005-09-30 18:25:48 (979)
 - releasing 1.5.3.1-4mdk

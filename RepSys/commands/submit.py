@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from RepSys import Error, config
 from RepSys.command import *
+from RepSys.util import execcmd
 from RepSys.rpmutil import get_spec, get_submit_info
 from RepSys.util import get_auth
 import urllib
@@ -33,7 +34,7 @@ Examples:
 def parse_options():
     parser = OptionParser(help=HELP)
     parser.defaults["revision"] = ""
-    parser.add_option("-t", dest="target", default="Snapshot")
+    parser.add_option("-t", dest="target", default="Cooker")
     parser.add_option("-l", dest="list", action="store_true")
     opts, args = parser.parse_args()
     if not args:
@@ -63,41 +64,49 @@ def submit(pkgdirurl, revision, target, list=0):
     host, path = urllib.splithost(rest)
     user, host = urllib.splituser(host)
     host, port = urllib.splitport(host)
-    if type != "https":
-        raise Error, "you must use https:// urls"
+    if type != "https" and type != "svn+ssh":
+        raise Error, "you must use https:// or svn+ssh:// urls"
     if user:
         user, passwd = urllib.splitpasswd(user)
         if passwd:
             raise Error, "do not use a password in your command line"
-    user, passwd = get_auth(username=user)
-    #soap = NINZ.client.Binding(host=host,
-    #                           url="https://%s/scripts/cnc/soap" % host,
-    #                           ssl=1,
-    #                           auth=(NINZ.client.AUTH.httpbasic,
-    #                                 user, passwd))
-    if port:
-        port = ":"+port
-    else:
-        port = ""
-    iface = xmlrpclib.ServerProxy("https://%s:%s@%s%s/scripts/cnc/xmlrpc"
-                                  % (user, passwd, host, port))
-    try:
-        if list:
-            targets = iface.submit_targets()
-            if not targets:
-                raise Error, "no targets available"
-            sys.stdout.writelines(['"%s"\n' % x for x in targets])
-        else:
-            iface.submit_package(pkgdirurl, revision, target)
-            print "Package submitted!"
-    #except NINZ.client.SoapError, e:
-    except xmlrpclib.ProtocolError, e:
-        raise Error, "remote error: "+str(e.errmsg)
-    except xmlrpclib.Fault, e:
-        raise Error, "remote error: "+str(e.faultString)
-    except xmlrpclib.Error, e:
-        raise Error, "remote error: "+str(e)
 
+    if type == "https":
+        user, passwd = get_auth(username=user)
+        #soap = NINZ.client.Binding(host=host,
+        #                           url="https://%s/scripts/cnc/soap" % host,
+        #                           ssl=1,
+        #                           auth=(NINZ.client.AUTH.httpbasic,
+        #                                 user, passwd))
+        if port:
+            port = ":"+port
+        else:
+            port = ""
+        iface = xmlrpclib.ServerProxy("https://%s:%s@%s%s/scripts/cnc/xmlrpc"
+                                      % (user, passwd, host, port))
+        try:
+            if list:
+                targets = iface.submit_targets()
+                if not targets:
+                    raise Error, "no targets available"
+                sys.stdout.writelines(['"%s"\n' % x for x in targets])
+            else:
+                iface.submit_package(pkgdirurl, revision, target)
+                print "Package submitted!"
+        #except NINZ.client.SoapError, e:
+        except xmlrpclib.ProtocolError, e:
+            raise Error, "remote error: "+str(e.errmsg)
+        except xmlrpclib.Fault, e:
+            raise Error, "remote error: "+str(e.faultString)
+        except xmlrpclib.Error, e:
+            raise Error, "remote error: "+str(e)
+    else:
+        status, output = execcmd("ssh %s /usr/share/repsys/create-srpm '%s' %s %s" % (host, pkgdirurl, revision, target))
+        if status == 0:
+            print "Package submitted!"
+        else:
+            sys.exit(status)
+            
 def main():
     do_command(parse_options, submit)
 
