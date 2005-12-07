@@ -1,0 +1,5 @@
+#!/bin/sh
+
+PACKAGE=$1
+
+repsys getsrpm -l $PACKAGE

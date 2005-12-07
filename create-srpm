@@ -1,0 +1,71 @@
+#!/usr/bin/python
+
+from RepSys import Error, config
+from RepSys.rpmutil import get_srpm
+from RepSys.cgiutil import get_targets
+import sys
+import os
+import pwd
+
+class CmdError(Error): pass
+
+class CmdIface:
+    def author_email(self, author):
+        return config.get("users", author)
+
+    def submit_package(self, packageurl, packagerev, targetname):
+        pw = pwd.getpwuid(os.getuid())
+        username = pw[0]
+        packager = config.get("users", username) or pw[4]
+        if not packager:
+            raise CmdError, "your email was not found"
+        elif not packagerev:
+            raise CmdError, "no revision provided"
+        elif not targetname:
+            raise CmdError, "no target provided"
+        else:
+            targetname = targetname.lower()
+            for target in get_targets():
+                if target.name.lower() == targetname:
+                    break
+            else:
+                raise CmdError, "target not found"
+            try:
+                tmp = int(packagerev)
+            except ValueError:
+                raise CmdError, "invalid revision provided"
+            for allowed in target.allowed:
+                if packageurl.startswith(allowed):
+                    break
+            else:
+                raise CmdError, "%s is not allowed for this target" \
+                                % packageurl
+            get_srpm(packageurl,
+                     revision=packagerev,
+                     targetdirs=target.target,
+                     packager=packager,
+                     revname=1,
+                     svnlog=1,
+                     scripts=target.scripts)
+        return 1
+
+    def submit_targets(self):
+        return [x.name for x in get_targets()]
+
+
+def main():
+
+    iface = CmdIface()
+
+    print sys.argv
+
+    if len(sys.argv) == 3:
+        rev = None
+        target = sys.argv[2]
+    else:
+        rev = sys.argv[2]
+        target = sys.argv[3]
+        
+    iface.submit_package(sys.argv[1], rev, target)
+    
+main()
