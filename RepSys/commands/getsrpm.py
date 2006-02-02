@@ -26,6 +26,7 @@ Options:
     -s FILE Run script with "FILE TOPDIR SPECFILE" command
     -n      Rename the package to include the revision number
     -l      Use subversion log to build rpm %changelog
+    -T FILE Template to be used to generate the %changelog
     -h      Show this message
 
 Examples:
@@ -41,7 +42,7 @@ def mode_callback(option, opt, val, parser, mode):
         try:
             opts.version, opts.release = val.split("-", 1)
         except ValueError:
-            raise Error, "wrong version, use something like 2.2-1cl"
+            raise Error, "wrong version, use something like 2.2-1mdk"
     elif mode == "revision":
         opts.revision = val
 
@@ -51,20 +52,25 @@ def parse_options():
     parser.defaults["version"] = None
     parser.defaults["release"] = None
     parser.defaults["revision"] = None
-    parser.add_option("-c", action="callback", callback=mode_callback,
-                      callback_kwargs={"mode": "current"})
-    parser.add_option("-p", action="callback", callback=mode_callback,
-                      callback_kwargs={"mode": "pristine"})
-    parser.add_option("-r", action="callback", callback=mode_callback,
-                      callback_kwargs={"mode": "revision"})
-    parser.add_option("-v", action="callback", callback=mode_callback,
-                      callback_kwargs={"mode": "version"})
+    parser.defaults["submit"] = False
+    callback_options = dict(action="callback", callback=mode_callback,
+                            type="string", dest="__ignore")
+    parser.add_option("-c", callback_kwargs={"mode": "current"}, nargs=0,
+                      **callback_options)
+    parser.add_option("-p", callback_kwargs={"mode": "pristine"}, nargs=0,
+                      **callback_options)
+    parser.add_option("-r", callback_kwargs={"mode": "revision"}, nargs=1,
+                      **callback_options)
+    parser.add_option("-v", callback_kwargs={"mode": "version"}, nargs=1,
+                      **callback_options)
     parser.add_option("-t", dest="targetdirs", action="append", default=[])
     parser.add_option("-s", dest="scripts", action="append", default=[])
     parser.add_option("-P", dest="packager", default="")
     parser.add_option("-n", dest="revname", action="store_true")
     parser.add_option("-l", dest="svnlog", action="store_true")
+    parser.add_option("-T", dest="template", type="string", default=None)
     opts, args = parser.parse_args()
+    del opts.__ignore
     if len(args) != 1:
         raise Error, "invalid arguments"
     opts.pkgdirurl = default_parent(args[0])

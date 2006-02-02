@@ -39,13 +39,14 @@ def version_callback(option, opt, val, parser):
     try:
         opts.version, opts.release = val.split("-", 1)
     except ValueError:
-        raise Error, "wrong version, use something like 1:2.2-1cl"
+        raise Error, "wrong version, use something like 1:2.2-1mdk"
 
 def parse_options():
     parser = OptionParser(help=HELP)
     parser.defaults["version"] = None
     parser.defaults["release"] = None
-    parser.add_option("-v", action="callback", type="string", callback=version_callback)
+    parser.add_option("-v", action="callback", callback=version_callback,
+            nargs=1, type="string", dest="__ignore")
     parser.add_option("-r", dest="revision")
     parser.add_option("-f", dest="filename")
     parser.add_option("-n", dest="appendname", action="store_true")
@@ -58,7 +59,7 @@ def parse_options():
 
     filename = opts.filename
     appendname = opts.appendname
-    del opts.filename, opts.appendname
+    del opts.filename, opts.appendname, opts.__ignore
 
     if filename:
         if not os.path.isfile(filename):
@@ -87,7 +88,7 @@ def parse_options():
         raise Error, "no revision provided"
     elif not opts.version:
         raise Error, "no version provided"
-    get_auth()
+    #get_auth()
     return opts
 
 def main():

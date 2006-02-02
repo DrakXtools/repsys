@@ -21,6 +21,7 @@ Buildrequires: python-devel
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: python 
 BuildRequires: python-devel
+Requires: python-cheetah
 
 %description
 Tools for Mandriva Linux repository access and management.

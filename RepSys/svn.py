@@ -1,5 +1,5 @@
 from RepSys import Error, config, pexpect
-from RepSys.util import execcmd
+from RepSys.util import execcmd, get_auth
 import sys
 import re
 import time
@@ -17,18 +17,18 @@ class SVNLogEntry:
         return cmp(self.date, other.date)
 
 class SVN:
-    def __init__(self, username=None, password=None):
-        if not username:
-            username = config.get("auth", "username")
-        if not password:
-            password = config.get("auth", "password")
+    def __init__(self, username=None, password=None, noauth=0, baseurl=None):
+        self.noauth = noauth or (
+            baseurl and (
+                baseurl.startswith("file:") or
+                baseurl.startswith("svn+ssh:")))
+        if not self.noauth: # argh
+            self.username, self.password = get_auth()
 
-        self.username = username
-        self.password = password
 
     def _execsvn(self, *args, **kwargs):
         cmdstr = "svn "+" ".join(args)
-        if kwargs.get("local"):
+        if kwargs.get("local") or kwargs.get("noauth") or self.noauth:
             return execcmd(cmdstr, **kwargs)
         show = kwargs.get("show")
         noerror = kwargs.get("noerror")
@@ -130,6 +130,11 @@ class SVN:
     def commit(self, path, **kwargs):
         cmd = ["commit", path]
         self._add_log(cmd, kwargs)
+        return self._execsvn_success(*cmd, **kwargs)
+
+    def export(self, url, targetpath, **kwargs):
+        cmd = ["export", "'%s'" % url, targetpath]
+        self._add_revision(cmd, kwargs, optional=1)
         return self._execsvn_success(*cmd, **kwargs)
 
     def checkout(self, url, targetpath, **kwargs):
@@ -260,7 +265,7 @@ class SVN:
         if status != 0:
             return None
 
-        revheader = re.compile("^r(?P<revision>[0-9]+) \| (?P<author>.+?) \| (?P<date>.+?) \| (?P<lines>[0-9]+) (?:line|lines)")
+        revheader = re.compile("^r(?P<revision>[0-9]+) \| (?P<author>[^\|]+) \| (?P<date>[^\|]+) \| (?P<lines>[0-9]+) (?:line|lines)$")
         logseparator = "-"*72
         linesleft = 0
         entry = None

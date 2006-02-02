@@ -19,5 +19,7 @@ setup(name="repsys",
       license = "GPL",
       long_description = """Tools for Mandriva Linux repository access and management.""",
       packages = ["RepSys", "RepSys.cgi", "RepSys.commands"],
-      scripts = ["repsys"]
+      scripts = ["repsys"],
+      data_files = (
+	      ("/usr/share/repsys/", ["default.chlog", "revno.chlog"]))
       )

@@ -10,12 +10,12 @@ import glob
 import sys
 import os
 
-def get_spec(pkgdirurl, targetdir="."):
-    svn = SVN()
+def get_spec(pkgdirurl, targetdir=".", submit=False):
+    svn = SVN(baseurl=pkgdirurl)
     tmpdir = tempfile.mktemp()
     try:
         geturl = "/".join([pkgdirurl, "current", "SPECS"])
-        svn.checkout("'%s'" % geturl, tmpdir)
+        svn.export("'%s'" % geturl, tmpdir)
         speclist = glob.glob(os.path.join(tmpdir, "*.spec"))
         if not speclist:
             raise Error, "no spec files found"
@@ -34,8 +34,10 @@ def get_srpm(pkgdirurl,
              packager = "",
              revname = 0,
              svnlog = 0,
-             scripts = []):
-    svn = SVN()
+             scripts = [], 
+             submit = False,
+             template = None):
+    svn = SVN(baseurl=pkgdirurl)
     tmpdir = tempfile.mktemp()
     try:
         if mode == "version":
@@ -56,8 +58,10 @@ def get_srpm(pkgdirurl,
             raise Error, "no spec files found"
         spec = speclist[0]
         if svnlog:
-            specfile_svn2rpm(pkgdirurl, spec, revision)
-        revision = svn.revision(tmpdir)
+            submit = not not revision
+            specfile_svn2rpm(pkgdirurl, spec, revision, submit=submit,
+                    template=template)
+        revisionreal = svn.revision(tmpdir)
         for script in scripts:
             status, output = execcmd(script, tmpdir, spec, str(revision),
                                      noerror=1)
@@ -67,10 +71,12 @@ def get_srpm(pkgdirurl,
             packager = " --define 'packager %s'" % packager
         execcmd("rpm -bs --nodeps --define '_topdir %s'%s %s" %
                 (tmpdir, packager, spec))
-        if revision:
+        if revision and revisionreal:
             srpm = glob.glob(os.path.join(srpmsdir, "*.src.rpm"))[0]
+            srpminfo = SRPM(srpm)
+            release = srpminfo.release
             srpmbase = os.path.basename(srpm)
-            os.rename(srpm, "%s/@%i:%s" % (srpmsdir, revision, srpmbase))
+            os.rename(srpm, "%s/@%s:%s" % (srpmsdir, revisionreal, srpmbase))
         srpm = glob.glob(os.path.join(srpmsdir, "*.src.rpm"))[0]
         if not targetdirs:
             targetdirs = (".",)
@@ -82,7 +88,7 @@ def get_srpm(pkgdirurl,
             shutil.rmtree(tmpdir)
 
 def patch_spec(pkgdirurl, patchfile, log=""):
-    svn = SVN()
+    svn = SVN(baseurl=pkgdirurl)
     tmpdir = tempfile.mktemp()
     try:
         geturl = "/".join([pkgdirurl, "current", "SPECS"])
@@ -104,7 +110,7 @@ def put_srpm(pkgdirurl, srpmfile, appendname=0, log=""):
     srpm = SRPM(srpmfile)
     if appendname:
         pkgdirurl = "/".join([pkgdirurl, srpm.name])
-    svn = SVN()
+    svn = SVN(baseurl=pkgdirurl)
     tmpdir = tempfile.mktemp()
     try:
         if srpm.epoch:
@@ -199,7 +205,7 @@ def put_srpm(pkgdirurl, srpmfile, appendname=0, log=""):
                  (version, srpm.release))
 
 def create_package(pkgdirurl, log="", verbose=0):
-    svn = SVN()
+    svn = SVN(baseurl=pkgdirurl)
     tmpdir = tempfile.mktemp()
     try:
         basename = os.path.basename(pkgdirurl)
@@ -228,8 +234,19 @@ def create_package(pkgdirurl, log="", verbose=0):
         if os.path.isdir(tmpdir):
             shutil.rmtree(tmpdir)
 
+
+def create_markrelease_log(version, release, revision):
+    log = """%%repsys markrelease
+version: %s
+release: %s
+revision: %s
+
+%s""" % (version, release, revision, 
+        ("Copying %s-%s to releases/ directory." % (version, release)))
+    return log
+
 def mark_release(pkgdirurl, version, release, revision):
-    svn = SVN()
+    svn = SVN(baseurl=pkgdirurl)
     releasesurl = "/".join([pkgdirurl, "releases"])
     versionurl = "/".join([releasesurl, version])
     releaseurl = "/".join([versionurl, release])
@@ -246,12 +263,12 @@ def mark_release(pkgdirurl, version, release, revision):
     svn.copy(currenturl, pristineurl,
              log="Copying release %s-%s to pristine/ directory." %
                  (version, release))
+    markreleaselog = create_markrelease_log(version, release, revision)
     svn.copy(currenturl, releaseurl, rev=revision,
-             log="Copying release %s-%s to releases/ directory." %
-                 (version, release))
+             log=markreleaselog)
 
 def check_changed(url, all=0, show=0, verbose=0):
-    svn = SVN()
+    svn = SVN(baseurl=pkgdirurl)
     if all:
         baseurl = url
         packages = []
@@ -311,7 +328,7 @@ def check_changed(url, all=0, show=0, verbose=0):
             "nopristine": nopristine}
 
 def checkout(url, path=None, revision=None):
-    svn = SVN()
+    svn = SVN(baseurl=pkgdirurl)
     current = os.path.join(url, "current")
     if path is None:
         _, path = os.path.split(url)
@@ -337,7 +354,8 @@ def get_submit_info(path):
     if not os.path.isdir(os.path.join(path, ".svn")):
         raise Error, "subversion directory not found"
     
-    svn = SVN()
+    svn = SVN(baseurl=pkgdirurl)
+
 
     # Now, extract the package name.
     for line in svn.info(path):

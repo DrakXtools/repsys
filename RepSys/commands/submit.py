@@ -1,9 +1,8 @@
 #!/usr/bin/python
 from RepSys import Error, config
 from RepSys.command import *
-from RepSys.util import execcmd
 from RepSys.rpmutil import get_spec, get_submit_info
-from RepSys.util import get_auth
+from RepSys.util import get_auth, execcmd
 import urllib
 import getopt
 import sys
@@ -70,7 +69,6 @@ def submit(pkgdirurl, revision, target, list=0):
         user, passwd = urllib.splitpasswd(user)
         if passwd:
             raise Error, "do not use a password in your command line"
-
     if type == "https":
         user, passwd = get_auth(username=user)
         #soap = NINZ.client.Binding(host=host,
@@ -101,12 +99,17 @@ def submit(pkgdirurl, revision, target, list=0):
         except xmlrpclib.Error, e:
             raise Error, "remote error: "+str(e)
     else:
-        status, output = execcmd("ssh %s /usr/share/repsys/create-srpm '%s' %s %s" % (host, pkgdirurl, revision, target))
+        if list:
+            raise Error, "unable to list targets from svn+ssh:// URLs"
+        command = "ssh %s /usr/share/repsys/create-srpm '%s' %s %s" % (
+                host, pkgdirurl, revision, target)
+        status, output = execcmd(command)
         if status == 0:
             print "Package submitted!"
         else:
             sys.exit(status)
-            
+
+
 def main():
     do_command(parse_options, submit)
 
