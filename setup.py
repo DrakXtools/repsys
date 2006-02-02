@@ -21,5 +21,6 @@ setup(name="repsys",
       packages = ["RepSys", "RepSys.cgi", "RepSys.commands"],
       scripts = ["repsys"],
       data_files = [
-	      ("/usr/share/repsys/", ["default.chlog", "revno.chlog"])]
+	      ("/usr/share/repsys/", ["default.chlog", "revno.chlog"]),
+	      ("/etc/", ["repsys.conf"])]
       )
