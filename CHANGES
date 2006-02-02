@@ -1,0 +1,12 @@
+* 1.6.0
+- improved markrelease command line parsing
+- changelogs entries are now groupped by author, and sorted by revision
+  number
+- the changelog now is generated using the Cheetah Template Engine, to
+  allow quick modifications without spending time reading code and
+  introducing new bugs
+- consequently, was added an option "-T <file>" to rpmlog and getsrpm to 
+  allow choosing the path of the template to be used
+- added options noauth=0, and baseurl=None in order to disable the
+  authentication in some url schemes (http:// and file://)
+- replaced some "cl" references to "mdv"
