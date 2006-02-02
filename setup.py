@@ -20,6 +20,6 @@ setup(name="repsys",
       long_description = """Tools for Mandriva Linux repository access and management.""",
       packages = ["RepSys", "RepSys.cgi", "RepSys.commands"],
       scripts = ["repsys"],
-      data_files = (
-	      ("/usr/share/repsys/", ["default.chlog", "revno.chlog"]))
+      data_files = [
+	      ("/usr/share/repsys/", ["default.chlog", "revno.chlog"])]
       )
