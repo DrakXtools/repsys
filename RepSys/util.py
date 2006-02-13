@@ -76,6 +76,21 @@ def mapurl(url):
             except re.error, errmsg:
                 log.error("error in URL mapping regexp: %s", errmsg)
     return newurl
+
+
+def get_helper(name):
+    """Tries to find the path of a helper script
+
+    It first looks if the helper has been explicitly defined in
+    configuration, if not, falls back to the default helper path, which can
+    also be defined in configuration file(s).
+    """
+    helperdir = config.get("helper", "prefix", "/usr/share/repsys")
+    hpath = config.get("helper", name, None) or \
+            os.path.join(helperdir, name)
+    if not os.path.isfile(hpath):
+        log.warn("providing unexistent helper: %s", hpath)
+    return hpath
     
 
 # vim:et:ts=4:sw=4
