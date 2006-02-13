@@ -2,7 +2,7 @@
 from RepSys import Error, config
 from RepSys.command import *
 from RepSys.rpmutil import get_spec, get_submit_info
-from RepSys.util import get_auth, execcmd
+from RepSys.util import get_auth, execcmd, get_helper
 import urllib
 import getopt
 import sys
@@ -21,12 +21,15 @@ Usage: repsys submit [OPTIONS] [URL [REVISION]]
 Options:
     -t TARGET  Submit given package URL to given target
     -l         Just list available targets
+    -r REV     Provides a revision number (when not providing as an
+               argument)
     -h         Show this message
 
 Examples:
     repsys submit
     repsys submit foo 14800
-    repsys submit https://repos/svn/cnc/snapshot/foo 14800
+    repsys submit https://repos/svn/mdv/cooker/foo 14800
+    repsys submit -r 14800 https://repos/svn/mdv/cooker/foo
     repsys submit -l https://repos
 """
 
@@ -35,6 +38,7 @@ def parse_options():
     parser.defaults["revision"] = ""
     parser.add_option("-t", dest="target", default="Cooker")
     parser.add_option("-l", dest="list", action="store_true")
+    parser.add_option("-r", dest="revision", type="string", nargs=1)
     opts, args = parser.parse_args()
     if not args:
         name, rev = get_submit_info(".")
@@ -52,6 +56,9 @@ def parse_options():
     opts.pkgdirurl = default_parent(args[0])
     if len(args) == 2:
         opts.revision = re.compile(r".*?(\d+).*").sub(r"\1", args[1])
+    elif len(args) == 1 and opts.revision:
+        # accepts -r 3123 http://foo/bar
+        pass
     elif not opts.list:
         raise Error, "provide -l or a revision number"
     return opts
@@ -99,10 +106,13 @@ def submit(pkgdirurl, revision, target, list=0):
         except xmlrpclib.Error, e:
             raise Error, "remote error: "+str(e)
     else:
+        # runs a create-srpm in the server through ssh, which will make a
+        # copy of the rpm in the export directory
         if list:
             raise Error, "unable to list targets from svn+ssh:// URLs"
-        command = "ssh %s /usr/share/repsys/create-srpm '%s' -r %s -t %s" % (
-                host, pkgdirurl, revision, target)
+        createsrpm = get_helper("create-srpm")
+        command = "ssh %s %s '%s' -r %s -t %s" % (
+                host, createsrpm, pkgdirurl, revision, target)
         status, output = execcmd(command)
         if status == 0:
             print "Package submitted!"
