@@ -245,7 +245,7 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False, template=None):
     svn = SVN(baseurl=pkgdirurl)
     pkgreleasesurl = os.path.join(pkgdirurl, "releases")
     pkgcurrenturl = os.path.join(pkgdirurl, "current")
-    releaseslog = svn.log(pkgreleasesurl, start=rev, noerror=1)
+    releaseslog = svn.log(pkgreleasesurl, noerror=1)
     currentlog = svn.log(pkgcurrenturl, start=rev)
     if size is not None:
         currentlog = currentlog[:size]
