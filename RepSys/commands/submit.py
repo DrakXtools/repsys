@@ -101,7 +101,7 @@ def submit(pkgdirurl, revision, target, list=0):
     else:
         if list:
             raise Error, "unable to list targets from svn+ssh:// URLs"
-        command = "ssh %s /usr/share/repsys/create-srpm '%s' %s %s" % (
+        command = "ssh %s /usr/share/repsys/create-srpm '%s' -r %s -t %s" % (
                 host, pkgdirurl, revision, target)
         status, output = execcmd(command)
         if status == 0:
