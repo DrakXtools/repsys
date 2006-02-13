@@ -1,8 +1,15 @@
 #!/usr/bin/python
+
 from RepSys import Error, config
+
 import getpass
-import sys, os
+import sys
+import os
+import re
+import logging
 #import commands
+
+log = logging.getLogger("repsys")
 
 # Our own version of commands' getstatusoutput(). We have a commands
 # module directory, so we can't import Python's standard module
@@ -50,5 +57,25 @@ def get_auth(username=None, password=None):
     if set_password:
         config.set("auth", "password", password)
     return username, password
+
+
+def mapurl(url):
+    """Maps a url following the regexp provided by the option url-map in
+    repsys.conf
+    """
+    urlmap = config.get("global", "url-map")
+    newurl = url
+    if urlmap:
+        try:
+            expr_, replace = urlmap.split()[:2]
+        except ValueError:
+            log.error("invalid url-map: %s", urlmap)
+        else:
+            try:
+                newurl = re.sub(expr_, replace, url)
+            except re.error, errmsg:
+                log.error("error in URL mapping regexp: %s", errmsg)
+    return newurl
+    
 
 # vim:et:ts=4:sw=4
