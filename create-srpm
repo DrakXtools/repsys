@@ -3,9 +3,11 @@
 from RepSys import Error, config
 from RepSys.rpmutil import get_srpm
 from RepSys.cgiutil import get_targets
+from RepSys.util import mapurl
 import sys
 import os
 import pwd
+import optparse
 
 class CmdError(Error): pass
 
@@ -13,7 +15,8 @@ class CmdIface:
     def author_email(self, author):
         return config.get("users", author)
 
-    def submit_package(self, packageurl, packagerev, targetname):
+    def submit_package(self, packageurl, packagerev, targetname, 
+            dontmapurl_=0):
         pw = pwd.getpwuid(os.getuid())
         username = pw[0]
         packager = config.get("users", username) or pw[4]
@@ -40,7 +43,10 @@ class CmdIface:
             else:
                 raise CmdError, "%s is not allowed for this target" \
                                 % packageurl
-            get_srpm(packageurl,
+            newurl = packageurl
+            if not dontmapurl_:
+                newurl = mapurl(packageurl)
+            get_srpm(newurl,
                      revision=packagerev,
                      targetdirs=target.target,
                      packager=packager,
@@ -53,19 +59,29 @@ class CmdIface:
         return [x.name for x in get_targets()]
 
 
+def parse_options():
+    usage = "create-srpm <packageurl> -t <target> [-r <revision>]"
+    parser = optparse.OptionParser(usage=usage)
+    parser.add_option("-r", "--revision", dest="revision", type="string",
+                      help="the revision number")
+    parser.add_option("-t", "--target", type="string", dest="target",
+                      help="target name")
+    parser.add_option("-M", "--nomapping", action="store_true",
+                      dest="urlmap", default=False, 
+                      help="disable url mapping")
+    opts, args = parser.parse_args()
+    if not args:
+        parser.error("you must supply a package url")
+    return opts, args
+
+
 def main():
-
     iface = CmdIface()
-
-    print sys.argv
-
-    if len(sys.argv) == 3:
-        rev = None
-        target = sys.argv[2]
-    else:
-        rev = sys.argv[2]
-        target = sys.argv[3]
-        
-    iface.submit_package(sys.argv[1], rev, target)
+    opts, args = parse_options()
+    iface.submit_package(args[0], opts.revision, opts.target, opts.urlmap)
     
-main()
+
+if __name__ == "__main__":
+    main()
+
+# vim:ts=4:sw=4:et
