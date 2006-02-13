@@ -1,5 +1,4 @@
 ## Sample Changelog template
-## lcapitulinos' Changelog3
 ##
 #for $rel in $releases_by_author
 * $rel.date $rel.author_name <$rel.author_email> $rel.version-$rel.release
