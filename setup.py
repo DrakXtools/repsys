@@ -21,6 +21,13 @@ setup(name="repsys",
       packages = ["RepSys", "RepSys.cgi", "RepSys.commands"],
       scripts = ["repsys"],
       data_files = [
-	      ("/usr/share/repsys/", ["default.chlog", "revno.chlog"]),
+	      ("/usr/share/repsys/", 
+              ["default.chlog", 
+              "revno.chlog", 
+              "create-srpm",
+              "getsrpm-mdk", 
+              "rebrand-mdk"]),
 	      ("/etc/", ["repsys.conf"])]
       )
+
+# vim:ts=4:sw=4:et
