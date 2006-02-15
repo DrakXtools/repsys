@@ -15,6 +15,7 @@ Useful commands:
     create
     getspec
     getsrpm
+    rpmlog
     changed
     authoremail
 
