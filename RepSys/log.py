@@ -241,7 +241,7 @@ def parse_repsys_entry(revlog):
 
 def get_revision_offset():
     try:
-        revoffset = config.getint("global", "revision-offset", 0)
+        revoffset = config.getint("log", "revision-offset", 0)
     except (ValueError, TypeError):
         raise Error, ("Invalid revision-offset number in configuration "
                       "file(s).")
