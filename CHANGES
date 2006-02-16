@@ -1,3 +1,15 @@
+* 1.6.2
+- reimplemented the option -n for rpmlog, which now uses the svn option
+  --limit.
+- added the option revision-offset, for the Zero Day Revision issue. 
+- small fix in main repsys help message
+
+* 1.6.1
+- added option url-map, as an workaround for svn+ssh:// urls problems
+- added configuration sectiom "helper"
+- added getsrpm-mdk and create-srpm to setup.py
+- added option -r to submit
+
 * 1.6.0
 - improved markrelease command line parsing
 - changelogs entries are now groupped by author, and sorted by revision
