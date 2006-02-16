@@ -1,14 +1,5 @@
-%define py_ver %(python -c "import sys; v=sys.version_info[:2]; print '%%d.%%d'%%v" 2>/dev/null || echo PYTHON-NOT-FOUND)
-%define maxver %(python -c "import sys; a,b=sys.version_info[:2]; print%'%%d.%%d'%%(a,b+1)" 2>/dev/null || echo PYTHON-NOT-FOUND) 
-%define minver %py_ver
-%define py_prefix  %(python -c "import sys; print sys.prefix" 2>/dev/null || echo PYTHON-NOT-FOUND)
-%define py_libdir  %{py_prefix}/%{_lib}/python%{py_ver}
-%define py_sitedir %{py_libdir}/site-packages
-
-%define repsys_version 1.5.4
-
 Name: repsys
-Version: 1.6.0
+Version: 1.6.2
 Release: 1mdk
 Summary: Tools for Mandriva Linux repository access and management
 Group: Development/Other
@@ -36,18 +27,10 @@ python setup.py build
 rm -rf %{buildroot}
 
 python setup.py install --root=%{buildroot}
-# Using compile inline since niemeyer's python macros still not available on mdk rpm macros
-find %{buildroot}%{py_sitedir} -name '*.pyc' -exec rm -f {} \; 
-python -c "import sys, os, compileall; br='%{buildroot}'; compileall.compile_dir(sys.argv[1], ddir=br and 
-(sys.argv[1][len(os.path.abspath(br)):]+'/') or None)" %{buildroot}%{py_sitedir}
 
 mkdir -p %{buildroot}%{_sysconfdir}
 mkdir -p %{buildroot}%{_datadir}/repsys/
 mkdir -p %{buildroot}%{_bindir}/
-install -m 0644 repsys.conf %{buildroot}%{_sysconfdir}/repsys.conf
-install -m 0755 rebrand-mdk %{buildroot}%{_datadir}/repsys/rebrand-mdk
-install -m 0755 getsrpm-mdk %{buildroot}%{_bindir}/getsrpm-mdk
-install -m 0755 create-srpm %{buildroot}%{_datadir}/repsys/create-srpm
 
 %clean
 rm -rf %{buildroot}
@@ -61,7 +44,6 @@ rm -rf %{buildroot}
 %{_bindir}/getsrpm-mdk
 %{_datadir}/repsys/rebrand-mdk
 %{_datadir}/repsys/create-srpm
-%{py_sitedir}/RepSys
 
 # MAKE THE CHANGES IN CVS: NO PATCH OR SOURCE ALLOWED
 
