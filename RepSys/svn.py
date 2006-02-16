@@ -247,10 +247,10 @@ class SVN:
             return output
         return None
 
-    def log(self, url, start=None, end=0, **kwargs):
+    def log(self, url, start=None, end=0, limit=None, **kwargs):
         cmd = ["log", url]
-        if start is not None:
-            if type(start) is not type(0):
+        if start is not None or end != 0:
+            if start is not None and type(start) is not type(0):
                 try:
                     start = int(start)
                 except (ValueError, TypeError):
@@ -260,7 +260,14 @@ class SVN:
                     end = int(end)
                 except (ValueError, TypeError):
                     raise Error, "invalid log end revision provided"
-            cmd.append("-r %d:%d" % (start, end))
+            start = start or "HEAD"
+            cmd.append("-r %s:%s" % (start, end))
+        if limit is not None:
+            try:
+                limit = int(limit)
+            except (ValueError, TypeError):
+                raise Error, "invalid limit number provided"
+            cmd.append("--limit %d" % limit)
         status, output = self._execsvn(*cmd, **kwargs)
         if status != 0:
             return None

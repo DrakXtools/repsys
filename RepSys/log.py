@@ -239,21 +239,31 @@ def parse_repsys_entry(revlog):
     return data
         
 
+def get_revision_offset():
+    try:
+        revoffset = config.getint("global", "revision-offset", 0)
+    except (ValueError, TypeError):
+        raise Error, ("Invalid revision-offset number in configuration "
+                      "file(s).")
+    return revoffset
+
 
 def svn2rpm(pkgdirurl, rev=None, size=None, submit=False, template=None):
     concat = config.get("log", "concat", "").split()
+    revoffset = get_revision_offset()
     svn = SVN(baseurl=pkgdirurl)
     pkgreleasesurl = os.path.join(pkgdirurl, "releases")
     pkgcurrenturl = os.path.join(pkgdirurl, "current")
     releaseslog = svn.log(pkgreleasesurl, noerror=1)
-    currentlog = svn.log(pkgcurrenturl, start=rev)
-    if size is not None:
-        currentlog = currentlog[:size]
+    currentlog = svn.log(pkgcurrenturl, limit=size, start=rev,
+            end=revoffset)
     lastauthor = None
     previous_revision = 0
     currelease = None
     releases = []
 
+    # for the emergency bug fixer: the [].sort() is done using the 
+    # decorate-sort-undecorate pattern
     releases_data = []
     for relentry in releaseslog[::-1]:
         try:
