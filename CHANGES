@@ -1,3 +1,6 @@
+* 1.6.2a
+- moved revision-offset to [log] section and added a comment
+
 * 1.6.2
 - reimplemented the option -n for rpmlog, which now uses the svn option
   --limit.

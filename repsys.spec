@@ -1,5 +1,5 @@
 Name: repsys
-Version: 1.6.2
+Version: 1.6.2a
 Release: 1mdk
 Summary: Tools for Mandriva Linux repository access and management
 Group: Development/Other
