@@ -205,8 +205,9 @@ def dump_file(releases, template=None):
                 templpath)
     else:
         params["file"] = templpath
-    releases = group_releases_by_author(releases)
-    params["searchList"] = [{"releases_by_author" : releases}]
+    releases_author = group_releases_by_author(releases)
+    params["searchList"] = [{"releases_by_author" : releases_author,
+                             "releases" : releases}]
     t = Template(**params)
     return repr(t)
 
@@ -245,7 +246,7 @@ def get_revision_offset():
     except (ValueError, TypeError):
         raise Error, ("Invalid revision-offset number in configuration "
                       "file(s).")
-    return revoffset
+    return revoffset or 0
 
 
 def svn2rpm(pkgdirurl, rev=None, size=None, submit=False, template=None):
