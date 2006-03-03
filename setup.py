@@ -24,7 +24,7 @@ setup(name="repsys",
 	      ("/usr/share/repsys/", 
               ["default.chlog", 
               "revno.chlog",
-              "oldstyle.chlog",
+              "oldfashion.chlog",
               "create-srpm",
               "rebrand-mdk"]),
 	      ("/etc/", ["repsys.conf"])]
