@@ -39,6 +39,13 @@ def get_srpm(pkgdirurl,
              template = None):
     svn = SVN(baseurl=pkgdirurl)
     tmpdir = tempfile.mktemp()
+    topdir = "--define '_topdir %s'" % tmpdir
+    builddir = "--define '_builddir %s/%s'" % (tmpdir, "BUILD")
+    rpmdir = "--define '_rpmdir %s/%s'" % (tmpdir, "RPMS")
+    sourcedir = "--define '_sourcedir %s/%s'" % (tmpdir, "SOURCES")
+    specdir = "--define '_specdir %s/%s'" % (tmpdir, "SPECS")
+    srcrpmdir = "--define '_srcrpmdir %s/%s'" % (tmpdir, "SRPMS")
+    patchdir = "--define '_patchdir %s/%s'" % (tmpdir, "SOURCES")
     try:
         if mode == "version":
             geturl = os.path.join(pkgdirurl, "versions",
@@ -69,8 +76,11 @@ def get_srpm(pkgdirurl,
                 raise Error, "script %s failed" % script
         if packager:
             packager = " --define 'packager %s'" % packager
-        execcmd("rpm -bs --nodeps --define '_topdir %s'%s %s" %
-                (tmpdir, packager, spec))
+
+        execcmd("rpm -bs --nodeps %s %s %s %s %s %s %s %s %s" %
+            (topdir, builddir, rpmdir, sourcedir, specdir, 
+             srcrpmdir, patchdir, packager, spec))
+
         if revision and revisionreal:
             srpm = glob.glob(os.path.join(srpmsdir, "*.src.rpm"))[0]
             srpminfo = SRPM(srpm)
