@@ -217,6 +217,8 @@ class spawn:
                     pass
 
             os.environ["LANG"] = "C"
+            os.environ["LANGUAGE"] = "C"
+            os.environ["LC_ALL"] = "C"
             os.execvp(self.command, self.args)
 
         # Parent

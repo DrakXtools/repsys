@@ -29,7 +29,7 @@ def execcmd(*cmd, **kwargs):
         status = os.system(cmdstr)
         output = ""
     else:
-        status, output = commands_getstatusoutput("LANG=C "+cmdstr)
+        status, output = commands_getstatusoutput("LANG=C LANGUAGE=C LC_ALL=C "+cmdstr)
     if status != 0 and not kwargs.get("noerror"):
         raise Error, "command failed: %s\n%s\n" % (cmdstr, output)
     if config.getbool("global", "verbose", 0):
