@@ -4,11 +4,13 @@ from RepSys.svn import SVN
 from RepSys.rpm import SRPM
 from RepSys.log import specfile_svn2rpm
 from RepSys.util import execcmd
+from RepSys.util import get_auth
 import tempfile
 import shutil
 import glob
 import sys
 import os
+import urllib
 
 def get_spec(pkgdirurl, targetdir="."):
     svn = SVN()
@@ -238,7 +240,13 @@ def create_package(pkgdirurl, log="", verbose=0):
             shutil.rmtree(tmpdir)
 
 def mark_release(pkgdirurl, version, release, revision):
-    svn = SVN()
+    auth = ()
+    type, rest = urllib.splittype(pkgdirurl)
+    if type == "https":
+        auth = get_auth()
+
+    svn = SVN(*auth)
+
     releasesurl = "/".join([pkgdirurl, "releases"])
     versionurl = "/".join([releasesurl, version])
     releaseurl = "/".join([versionurl, release])

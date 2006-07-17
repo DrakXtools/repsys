@@ -38,7 +38,7 @@ class SVN:
         outlist = []
         while True:
             i = p.expect_exact([pexpect.EOF, pexpect.TIMEOUT,
-                    "username:", "password:",
+                    "Username:", "Password for '%s':" % self.username,
                     "(p)ermanently?",
                     "Authorization failed"])
             if i == 0:

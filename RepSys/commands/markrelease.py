@@ -87,7 +87,6 @@ def parse_options():
         raise Error, "no revision provided"
     elif not opts.version:
         raise Error, "no version provided"
-    get_auth()
     return opts
 
 def main():
