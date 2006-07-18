@@ -86,6 +86,8 @@ def get_srpm(pkgdirurl,
         if not targetdirs:
             targetdirs = (".",)
         for targetdir in targetdirs:
+            sys.stderr.write("Wrote: %s\n" % 
+                    os.path.join(os.path.realpath(targetdir), os.path.basename(srpm)))
             execcmd("cp -f", srpm, targetdir)
         os.unlink(srpm)
     finally:
