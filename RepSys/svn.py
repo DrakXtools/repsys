@@ -1,4 +1,4 @@
-from RepSys import Error, config, pexpect
+from RepSys import Error, config
 from RepSys.util import execcmd, get_auth
 
 import sys
