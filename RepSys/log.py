@@ -49,14 +49,14 @@ def getrelease(pkgdirurl, rev=None):
     Is here where things should be changed if "automatic release increasing" 
     will be used.
     """
-    svn = SVN(baseurl=pkgdirurl)
+    svn = SVN()
     tmpdir = tempfile.mktemp()
     try:
         pkgname = os.path.basename(pkgdirurl)
         pkgcurrenturl = os.path.join(pkgdirurl, "current")
         specurl = os.path.join(pkgcurrenturl, "SPECS")
-        if svn.ls(specurl, noerror=1):
-            svn.export(specurl, tmpdir, rev=rev)
+        if svn.exists(specurl):
+            svn.export(specurl, tmpdir, revision=SVN.revision(rev))
             found = glob.glob(os.path.join(tmpdir, "*.spec"))
             if found:
                 specpath = found[0]
@@ -250,14 +250,18 @@ def get_revision_offset():
 
 
 def svn2rpm(pkgdirurl, rev=None, size=None, submit=False, template=None):
+    size = size or 0
     concat = config.get("log", "concat", "").split()
     revoffset = get_revision_offset()
-    svn = SVN(baseurl=pkgdirurl)
+    svn = SVN()
     pkgreleasesurl = os.path.join(pkgdirurl, "releases")
     pkgcurrenturl = os.path.join(pkgdirurl, "current")
-    releaseslog = svn.log(pkgreleasesurl, noerror=1)
-    currentlog = svn.log(pkgcurrenturl, limit=size, start=rev,
-            end=revoffset)
+    releaseslog = list(svn.log(pkgreleasesurl, 
+            strict_node_history=False, noerror=1)) or []
+    currentlog = list(svn.log(pkgcurrenturl, 
+            strict_node_history=False,
+            revision_start=SVN.revision(rev),
+            revision_end=SVN.revision(revoffset), limit=size))
     lastauthor = None
     previous_revision = 0
     currelease = None
@@ -350,12 +354,12 @@ def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
     # Merge old changelog, if available
     oldurl = config.get("log", "oldurl")
     if oldurl:
-        svn = SVN(baseurl=pkgdirurl)
+        svn = SVN()
         tmpdir = tempfile.mktemp()
         try:
             pkgname = os.path.basename(pkgdirurl)
             pkgoldurl = os.path.join(oldurl, pkgname)
-            if svn.ls(pkgoldurl, noerror=1):
+            if svn.exists(pkgoldurl):
                 svn.export(pkgoldurl, tmpdir, rev=rev)
                 logfile = os.path.join(tmpdir, "log")
                 if os.path.isfile(logfile):
