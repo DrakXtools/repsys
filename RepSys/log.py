@@ -77,7 +77,7 @@ def getrelease(pkgdirurl, rev=None):
             shutil.rmtree(tmpdir)
             
 
-class _Revision:
+class ChangelogRevision:
     lines = []
     date = None
     raw_date = None
@@ -89,14 +89,14 @@ class _Revision:
         self.__dict__.update(kwargs)
 
 
-class _Release(_Revision):
+class ChangelogRelease(ChangelogRevision):
     version = None
     release = None
     revisions = None
 
     def __init__(self, **kwargs):
+        ChangelogRevision.__init__(self, **kwargs)
         self.revisions = []
-        _Revision.__init__(self, **kwargs)
 
 
 def format_lines(lines):
@@ -122,7 +122,7 @@ def format_lines(lines):
     return entrylines
 
 
-class _Author:
+class ChangelogByAuthor:
     name = None
     email = None
     revisions = None
@@ -138,7 +138,7 @@ def group_releases_by_author(releases):
         # all the mess below is to sort by author and by revision number
         decorated = []
         for authorname, revs in authors.iteritems():
-            author = _Author()
+            author = ChangelogByAuthor()
             author.name = revs[0].author_name
             author.email = revs[0].author_email
             revdeco = [(r.revision, r) for r in revs]
@@ -148,10 +148,11 @@ def group_releases_by_author(releases):
 
         decorated.sort(reverse=1)
         release.authors = [t[1] for t in decorated]
-        # the difference between a released and a not released _Release is
-        # the way the release numbers is obtained. So, when this is a
-        # released, we already have it, but if we don't, we should get de
-        # version/release string using getrelease and then get the first
+        # the difference between a released and a not released
+        # ChangelogRelease is the way the release numbers is obtained. So,
+        # when this is a released, we already have it, but if we don't, we
+        # should get de version/release string using getrelease and then
+        # get the first
         first, release.authors = release.authors[0], release.authors[1:]
         release.author_name = first.name
         release.author_email = first.email
@@ -168,7 +169,7 @@ emailpat = re.compile("(?P<name>.*?)\s*<(?P<email>.*?)>")
 
 def make_release(author=None, revision=None, date=None, lines=None,
         entries=[], released=True, version=None, release=None):
-    rel = _Release()
+    rel = ChangelogRelease()
     rel.author = author
     found = emailpat.match(config.get("users", author, author or ""))
     rel.author_name = (found and found.group("name")) or author
@@ -180,7 +181,7 @@ def make_release(author=None, revision=None, date=None, lines=None,
     rel.lines = lines
     rel.released = released
     for entry in entries:
-        revision = _Revision()
+        revision = ChangelogRevision()
         revision.revision = entry.revision
         revision.lines = format_lines(entry.lines)
         revision.date = time.strftime("%a %b %d %Y", entry.date)
