@@ -54,7 +54,7 @@ class SVN:
                 except pysvn.ClientError:
                     if not ignore_errors:
                         raise
-                    return False
+                    return None
             finally:
                 self._current_message = None
                 self._client_lock.release()
@@ -91,6 +91,8 @@ class SVN:
     def log(self, *args, **kwargs):
         meth = self.__getattr__("log")
         entries = meth(*args, **kwargs)
+        if entries is None:
+            return
         for entrydic in entries:
             entry = SVNLogEntry(entrydic["revision"].number,
                                 entrydic["author"],
@@ -99,7 +101,7 @@ class SVN:
             yield entry
 
     def exists(self, path):
-        return self.ls(path, noerror=1) is not False
+        return self.ls(path, noerror=1) is not None
 
     def _edit_message(self, message):
         # argh!
