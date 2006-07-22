@@ -146,10 +146,7 @@ class SVN:
             propset = self.propset
         revision, message = propget(propname, pkgdirurl, revision=revision)
         changed, newmessage = self._edit_message(message)
-        try:
-            if changed:
-                propset(propname, newmessage, pkgdirurl, revision=revision)
-        except pysvn.ClientError, (msg,):
-            raise SVNError, msg
+        if changed:
+            propset(propname, newmessage, pkgdirurl, revision=revision)
 
 # vim:et:ts=4:sw=4
