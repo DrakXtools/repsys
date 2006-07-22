@@ -5,9 +5,10 @@ import getopt
 import sys
 
 
-VERSION="1.7.%sa" % "$Rev$"
+VERSION="1.7.r%s" % ("$Rev$".split()[-2].strip())
 
 HELP = """\
+$Id$
 Usage: repsys COMMAND [COMMAND ARGUMENTS]
 
 Useful commands:
