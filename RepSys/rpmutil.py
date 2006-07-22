@@ -142,7 +142,7 @@ def put_srpm(pkgdirurl, srpmfile, appendname=0, log=""):
             version_exists = 1
             currentdir = os.path.join(tmpdir, "current")
         else:
-            if svn.exists(releaseurl, noerror=1):
+            if svn.exists(releaseurl):
                 raise Error, "release already exists"
             svn.checkout("/".join([pkgdirurl, "current"]), tmpdir)
             svn.mkdir(versionurl, noerror=1,
