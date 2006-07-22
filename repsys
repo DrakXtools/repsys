@@ -4,7 +4,8 @@ from RepSys.command import *
 import getopt
 import sys
 
-VERSION="1.7.%sa" % "$Rev"
+
+VERSION="1.7.%sa" % "$Rev$"
 
 HELP = """\
 Usage: repsys COMMAND [COMMAND ARGUMENTS]
