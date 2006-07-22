@@ -285,20 +285,9 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False, template=None):
     releases_data.sort()
 
     for release_number, relentry, revinfo in releases_data:
-        try:
-            revinfo = parse_repsys_entry(relentry)
-        except InvalidEntryError:
-            continue
-
-        try:
-            release_revision = int(revinfo["revision"])
-        except (ValueError, KeyError):
-            raise Error, "Error parsing data from log entry from r%s" % \
-                            relentry.revision  
-        
         # get entries newer than 'previous' and older than 'relentry'
         entries = [entry for entry in currentlog
-                    if release_revision >= entry.revision and
+                    if release_number >= entry.revision and
                       (previous_revision < entry.revision)]
         if not entries:
             #XXX probably a forced release, without commits in current/,
@@ -311,7 +300,7 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False, template=None):
                 lines=relentry.lines, entries=entries,
                 version=revinfo["version"], release=revinfo["release"])
         releases.append(release)
-        previous_revision = release_revision
+        previous_revision = release_number
 
     # look for commits that have been not submited (released) yet
     # this is done by getting all log entries newer (revision larger)
