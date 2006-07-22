@@ -9,7 +9,10 @@ import threading
 import tempfile
 import pysvn
 
-__all__ = ["SVN", "Revision", "SVNLogEntry"]
+__all__ = ["SVN", "Revision", "SVNLogEntry", "SVNError"]
+
+class SVNError(Error):
+    pass
 
 class SVNLogEntry:
     def __init__(self, revision, author, date):
@@ -51,9 +54,9 @@ class SVN:
                 ignore_errors = kwargs.pop("noerror", None)
                 try:
                     return meth(*args, **kwargs)
-                except pysvn.ClientError:
+                except pysvn.ClientError, (msg,):
                     if not ignore_errors:
-                        raise
+                        raise SVNError, msg
                     return None
             finally:
                 self._current_message = None
@@ -147,6 +150,6 @@ class SVN:
             if changed:
                 propset(propname, newmessage, pkgdirurl, revision=revision)
         except pysvn.ClientError, (msg,):
-            raise Error, msg
+            raise SVNError, msg
 
 # vim:et:ts=4:sw=4
