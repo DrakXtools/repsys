@@ -2,7 +2,10 @@
 from RepSys import Error, config
 import getpass
 import sys, os
+import logging
 #import commands
+
+log = logging.getLogger("repsys")
 
 # Our own version of commands' getstatusoutput(). We have a commands
 # module directory, so we can't import Python's standard module
