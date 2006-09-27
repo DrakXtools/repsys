@@ -46,6 +46,7 @@ rm -rf %{buildroot}
 %{_datadir}/repsys/create-srpm
 %{_datadir}/repsys/default.chlog
 %{_datadir}/repsys/revno.chlog
+%{_datadir}/repsys/oldfashion.chlog
 %{py_sitedir}/RepSys
 
 # MAKE THE CHANGES IN CVS: NO PATCH OR SOURCE ALLOWED
