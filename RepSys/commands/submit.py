@@ -39,6 +39,7 @@ def parse_options():
     parser.add_option("-t", dest="target", default="Cooker")
     parser.add_option("-l", dest="list", action="store_true")
     parser.add_option("-r", dest="revision", type="string", nargs=1)
+    parser.add_option("--define", action="append")
     opts, args = parser.parse_args()
     if not args:
         name, rev = get_submit_info(".")
@@ -63,7 +64,7 @@ def parse_options():
         raise Error, "provide -l or a revision number"
     return opts
 
-def submit(pkgdirurl, revision, target, list=0):
+def submit(pkgdirurl, revision, target, list=0, define=[]):
     #if not NINZ:
     #    raise Error, "you must have NINZ installed to use this command"
     type, rest = urllib.splittype(pkgdirurl)
@@ -113,10 +114,13 @@ def submit(pkgdirurl, revision, target, list=0):
         createsrpm = get_helper("create-srpm")
         command = "ssh %s %s '%s' -r %s -t %s" % (
                 host, createsrpm, pkgdirurl, revision, target)
+        if define:
+            command += " " + " ".join([ "--define " + x for x in define ])
         status, output = execcmd(command)
         if status == 0:
             print "Package submitted!"
         else:
+            sys.stderr.write(output)
             sys.exit(status)
 
 

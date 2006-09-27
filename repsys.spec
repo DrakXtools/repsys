@@ -1,9 +1,9 @@
 Name: repsys
-Version: 1.6.2a
-Release: 1mdk
+Version: 1.6.2b
+Release: %mkrel 1
 Summary: Tools for Mandriva Linux repository access and management
 Group: Development/Other
-Source: %{name}-%{repsys_version}.tar.bz2
+Source: %{name}-%{version}.tar.bz2
 License: GPL
 URL: http://qa.mandriva.com/twiki/bin/view/Main/RepositorySystem
 Prefix: %{_prefix}
@@ -18,7 +18,7 @@ Requires: python-cheetah
 Tools for Mandriva Linux repository access and management.
 
 %prep
-%setup -q -n %{name}-%{repsys_version}
+%setup -q
 
 %build
 python setup.py build
@@ -44,6 +44,9 @@ rm -rf %{buildroot}
 %{_bindir}/getsrpm-mdk
 %{_datadir}/repsys/rebrand-mdk
 %{_datadir}/repsys/create-srpm
+%{_datadir}/repsys/default.chlog
+%{_datadir}/repsys/revno.chlog
+%{py_sitedir}/RepSys
 
 # MAKE THE CHANGES IN CVS: NO PATCH OR SOURCE ALLOWED
 

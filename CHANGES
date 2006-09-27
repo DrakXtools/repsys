@@ -1,3 +1,9 @@
+* 1.6.2b
+- make submit pass --define options to create-srpm script
+- print error message when create-srpm fails
+- make get_srpm return the srpms list
+- add upload-srpm support in create-srpm
+
 * 1.6.2a
 - moved revision-offset to [log] section and added a comment
 
