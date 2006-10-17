@@ -266,17 +266,18 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False, template=None):
     # for the emergency bug fixer: the [].sort() is done using the 
     # decorate-sort-undecorate pattern
     releases_data = []
-    for relentry in releaseslog[::-1]:
-        try:
-            revinfo = parse_repsys_entry(relentry)
-        except InvalidEntryError:
-            continue
-        try:
-            release_number = int(revinfo["revision"])
-        except (KeyError, ValueError):
-            raise Error, "Error parsing data from log entry from r%s" % \
-                            relentry.revision  
-        releases_data.append((release_number, relentry, revinfo))
+    if releaseslog:
+        for relentry in releaseslog[::-1]:
+            try:
+                revinfo = parse_repsys_entry(relentry)
+            except InvalidEntryError:
+                continue
+            try:
+                release_number = int(revinfo["revision"])
+            except (KeyError, ValueError):
+                raise Error, "Error parsing data from log entry from r%s" % \
+                                relentry.revision  
+            releases_data.append((release_number, relentry, revinfo))
     releases_data.sort()
 
     for release_number, relentry, revinfo in releases_data:
@@ -311,16 +312,17 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False, template=None):
     # look for commits that have been not submited (released) yet
     # this is done by getting all log entries newer (revision larger)
     # than releaseslog[0]
-    latest_revision = releaseslog[0].revision
-    notsubmitted = [entry for entry in currentlog 
-                    if entry.revision > latest_revision]
-    if notsubmitted:
-        # if they are not submitted yet, what we have to do is to add
-        # a release/version number from getrelease()
-        version, release = getrelease(pkgdirurl)
-        toprelease = make_release(entries=notsubmitted, released=False,
-                        version=version, release=release)
-        releases.append(toprelease)
+    if releaseslog:
+        latest_revision = releaseslog[0].revision
+        notsubmitted = [entry for entry in currentlog 
+                        if entry.revision > latest_revision]
+        if notsubmitted:
+            # if they are not submitted yet, what we have to do is to add
+            # a release/version number from getrelease()
+            version, release = getrelease(pkgdirurl)
+            toprelease = make_release(entries=notsubmitted, released=False,
+                            version=version, release=release)
+            releases.append(toprelease)
 
     data = dump_file(releases[::-1], template=template)
     return data
