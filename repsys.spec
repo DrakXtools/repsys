@@ -1,5 +1,5 @@
 Name: repsys
-Version: 1.6.5
+Version: 1.6.6
 Release: %mkrel 1
 Summary: Tools for Mandriva Linux repository access and management
 Group: Development/Other
@@ -52,7 +52,7 @@ rm -rf %{buildroot}
 # MAKE THE CHANGES IN CVS: NO PATCH OR SOURCE ALLOWED
 
 %changelog
-* Wed Oct 18 2006 Olivier Blin <blino@mandriva.com> 1.6.5-1mdv2007.1
+* Wed Oct 18 2006 Olivier Blin <blino@mandriva.com> 1.6.6-1mdv2007.1
 - use a different "submit <target>" section per target in configuration file
 
 * Tue Oct 17 2006 Andreas Hasenack <andreas@mandriva.com> 1.6.5-1mdk
