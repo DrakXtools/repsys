@@ -282,11 +282,6 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False, template=None):
 
     for release_number, relentry, revinfo in releases_data:
         try:
-            revinfo = parse_repsys_entry(relentry)
-        except InvalidEntryError:
-            continue
-
-        try:
             release_revision = int(revinfo["revision"])
         except (ValueError, KeyError):
             raise Error, "Error parsing data from log entry from r%s" % \
