@@ -54,7 +54,7 @@ class CmdIface:
                      svnlog=1,
                      scripts=target.scripts)
 
-            uploadsrpm = config.get("helper", "upload-srpm", None)
+            uploadsrpm = get_helper("upload-srpm")
             if uploadsrpm:
                 upload_command = [ uploadsrpm ]
                 if define:
