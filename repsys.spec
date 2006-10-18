@@ -13,6 +13,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: python 
 BuildRequires: python-devel
 Requires: python-cheetah
+Requires: pysvn
 
 %description
 Tools for Mandriva Linux repository access and management.
