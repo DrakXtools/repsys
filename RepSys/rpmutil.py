@@ -91,9 +91,14 @@ def get_srpm(pkgdirurl,
         srpm = glob.glob(os.path.join(srpmsdir, "*.src.rpm"))[0]
         if not targetdirs:
             targetdirs = (".",)
+        targetsrpms = []
         for targetdir in targetdirs:
+            targetsrpm = os.path.join(os.path.realpath(targetdir), os.path.basename(srpm))
+            targetsrpms.append(targetsrpm)
+            sys.stderr.write("Wrote: %s\n" %  targetsrpm)
             execcmd("cp -f", srpm, targetdir)
         os.unlink(srpm)
+        return targetsrpms
     finally:
         if os.path.isdir(tmpdir):
             shutil.rmtree(tmpdir)
