@@ -306,18 +306,20 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False, template=None):
 
     # look for commits that have been not submited (released) yet
     # this is done by getting all log entries newer (revision larger)
-    # than releaseslog[0]
+    # than releaseslog[0] (in the case it exists)
     if releaseslog:
         latest_revision = releaseslog[0].revision
-        notsubmitted = [entry for entry in currentlog 
-                        if entry.revision > latest_revision]
-        if notsubmitted:
-            # if they are not submitted yet, what we have to do is to add
-            # a release/version number from getrelease()
-            version, release = getrelease(pkgdirurl)
-            toprelease = make_release(entries=notsubmitted, released=False,
-                            version=version, release=release)
-            releases.append(toprelease)
+    else:
+        latest_revision = 0
+    notsubmitted = [entry for entry in currentlog 
+                    if entry.revision > latest_revision]
+    if notsubmitted:
+        # if they are not submitted yet, what we have to do is to add
+        # a release/version number from getrelease()
+        version, release = getrelease(pkgdirurl)
+        toprelease = make_release(entries=notsubmitted, released=False,
+                        version=version, release=release)
+        releases.append(toprelease)
 
     data = dump_file(releases[::-1], template=template)
     return data
