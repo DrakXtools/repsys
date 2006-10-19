@@ -161,10 +161,38 @@ def group_releases_by_author(releases):
         release.revision = first.revisions[0].revision
 
     return releases
-            
+
+
+def group_revisions_by_author(currentlog):
+    revisions = []
+    last_author = None
+    for entry in currentlog:
+        revision = _Revision()
+        revision.lines = format_lines(entry.lines)
+        revision.raw_date = entry.date
+        revision.date = parse_raw_date(entry.date)
+        revision.revision = entry.revision
+        if entry.author == last_author:
+            revisions[-1].revisions.append(revision)
+        else:
+            author = _Author()
+            author.name, author.email = get_author_name(entry.author)
+            author.revisions = [revision]
+            revisions.append(author)
+        last_author = entry.author
+    return revisions
+
 
 emailpat = re.compile("(?P<name>.*?)\s*<(?P<email>.*?)>")
 
+def get_author_name(author):
+    found = emailpat.match(config.get("users", author, author))
+    name = ((found and found.group("name")) or author)
+    email = ((found and found.group("email")) or author)
+    return name, email
+
+def parse_raw_date(rawdate):
+    return time.strftime("%a %b %d %Y", rawdate)
 
 def make_release(author=None, revision=None, date=None, lines=None,
         entries=[], released=True, version=None, release=None):
@@ -176,27 +204,23 @@ def make_release(author=None, revision=None, date=None, lines=None,
     rel.revision = revision
     rel.version = version
     rel.release = release
-    rel.date = (date and time.strftime("%a %b %d %Y", date)) or None
+    rel.date = (date and parse_raw_date(date)) or None
     rel.lines = lines
     rel.released = released
     for entry in entries:
         revision = _Revision()
         revision.revision = entry.revision
         revision.lines = format_lines(entry.lines)
-        revision.date = time.strftime("%a %b %d %Y", entry.date)
+        revision.date = parse_raw_date(entry.date)
         revision.raw_date = entry.date
         revision.author = entry.author
-        found = emailpat.match(config.get("users", entry.author, entry.author))
-        revision.author_name = ((found and found.group("name")) or
-                entry.author)
-        revision.author_email = ((found and found.group("email")) or
-                entry.author)
+        (revision.author_name, revision.author_email) = \
+                get_author_name(entry.author)
         rel.revisions.append(revision)
     return rel
 
 
-def dump_file(releases, template=None):
-    
+def dump_file(releases, currentlog=None, template=None):
     templpath = template or config.get("template", "path", None)
     params = {}
     if templpath is None or not os.path.exists(templpath):
@@ -206,8 +230,10 @@ def dump_file(releases, template=None):
     else:
         params["file"] = templpath
     releases_author = group_releases_by_author(releases)
+    revisions_author = group_revisions_by_author(currentlog)
     params["searchList"] = [{"releases_by_author" : releases_author,
-                             "releases" : releases}]
+                             "releases" : releases,
+                             "revisions_by_author": revisions_author}]
     t = Template(**params)
     return repr(t)
 
@@ -321,7 +347,7 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False, template=None):
                         version=version, release=release)
         releases.append(toprelease)
 
-    data = dump_file(releases[::-1], template=template)
+    data = dump_file(releases[::-1], currentlog=currentlog, template=template)
     return data
 
 
