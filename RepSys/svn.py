@@ -283,12 +283,13 @@ class SVN:
         changedheader = 0
         for line in output.splitlines():
             line = line.rstrip()
-            if not line:
-                appendchanged = 0
             if changedheader:
                 appendchanged = 1
                 changedheader = 0
             elif appendchanged:
+                if not line:
+                    appendchanged = 0
+                    continue
                 m = changedpat.match(line)
                 if m:
                     changed = m.groupdict().copy()
