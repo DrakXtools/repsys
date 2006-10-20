@@ -274,6 +274,27 @@ def get_revision_offset():
                       "file(s).")
     return revoffset or 0
 
+oldmsgpat = re.compile(
+        r"Copying release (?P<rel>[^\s]+) to (?P<dir>[^\s]+) directory\.")
+
+def parse_markrelease_log(relentry):
+    if not ((relentry.lines and oldmsgpat.match(relentry.lines[0]) \
+            or parse_repsys_entry(relentry))):
+        raise InvalidEntryError
+    from_rev = None
+    path = None
+    for changed in relentry.changed:
+        if changed["action"] == "A" and changed["from_rev"]:
+            from_rev = changed["from_rev"]
+            path = changed["path"]
+            break
+    else:
+        raise InvalidEntryError
+    # get the version and release from the names in the path, do not relay
+    # on log messages
+    version, release = path.rsplit(os.path.sep, 3)[-2:]
+    return version, release, from_rev
+
 
 def svn2rpm(pkgdirurl, rev=None, size=None, submit=False, template=None):
     concat = config.get("log", "concat", "").split()
@@ -284,52 +305,46 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False, template=None):
     releaseslog = svn.log(pkgreleasesurl, noerror=1)
     currentlog = svn.log(pkgcurrenturl, limit=size, start=rev,
             end=revoffset)
-    lastauthor = None
-    previous_revision = 0
-    currelease = None
-    releases = []
 
-    # for the emergency bug fixer: the [].sort() is done using the 
-    # decorate-sort-undecorate pattern
-    releases_data = []
-    if releaseslog:
-        for relentry in releaseslog[::-1]:
-            try:
-                revinfo = parse_repsys_entry(relentry)
-            except InvalidEntryError:
-                continue
-            try:
-                release_number = int(revinfo["revision"])
-            except (KeyError, ValueError):
-                raise Error, "Error parsing data from log entry from r%s" % \
-                                relentry.revision  
-            releases_data.append((release_number, relentry, revinfo))
-    releases_data.sort()
-
-    for release_number, relentry, revinfo in releases_data:
+    # sort releases by copyfrom-revision, so that markreleases for same
+    # revisions won't be look empty
+    releasesdata = []
+    for relentry in releaseslog[::-1]:
         try:
-            release_revision = int(revinfo["revision"])
-        except (ValueError, KeyError):
-            raise Error, "Error parsing data from log entry from r%s" % \
-                            relentry.revision  
-        
-        # get entries newer than 'previous' and older than 'relentry'
+            (version, release, relrevision) = \
+                    parse_markrelease_log(relentry)
+        except InvalidEntryError:
+            continue
+        releasesdata.append((relrevision, -relentry.revision, relentry, version, release))
+    releasesdata.sort()
+
+    # collect valid releases using the versions provided by the changes and
+    # the packages
+    prevrevision = 0
+    releases = []
+    for (relrevision, dummy, relentry, version, release) in releasesdata:
+        if prevrevision == relrevision: 
+            # ignore older markrelease of the same revision, since they
+            # will have history
+            continue
         entries = [entry for entry in currentlog
-                    if release_revision >= entry.revision and
-                      (previous_revision < entry.revision)]
+                    if relrevision >= entry.revision and
+                      (prevrevision < entry.revision)]
         if not entries:
             #XXX probably a forced release, without commits in current/,
-            # check if this is the right behavior and if some release is
-            # not being lost.
+            # check if this is the right behavior
+            sys.stderr.write("warning: skipping (possible) release "
+                    "%s-%s@%s, no commits since previous markrelease (r%r)\n" %
+                    (version, release, relrevision, prevrevision))
             continue
 
         release = make_release(author=relentry.author,
                 revision=relentry.revision, date=relentry.date,
                 lines=relentry.lines, entries=entries,
-                version=revinfo["version"], release=revinfo["release"])
+                version=version, release=release)
         releases.append(release)
-        previous_revision = release_revision
-
+        prevrevision = relrevision
+            
     # look for commits that have been not submited (released) yet
     # this is done by getting all log entries newer (revision larger)
     # than releaseslog[0] (in the case it exists)
