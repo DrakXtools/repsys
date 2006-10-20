@@ -11,6 +11,7 @@ class SVNLogEntry:
         self.revision = revision
         self.author = author
         self.date = date
+        self.changed = []
         self.lines = []
 
     def __cmp__(self, other):
@@ -248,7 +249,7 @@ class SVN:
         return None
 
     def log(self, url, start=None, end=0, limit=None, **kwargs):
-        cmd = ["log", url]
+        cmd = ["log", "-v", url]
         if start is not None or end != 0:
             if start is not None and type(start) is not type(0):
                 try:
@@ -273,17 +274,32 @@ class SVN:
             return None
 
         revheader = re.compile("^r(?P<revision>[0-9]+) \| (?P<author>[^\|]+) \| (?P<date>[^\|]+) \| (?P<lines>[0-9]+) (?:line|lines)$")
+        changedpat = re.compile(r"^\s+(?P<action>[^\s]+) (?P<path>[^\s]+)(?: \([^\s]+ (?P<from_path>[^:]+)(?:\:(?P<from_rev>[0-9]+))?\))?$")
         logseparator = "-"*72
         linesleft = 0
         entry = None
         log = []
-        emptyline = 0
+        appendchanged = 0
+        changedheader = 0
         for line in output.splitlines():
-            if emptyline:
-                emptyline = 0
-                continue
             line = line.rstrip()
-            if linesleft == 0:
+            if not line:
+                appendchanged = 0
+            if changedheader:
+                appendchanged = 1
+                changedheader = 0
+            elif appendchanged:
+                m = changedpat.match(line)
+                if m:
+                    changed = m.groupdict().copy()
+                    from_rev = changed.get("from_rev")
+                    if from_rev is not None:
+                        try:
+                            changed["from_rev"] = int(from_rev)
+                        except (ValueError, TypeError):
+                            raise Error, "invalid revision number in svn log"
+                    entry.changed.append(changed)
+            elif linesleft == 0:
                 if line != logseparator:
                     m = revheader.match(line)
                     if m:
@@ -294,7 +310,7 @@ class SVN:
                         entry = SVNLogEntry(int(m.group("revision")),
                                             m.group("author"), timetuple)
                         log.append(entry)
-                        emptyline = 1
+                        changedheader = 1
             else:
                 entry.lines.append(line)
                 linesleft -= 1
