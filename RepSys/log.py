@@ -309,14 +309,15 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False, template=None):
     # sort releases by copyfrom-revision, so that markreleases for same
     # revisions won't be look empty
     releasesdata = []
-    for relentry in releaseslog[::-1]:
-        try:
-            (version, release, relrevision) = \
-                    parse_markrelease_log(relentry)
-        except InvalidEntryError:
-            continue
-        releasesdata.append((relrevision, -relentry.revision, relentry, version, release))
-    releasesdata.sort()
+    if releaseslog:
+        for relentry in releaseslog[::-1]:
+            try:
+                (version, release, relrevision) = \
+                        parse_markrelease_log(relentry)
+            except InvalidEntryError:
+                continue
+            releasesdata.append((relrevision, -relentry.revision, relentry, version, release))
+        releasesdata.sort()
 
     # collect valid releases using the versions provided by the changes and
     # the packages
