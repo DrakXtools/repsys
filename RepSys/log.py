@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from RepSys import Error, config
+from RepSys import Error, config, RepSysTree
 from RepSys.svn import SVN
 from RepSys.util import execcmd
 
@@ -52,7 +52,7 @@ def getrelease(pkgdirurl, rev=None):
     svn = SVN(baseurl=pkgdirurl)
     tmpdir = tempfile.mktemp()
     try:
-        pkgname = os.path.basename(pkgdirurl)
+        pkgname = RepSysTree.pkgname(pkgdirurl)
         pkgcurrenturl = os.path.join(pkgdirurl, "current")
         specurl = os.path.join(pkgcurrenturl, "SPECS")
         if svn.ls(specurl, noerror=1):
@@ -394,7 +394,7 @@ def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
         svn = SVN(baseurl=pkgdirurl)
         tmpdir = tempfile.mktemp()
         try:
-            pkgname = os.path.basename(pkgdirurl)
+            pkgname = RepSysTree.pkgname(pkgdirurl)
             pkgoldurl = os.path.join(oldurl, pkgname)
             if svn.ls(pkgoldurl, noerror=1):
                 svn.export(pkgoldurl, tmpdir, rev=rev)

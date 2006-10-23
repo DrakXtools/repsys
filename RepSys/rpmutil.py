@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from RepSys import Error, config
+from RepSys import Error, config, RepSysTree
 from RepSys.svn import SVN
 from RepSys.rpm import SRPM
 from RepSys.log import specfile_svn2rpm
@@ -223,7 +223,7 @@ def create_package(pkgdirurl, log="", verbose=0):
     svn = SVN(baseurl=pkgdirurl)
     tmpdir = tempfile.mktemp()
     try:
-        basename = os.path.basename(pkgdirurl)
+        basename = RepSysTree.pkgname(pkgdirurl)
         if verbose:
             print "Creating package directory...",
         sys.stdout.flush()
