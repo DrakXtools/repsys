@@ -4,7 +4,7 @@
 * $rel.date $rel.author_name <$rel.author_email> $rel.version-$rel.release
 + Revision: $rel.revision
  #if not $rel.released
-+ Status: not released
+##+ Status: not released
  #end if
  #for $rev in $rel.release_revisions
   #for $line in $rev.lines
