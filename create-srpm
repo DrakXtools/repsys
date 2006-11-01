@@ -63,7 +63,8 @@ class CmdIface:
                         upload_command.append(x)
                 upload_command.append(targetname)
                 upload_command.append(targetsrpms[0])
-                status, output = execcmd(" ".join(upload_command))
+                status, output = execcmd(" ".join(upload_command),
+                        noerror=1)
                 if status != 0:
                     raise CmdError, "Failed to upload %s:\n%s" % (targetsrpms[0], output)
         return 1
@@ -92,7 +93,11 @@ def parse_options():
 def main():
     iface = CmdIface()
     opts, args = parse_options()
-    iface.submit_package(args[0], opts.revision, opts.target, opts.urlmap, opts.define)
+    try:
+        iface.submit_package(args[0], opts.revision, opts.target, opts.urlmap, opts.define)
+    except Error, e:
+        sys.stderr.write("error: %s\n" % str(e))
+        sys.exit(1)
     
 
 if __name__ == "__main__":
