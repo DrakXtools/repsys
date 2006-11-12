@@ -65,8 +65,9 @@ class CmdIface:
                 upload_command.append(targetsrpms[0])
                 status, output = execcmd(" ".join(upload_command),
                         noerror=1)
+                os.unlink(targetsrpms[0])
                 if status != 0:
-                    raise CmdError, "Failed to upload %s:\n%s" % (targetsrpms[0], output)
+                    raise CmdError, "Failed to upload %s:\n%s" % (packageurl, output)
         return 1
 
     def submit_targets(self):
