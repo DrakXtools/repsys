@@ -36,7 +36,8 @@ def get_srpm(pkgdirurl,
              svnlog = 0,
              scripts = [], 
              submit = False,
-             template = None):
+             template = None,
+             verbose = 0):
     svn = SVN(baseurl=pkgdirurl)
     tmpdir = tempfile.mktemp()
     topdir = "--define '_topdir %s'" % tmpdir
@@ -94,7 +95,8 @@ def get_srpm(pkgdirurl,
         for targetdir in targetdirs:
             targetsrpm = os.path.join(os.path.realpath(targetdir), os.path.basename(srpm))
             targetsrpms.append(targetsrpm)
-            sys.stderr.write("Wrote: %s\n" %  targetsrpm)
+            if verbose:
+                sys.stderr.write("Wrote: %s\n" %  targetsrpm)
             execcmd("cp -f", srpm, targetdir)
         os.unlink(srpm)
         return targetsrpms
