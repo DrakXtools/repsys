@@ -344,11 +344,11 @@ def check_changed(url, all=0, show=0, verbose=0):
             "nocurrent": nocurrent,
             "nopristine": nopristine}
 
-def checkout(url, path=None, revision=None):
+def checkout(pkgdirurl, path=None, revision=None):
     svn = SVN(baseurl=pkgdirurl)
-    current = os.path.join(url, "current")
+    current = os.path.join(pkgdirurl, "current")
     if path is None:
-        _, path = os.path.split(url)
+        _, path = os.path.split(pkgdirurl)
     svn.checkout(current, path, rev=revision, show=1)
 
 def get_submit_info(path):

@@ -23,7 +23,7 @@ def parse_options():
     opts, args = parser.parse_args()
     if len(args) not in (1, 2):
         raise Error, "invalid arguments"
-    opts.url = default_parent(args[0])
+    opts.pkgdirurl = default_parent(args[0])
     if len(args) == 2:
         opts.path = args[1]
     else:
