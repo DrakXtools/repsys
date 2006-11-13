@@ -3,7 +3,7 @@
 from RepSys import Error, config
 from RepSys.rpmutil import get_srpm
 from RepSys.cgiutil import get_targets
-from RepSys.util import mapurl
+from RepSys.util import mapurl, execcmd, get_helper
 import sys
 import os
 import pwd
@@ -16,7 +16,7 @@ class CmdIface:
         return config.get("users", author)
 
     def submit_package(self, packageurl, packagerev, targetname, 
-            dontmapurl_=0):
+            dontmapurl_=0, define=[]):
         pw = pwd.getpwuid(os.getuid())
         username = pw[0]
         packager = config.get("users", username) or pw[4]
@@ -46,13 +46,27 @@ class CmdIface:
             newurl = packageurl
             if not dontmapurl_:
                 newurl = mapurl(packageurl)
-            get_srpm(newurl,
+            targetsrpms = get_srpm(newurl,
                      revision=packagerev,
                      targetdirs=target.target,
                      packager=packager,
                      revname=1,
                      svnlog=1,
                      scripts=target.scripts)
+
+            uploadsrpm = get_helper("upload-srpm")
+            if uploadsrpm:
+                upload_command = [ uploadsrpm ]
+                if define:
+                    for x in define:
+                        upload_command.append("--define")
+                        upload_command.append(x)
+                upload_command.append(targetname)
+                upload_command.append(targetsrpms[0])
+                status, output = execcmd(" ".join(upload_command))
+                os.unlink(targetsrpms[0])
+                if status != 0:
+                    raise CmdError, "Failed to upload %s:\n%s" % (packageurl, output)
         return 1
 
     def submit_targets(self):
@@ -69,6 +83,7 @@ def parse_options():
     parser.add_option("-M", "--nomapping", action="store_true",
                       dest="urlmap", default=False, 
                       help="disable url mapping")
+    parser.add_option("--define", action="append")
     opts, args = parser.parse_args()
     if not args:
         parser.error("you must supply a package url")
@@ -78,7 +93,7 @@ def parse_options():
 def main():
     iface = CmdIface()
     opts, args = parse_options()
-    iface.submit_package(args[0], opts.revision, opts.target, opts.urlmap)
+    iface.submit_package(args[0], opts.revision, opts.target, opts.urlmap, opts.define)
     
 
 if __name__ == "__main__":
