@@ -199,9 +199,7 @@ def make_release(author=None, revision=None, date=None, lines=None,
         entries=[], released=True, version=None, release=None):
     rel = _Release()
     rel.author = author
-    found = emailpat.match(config.get("users", author, author or ""))
-    rel.author_name = (found and found.group("name")) or author
-    rel.author_email = (found and found.group("email")) or author
+    rel.author_name, rel.author_email = get_author_name(author)
     rel.revision = revision
     rel.version = version
     rel.release = release
