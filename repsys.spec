@@ -44,6 +44,7 @@ rm -rf %{buildroot}
 %{_bindir}/getsrpm-mdk
 %{_datadir}/repsys/rebrand-mdk
 %{_datadir}/repsys/create-srpm
+%{_datadir}/repsys/compatv15.chlog
 %{_datadir}/repsys/default.chlog
 %{_datadir}/repsys/revno.chlog
 %{_datadir}/repsys/oldfashion.chlog
