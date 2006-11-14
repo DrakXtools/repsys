@@ -61,7 +61,7 @@ def getrelease(pkgdirurl, rev=None):
             if found:
                 specpath = found[0]
                 command = (("rpm -q --qf '%%{VERSION}-%%{RELEASE}\n' "
-                           "--specfile %s") % specpath)
+                           "--specfile %s 2>/dev/null") % specpath)
                 status, output = execcmd(command)
                 if status != 0:
                     raise Error, "Error in command %s: %s" % (command, output)
