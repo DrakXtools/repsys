@@ -57,7 +57,7 @@ def get_srpm(pkgdirurl,
             geturl = os.path.join(pkgdirurl, "current")
         else:
             raise Error, "unsupported get_srpm mode: %s" % mode
-        svn.checkout(geturl, tmpdir, rev=revision)
+        svn.export(geturl, tmpdir, rev=revision)
         srpmsdir = os.path.join(tmpdir, "SRPMS")
         os.mkdir(srpmsdir)
         specsdir = os.path.join(tmpdir, "SPECS")
@@ -69,7 +69,7 @@ def get_srpm(pkgdirurl,
             submit = not not revision
             specfile_svn2rpm(pkgdirurl, spec, revision, submit=submit,
                     template=template)
-        revisionreal = svn.revision(tmpdir)
+        revisionreal = svn.revision(pkgdirurl)
         for script in scripts:
             status, output = execcmd(script, tmpdir, spec, str(revision),
                                      noerror=1)

@@ -199,7 +199,8 @@ def make_release(author=None, revision=None, date=None, lines=None,
         entries=[], released=True, version=None, release=None):
     rel = _Release()
     rel.author = author
-    rel.author_name, rel.author_email = get_author_name(author)
+    if author:
+        rel.author_name, rel.author_email = get_author_name(author)
     rel.revision = revision
     rel.version = version
     rel.release = release
