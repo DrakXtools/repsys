@@ -284,10 +284,10 @@ def mark_release(pkgdirurl, version, release, revision):
     svn.copy(currenturl, releaseurl, rev=revision,
              log=markreleaselog)
 
-def check_changed(url, all=0, show=0, verbose=0):
+def check_changed(pkgdirurl, all=0, show=0, verbose=0):
     svn = SVN(baseurl=pkgdirurl)
     if all:
-        baseurl = url
+        baseurl = pkgdirurl
         packages = []
         if verbose:
             print "Getting list of packages...",
@@ -298,7 +298,7 @@ def check_changed(url, all=0, show=0, verbose=0):
         if not packages:
             raise Error, "couldn't get list of packages"
     else:
-        baseurl, basename = os.path.split(url)
+        baseurl, basename = os.path.split(pkgdirurl)
         packages = [basename]
     clean = []
     changed = []
