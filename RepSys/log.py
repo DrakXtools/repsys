@@ -195,6 +195,13 @@ def get_author_name(author):
 def parse_raw_date(rawdate):
     return time.strftime("%a %b %d %Y", rawdate)
 
+def ignore_log_entry(entry):
+    ignstr = config.get("log", "ignore-string", "SILENT")
+    for line in entry.lines:
+        if ignstr in line:
+            return True
+    return False
+
 def make_release(author=None, revision=None, date=None, lines=None,
         entries=[], released=True, version=None, release=None):
     rel = _Release()
@@ -208,6 +215,8 @@ def make_release(author=None, revision=None, date=None, lines=None,
     rel.lines = lines
     rel.released = released
     for entry in entries:
+        if ignore_log_entry(entry):
+            continue
         revision = _Revision()
         revision.revision = entry.revision
         revision.lines = format_lines(entry.lines)
