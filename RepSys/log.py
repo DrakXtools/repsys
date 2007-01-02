@@ -195,12 +195,16 @@ def get_author_name(author):
 def parse_raw_date(rawdate):
     return time.strftime("%a %b %d %Y", rawdate)
 
-def ignore_log_entry(entry):
+def filter_log_lines(lines):
+    # lines in commit messages containing SILENT at any position will be
+    # skipped; commits with their log messages beggining with SILENT in the
+    # first positionj of the first line will be completely ignored.
     ignstr = config.get("log", "ignore-string", "SILENT")
-    for line in entry.lines:
-        if ignstr in line:
-            return True
-    return False
+    if len(lines) and lines[0].startswith(ignstr):
+        return None
+    filtered = [line for line in lines if ignstr not in line]
+    return filtered
+
 
 def make_release(author=None, revision=None, date=None, lines=None,
         entries=[], released=True, version=None, release=None):
@@ -215,11 +219,12 @@ def make_release(author=None, revision=None, date=None, lines=None,
     rel.lines = lines
     rel.released = released
     for entry in entries:
-        if ignore_log_entry(entry):
+        lines = filter_log_lines(entry.lines)
+        if lines is None:
             continue
         revision = _Revision()
         revision.revision = entry.revision
-        revision.lines = format_lines(entry.lines)
+        revision.lines = format_lines(lines)
         revision.date = parse_raw_date(entry.date)
         revision.raw_date = entry.date
         revision.author = entry.author
