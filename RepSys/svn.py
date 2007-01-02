@@ -205,7 +205,8 @@ class SVN:
             return [x.split() for x in output.split()]
         return None
 
-    def merge(self, url1, url2=None, rev1=None, rev2=None, path=None, **kwargs):
+    def merge(self, url1, url2=None, rev1=None, rev2=None, path=None, 
+            **kwargs):
         cmd = ["merge"]
         if rev1 and rev2 and not url2:
             cmd.append("-r")

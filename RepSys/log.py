@@ -316,7 +316,8 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False, template=None):
                         parse_markrelease_log(relentry)
             except InvalidEntryError:
                 continue
-            releasesdata.append((relrevision, -relentry.revision, relentry, version, release))
+            releasesdata.append((relrevision, -relentry.revision, relentry, 
+                version, release))
         releasesdata.sort()
 
     # collect valid releases using the versions provided by the changes and

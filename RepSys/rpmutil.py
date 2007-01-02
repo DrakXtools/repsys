@@ -93,7 +93,8 @@ def get_srpm(pkgdirurl,
             targetdirs = (".",)
         targetsrpms = []
         for targetdir in targetdirs:
-            targetsrpm = os.path.join(os.path.realpath(targetdir), os.path.basename(srpm))
+            targetsrpm = os.path.join(os.path.realpath(targetdir), 
+                    os.path.basename(srpm))
             targetsrpms.append(targetsrpm)
             if verbose:
                 sys.stderr.write("Wrote: %s\n" %  targetsrpm)
