@@ -307,7 +307,7 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False, template=None):
             end=revoffset)
 
     # sort releases by copyfrom-revision, so that markreleases for same
-    # revisions won't be look empty
+    # revisions won't look empty
     releasesdata = []
     if releaseslog:
         for relentry in releaseslog[::-1]:
@@ -327,7 +327,7 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False, template=None):
     for (relrevision, dummy, relentry, version, release) in releasesdata:
         if prevrevision == relrevision: 
             # ignore older markrelease of the same revision, since they
-            # will have history
+            # will have no history
             continue
         entries = [entry for entry in currentlog
                     if relrevision >= entry.revision and
