@@ -198,10 +198,10 @@ def parse_raw_date(rawdate):
 def filter_log_lines(lines):
     # lines in commit messages containing SILENT at any position will be
     # skipped; commits with their log messages beggining with SILENT in the
-    # first positionj of the first line will be completely ignored.
+    # first positionj of the first line will have all lines ignored.
     ignstr = config.get("log", "ignore-string", "SILENT")
     if len(lines) and lines[0].startswith(ignstr):
-        return None
+        return []
     filtered = [line for line in lines if ignstr not in line]
     return filtered
 
@@ -220,8 +220,6 @@ def make_release(author=None, revision=None, date=None, lines=None,
     rel.released = released
     for entry in entries:
         lines = filter_log_lines(entry.lines)
-        if lines is None:
-            continue
         revision = _Revision()
         revision.revision = entry.revision
         revision.lines = format_lines(lines)
