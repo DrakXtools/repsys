@@ -269,7 +269,7 @@ def mark_release(pkgdirurl, version, release, revision):
     versionurl = "/".join([releasesurl, version])
     releaseurl = "/".join([versionurl, release])
     if svn.ls(releaseurl, noerror=1):
-        raise cncrep.Error, "release already exists"
+        raise Error, "release already exists"
     svn.mkdir(releasesurl, noerror=1,
               log="Created releases directory.")
     svn.mkdir(versionurl, noerror=1,
