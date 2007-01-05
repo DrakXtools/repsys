@@ -333,9 +333,7 @@ def check_changed(url, all=0, show=0, verbose=0):
                     print "clean"
                 clean.append(package)
     if verbose:
-        if not packages:
-            print "No packages found!"
-        elif all:
+        if all:
             print "Total clean packages: %s" % len(clean)
             print "Total CHANGED packages: %d" % len(changed)
             print "Total NO CURRENT packages: %s" % len(nocurrent)
@@ -350,7 +348,7 @@ def checkout(url, path=None, revision=None):
     current = os.path.join(url, "current")
     if path is None:
         _, path = os.path.split(url)
-    svn.checkout(current, path, rev=revision, show=1)
+    svn.checkout(current, path, revision=SVN.revision(revision), show=1)
 
 def get_submit_info(path):
     path = os.path.abspath(path)
