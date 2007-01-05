@@ -332,12 +332,11 @@ def check_changed(url, all=0, show=0, verbose=0):
                 if verbose:
                     print "clean"
                 clean.append(package)
-    if verbose:
-        if all:
-            print "Total clean packages: %s" % len(clean)
-            print "Total CHANGED packages: %d" % len(changed)
-            print "Total NO CURRENT packages: %s" % len(nocurrent)
-            print "Total NO PRISTINE packages: %s" % len(nopristine)
+    if verbose and all:
+        print "Total clean packages: %s" % len(clean)
+        print "Total CHANGED packages: %d" % len(changed)
+        print "Total NO CURRENT packages: %s" % len(nocurrent)
+        print "Total NO PRISTINE packages: %s" % len(nopristine)
     return {"clean": clean,
             "changed": changed,
             "nocurrent": nocurrent,
