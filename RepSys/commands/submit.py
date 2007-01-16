@@ -18,12 +18,18 @@ import xmlrpclib
 HELP = """\
 Usage: repsys submit [OPTIONS] [URL [REVISION]]
 
+Submits the package from URL to the submit host.
+
 Options:
     -t TARGET  Submit given package URL to given target
     -l         Just list available targets
     -r REV     Provides a revision number (when not providing as an
                argument)
+    -s         The host in which the package URL will be submitted
+               (defaults to the host in the URL)
     -h         Show this message
+    --define   Defines one variable to be used by the submit scripts 
+               in the submit host
 
 Examples:
     repsys submit
@@ -39,6 +45,8 @@ def parse_options():
     parser.add_option("-t", dest="target", default="Cooker")
     parser.add_option("-l", dest="list", action="store_true")
     parser.add_option("-r", dest="revision", type="string", nargs=1)
+    parser.add_option("-s", dest="submithost", type="string", nargs=1,
+            default=None)
     parser.add_option("--define", action="append")
     opts, args = parser.parse_args()
     if not args:
@@ -64,64 +72,33 @@ def parse_options():
         raise Error, "provide -l or a revision number"
     return opts
 
-def submit(pkgdirurl, revision, target, list=0, define=[]):
+def submit(pkgdirurl, revision, target, list=0, define=[], submithost=None):
     #if not NINZ:
     #    raise Error, "you must have NINZ installed to use this command"
-    type, rest = urllib.splittype(pkgdirurl)
-    host, path = urllib.splithost(rest)
-    user, host = urllib.splituser(host)
-    host, port = urllib.splitport(host)
-    if type != "https" and type != "svn+ssh":
-        raise Error, "you must use https:// or svn+ssh:// urls"
-    if user:
-        user, passwd = urllib.splitpasswd(user)
-        if passwd:
-            raise Error, "do not use a password in your command line"
-    if type == "https":
-        user, passwd = get_auth(username=user)
-        #soap = NINZ.client.Binding(host=host,
-        #                           url="https://%s/scripts/cnc/soap" % host,
-        #                           ssl=1,
-        #                           auth=(NINZ.client.AUTH.httpbasic,
-        #                                 user, passwd))
-        if port:
-            port = ":"+port
-        else:
-            port = ""
-        iface = xmlrpclib.ServerProxy("https://%s:%s@%s%s/scripts/cnc/xmlrpc"
-                                      % (user, passwd, host, port))
-        try:
-            if list:
-                targets = iface.submit_targets()
-                if not targets:
-                    raise Error, "no targets available"
-                sys.stdout.writelines(['"%s"\n' % x for x in targets])
-            else:
-                iface.submit_package(pkgdirurl, revision, target)
-                print "Package submitted!"
-        #except NINZ.client.SoapError, e:
-        except xmlrpclib.ProtocolError, e:
-            raise Error, "remote error: "+str(e.errmsg)
-        except xmlrpclib.Fault, e:
-            raise Error, "remote error: "+str(e.faultString)
-        except xmlrpclib.Error, e:
-            raise Error, "remote error: "+str(e)
+    if submithost is None:
+        submithost = config.get("submit", "host")
+        if submithost is None:
+            # extract the submit host from the svn host
+            type, rest = urllib.splittype(pkgdirurl)
+            host, path = urllib.splithost(rest)
+            user, host = urllib.splituser(host)
+            submithost, port = urllib.splitport(host)
+            del type, user, port, path, rest
+    # runs a create-srpm in the server through ssh, which will make a
+    # copy of the rpm in the export directory
+    if list:
+        raise Error, "unable to list targets from svn+ssh:// URLs"
+    createsrpm = get_helper("create-srpm")
+    command = "ssh %s %s '%s' -r %s -t %s" % (
+            submithost, createsrpm, pkgdirurl, revision, target)
+    if define:
+        command += " " + " ".join([ "--define " + x for x in define ])
+    status, output = execcmd(command)
+    if status == 0:
+        print "Package submitted!"
     else:
-        # runs a create-srpm in the server through ssh, which will make a
-        # copy of the rpm in the export directory
-        if list:
-            raise Error, "unable to list targets from svn+ssh:// URLs"
-        createsrpm = get_helper("create-srpm")
-        command = "ssh %s %s '%s' -r %s -t %s" % (
-                host, createsrpm, pkgdirurl, revision, target)
-        if define:
-            command += " " + " ".join([ "--define " + x for x in define ])
-        status, output = execcmd(command)
-        if status == 0:
-            print "Package submitted!"
-        else:
-            sys.stderr.write(output)
-            sys.exit(status)
+        sys.stderr.write(output)
+        sys.exit(status)
 
 
 def main():
