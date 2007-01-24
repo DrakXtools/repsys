@@ -60,8 +60,12 @@ def getrelease(pkgdirurl, rev=None):
             found = glob.glob(os.path.join(tmpdir, "*.spec"))
             if found:
                 specpath = found[0]
+                fmt = "--define \"%s %s\""
+                macros = (fmt % macro for macro in parse_macros())
+                options = " ".join(macros)
                 command = (("rpm -q --qf '%%{VERSION}-%%{RELEASE}\n' "
-                           "--specfile %s 2>/dev/null") % specpath)
+                           "--specfile %s %s 2>/dev/null") % 
+                           (specpath, options))
                 status, output = execcmd(command)
                 if status != 0:
                     raise Error, "Error in command %s: %s" % (command, output)
@@ -76,6 +80,25 @@ def getrelease(pkgdirurl, rev=None):
         if os.path.isdir(tmpdir):
             shutil.rmtree(tmpdir)
             
+
+def parse_macros():
+    path = config.get("log", "macros-file", None)
+    if not path:
+        # if the user did not declated where is the file, ignore it
+        return
+    if not os.path.isfile(path):
+        # complain when declared and not found
+        sys.stderr.write("warning: could not open macros file: %s\n" %
+                path)
+        return
+    for line in open(path):
+        line = line.strip()
+        if line.startswith("#") or not line:
+            continue
+        name, value = line.split(None, 1)
+        # trying to have the same format from rpm macros files
+        name = name[1:]
+        yield (name, value)
 
 class _Revision:
     lines = []
