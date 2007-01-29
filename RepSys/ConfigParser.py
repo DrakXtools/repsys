@@ -373,8 +373,8 @@ class Config:
     def set(self, section, option, value):
         return self._config.set(section, option, value)
     
-    def walk(self, section):
-        return self._config.walk(section)
+    def walk(self, section, *args, **kwargs):
+        return self._config.walk(section, *args, **kwargs)
 
     def get(self, section, option, default=None):
         try:
