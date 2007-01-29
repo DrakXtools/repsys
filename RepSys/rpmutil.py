@@ -25,6 +25,11 @@ def get_spec(pkgdirurl, targetdir=".", submit=False):
         if os.path.isdir(tmpdir):
             shutil.rmtree(tmpdir)
 
+def rpm_macros_defs(macros):
+    defs = ("--define \"%s %s\"" % macro for macro in macros)
+    args = " ".join(defs)
+    return args
+
 def get_srpm(pkgdirurl,
              mode = "current",
              targetdirs = None,
@@ -37,6 +42,7 @@ def get_srpm(pkgdirurl,
              scripts = [], 
              submit = False,
              template = None,
+             macros = [],
              verbose = 0):
     svn = SVN(baseurl=pkgdirurl)
     tmpdir = tempfile.mktemp()
@@ -68,7 +74,7 @@ def get_srpm(pkgdirurl,
         if svnlog:
             submit = not not revision
             specfile_svn2rpm(pkgdirurl, spec, revision, submit=submit,
-                    template=template)
+                    template=template, macros=macros)
         revisionreal = svn.revision(pkgdirurl)
         for script in scripts:
             status, output = execcmd(script, tmpdir, spec, str(revision),
@@ -78,9 +84,10 @@ def get_srpm(pkgdirurl,
         if packager:
             packager = " --define 'packager %s'" % packager
 
-        execcmd("rpm -bs --nodeps %s %s %s %s %s %s %s %s %s" %
+        defs = rpm_macros_defs(macros)
+        execcmd("rpm -bs --nodeps %s %s %s %s %s %s %s %s %s %s" %
             (topdir, builddir, rpmdir, sourcedir, specdir, 
-             srcrpmdir, patchdir, packager, spec))
+             srcrpmdir, patchdir, packager, spec, defs))
 
         if revision and revisionreal:
             srpm = glob.glob(os.path.join(srpmsdir, "*.src.rpm"))[0]

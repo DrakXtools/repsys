@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from RepSys import Error, config
 from RepSys.svn import SVN
+from RepSys.ConfigParser import NoSectionError
 import time
 import re
 
@@ -10,10 +11,22 @@ class SubmitTarget:
     def __init__(self):
         self.name = ""
         self.target = ""
+        self.macros = []
         self.allowed = []
         self.scripts = []
 
 TARGETS = []
+
+def parse_macrosref(refs, config):
+    macros = []
+    for name in refs:
+        secname = "macros %s" % name
+        try:
+            macros.extend(config.walk(secname, raw=True))
+        except NoSectionError:
+            raise Error, "missing macros section " \
+                    "%r in configuration" % secname
+    return macros
 
 def get_targets():
     global TARGETS
@@ -27,12 +40,11 @@ def get_targets():
                 target = SubmitTarget()
                 target.name = m.group(1)
                 for option, value in config.walk(section):
-                    if option == "target":
-                        target.target = value.split()
-                    elif option == "allowed":
-                        target.allowed = value.split()
-                    elif option == "scripts":
-                        target.scripts = value.split()
+                    if option in ("target", "allowed", "scripts"):
+                        setattr(target, option, value.split())
+                    elif option == "rpm-macros":
+                        refs = value.split()
+                        target.macros = parse_macrosref(refs, config)
                     else:
                         raise Error, "unknown [%s] option %s" % (section, option)
                 TARGETS.append(target)

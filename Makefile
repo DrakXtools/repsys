@@ -14,7 +14,7 @@ TAG := $(shell echo "V$(VERSION)_$(RELEASE)" | tr -- '-.' '__')
 
 FILES = ChangeLog Makefile MANIFEST.in PKG-INFO create-srpm getsrpm-mdk rebrand-mdk \
         {compatv15,default,oldfashion,revno}.chlog \
-        repsys repsys.conf repsys.macros repsys.spec setup.cfg setup.py RepSys/*.py RepSys/{cgi,commands}/*.py
+        repsys repsys.conf repsys.spec setup.cfg setup.py RepSys/*.py RepSys/{cgi,commands}/*.py
 
 # rules to build a test rpm
 

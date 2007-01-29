@@ -1,6 +1,0 @@
-# Use this file to override the macros from the machine where repsys is
-# being run. It is used when retrieving version-release to be used in the
-# changelog of a package not released yet.
-
-#%mandriva_release	2007.1
-#%distsuffix		mdv

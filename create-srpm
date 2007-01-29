@@ -52,7 +52,8 @@ class CmdIface:
                      packager=packager,
                      revname=1,
                      svnlog=1,
-                     scripts=target.scripts)
+                     scripts=target.scripts, 
+                     macros=target.macros)
 
             uploadsrpm = get_helper("upload-srpm")
             if uploadsrpm:

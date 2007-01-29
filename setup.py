@@ -28,7 +28,7 @@ setup(name="repsys",
               "compatv15.chlog",
               "create-srpm",
               "rebrand-mdk"]),
-	      ("/etc/", ["repsys.conf", "repsys.macros"])]
+	      ("/etc/", ["repsys.conf"])]
       )
 
 # vim:ts=4:sw=4:et
