@@ -106,7 +106,6 @@ def format_lines(lines):
     entrylines = []
     perexpr = re.compile(r"([^%])%([^%])")
     for line in lines:
-        line = line.lstrip()
         if line:
             line = perexpr.sub("\\1%%\\2", line)
             if first:
