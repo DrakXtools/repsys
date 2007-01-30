@@ -94,7 +94,9 @@ class _Revision:
 class _Release(_Revision):
     version = None
     release = None
-    revisions = None
+    revisions = []
+    release_revisions = []
+    authors = []
 
     def __init__(self, **kwargs):
         self.revisions = []
@@ -135,7 +137,12 @@ def group_releases_by_author(releases):
     for release in releases:
         authors = {}
         for revision in release.revisions:
+            if not revision.lines:
+                continue
             authors.setdefault(revision.author, []).append(revision)
+
+        if not authors:
+            continue
 
         # all the mess below is to sort by author and by revision number
         decorated = []
