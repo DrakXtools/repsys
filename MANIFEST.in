@@ -1,2 +1,4 @@
 recursive-include RepSys *.py
-include repsys repsys.conf MANIFEST.in
+include repsys repsys.conf MANIFEST.in 
+include *.chlog
+include rebrand-mdk create-srpm getsrpm-mdk
