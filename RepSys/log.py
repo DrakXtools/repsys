@@ -97,6 +97,7 @@ class _Release(_Revision):
     revisions = []
     release_revisions = []
     authors = []
+    visible = False
 
     def __init__(self, **kwargs):
         self.revisions = []
@@ -137,12 +138,7 @@ def group_releases_by_author(releases):
     for release in releases:
         authors = {}
         for revision in release.revisions:
-            if not revision.lines:
-                continue
             authors.setdefault(revision.author, []).append(revision)
-
-        if not authors:
-            continue
 
         # all the mess below is to sort by author and by revision number
         decorated = []
@@ -226,8 +222,11 @@ def make_release(author=None, revision=None, date=None, lines=None,
     rel.date = (date and parse_raw_date(date)) or None
     rel.lines = lines
     rel.released = released
+    rel.visible = False
     for entry in entries:
         lines = filter_log_lines(entry.lines)
+        if lines:
+            rel.visible = True
         revision = _Revision()
         revision.revision = entry.revision
         revision.lines = format_lines(lines)
