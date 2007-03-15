@@ -68,6 +68,8 @@ class CmdIface:
                         noerror=1)
                 if os.path.isfile(targetsrpms[0]):
                     os.unlink(targetsrpms[0])
+                else:
+                    sys.stderr.write("warning: upload ok; temp file '%s' removed unexpectedly\n" % (targetsrpms[0]))
                 if status != 0:
                     raise CmdError, "Failed to upload %s:\n%s" % (packageurl, output)
         return 1
