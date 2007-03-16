@@ -1,3 +1,9 @@
+* 1.6.15
+- empty changelog entries are now shown, with a EMPTYLOG tag to allow
+  rpmlint warn the developer about it
+- check (and warn) if a temporary package has already been removed before
+  trying to remove it
+
 * 1.6.2b
 - make submit pass --define options to create-srpm script
 - print error message when create-srpm fails
