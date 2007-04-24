@@ -103,6 +103,11 @@ class _Release(_Revision):
         self.revisions = []
         _Revision.__init__(self, **kwargs)
 
+unescaped_macro_pat = re.compile(r"([^%])%([^%])")
+
+def escape_macros(text):
+    escaped = unescaped_macro_pat.sub("\\1%%\\2", text)
+    return escaped
 
 def format_lines(lines):
     first = 1
@@ -110,7 +115,7 @@ def format_lines(lines):
     perexpr = re.compile(r"([^%])%([^%])")
     for line in lines:
         if line:
-            line = perexpr.sub("\\1%%\\2", line)
+            line = escape_macros(line)
             if first:
                 first = 0
                 line = line.lstrip()
@@ -425,7 +430,9 @@ def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
                 if os.path.isfile(logfile):
                     file = open(logfile)
                     newlines.append("\n")
-                    newlines.append(file.read())
+                    log = file.read()
+                    log = escape_macros(log)
+                    newlines.append(log)
                     file.close()
         finally:
             if os.path.isdir(tmpdir):
