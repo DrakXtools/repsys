@@ -2,7 +2,7 @@
 A Repsys plugin for obtaining users from a LDAP server.
 
 In order to enable the plugin, the user must define the following 
-options the [global] section of repsys.conf:
+options in the [global] section of repsys.conf:
 
     ldap-server [required]
         the host name of the LDAP server
