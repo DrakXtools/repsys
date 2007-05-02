@@ -16,6 +16,13 @@ $line
  #end for
 
  #for $author in $rel.authors
+  #if $author.revisions and not $author.revisions[0].lines
+    #continue
+  #end if
+  ##alternatively, one could use:
+  ###if $author.email == "root"
+  ## #continue
+  ###end if
   + $author.name <$author.email>
   #for $rev in $author.revisions
     #for $line in $rev.lines
