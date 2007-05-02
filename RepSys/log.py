@@ -90,6 +90,12 @@ class _Revision:
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 
+    def __repr__(self):
+        lines = repr(self.lines)[:30] + "...]" 
+        line = "<_Revision %d author=%r date=%r lines=%s>" % \
+                    (self.revision, self.author, self.date, lines)
+        return line
+
 
 class _Release(_Revision):
     version = None
@@ -102,6 +108,11 @@ class _Release(_Revision):
     def __init__(self, **kwargs):
         self.revisions = []
         _Revision.__init__(self, **kwargs)
+
+    def __repr__(self):
+        line = "<_Release v=%s r=%s revs=%r>" % \
+                    (self.version, self.release, self.revisions)
+        return line
 
 unescaped_macro_pat = re.compile(r"([^%])%([^%])")
 
