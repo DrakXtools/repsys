@@ -151,8 +151,10 @@ class _Author:
 
 def group_releases_by_author(releases):
     allauthors = []
+    grouped = []
     for release in releases:
         authors = {}
+        latest = None
         for revision in release.revisions:
             authors.setdefault(revision.author, []).append(revision)
 
@@ -165,7 +167,19 @@ def group_releases_by_author(releases):
             revdeco = [(r.revision, r) for r in revs]
             revdeco.sort(reverse=1)
             author.revisions = [t[1] for t in revdeco]
-            decorated.append((max(revdeco)[0], author))
+            revlatest = author.revisions[0]
+            # keep the latest revision even for silented authors (below)
+            if latest is None or revlatest.revision > latest.revision:
+                latest = revlatest
+            count = sum(len(rev.lines) for rev in author.revisions)
+            if count == 0:
+                # skipping author with only silented lines
+                continue
+            decorated.append((revdeco[0][0], author))
+
+        if not decorated:
+            # skipping release with only authors with silented lines
+            continue
 
         decorated.sort(reverse=1)
         release.authors = [t[1] for t in decorated]
@@ -176,12 +190,17 @@ def group_releases_by_author(releases):
         first, release.authors = release.authors[0], release.authors[1:]
         release.author_name = first.name
         release.author_email = first.email
-        release.date = first.revisions[0].date
-        release.raw_date = first.revisions[0].raw_date
         release.release_revisions = first.revisions
-        release.revision = first.revisions[0].revision
 
-    return releases
+        #release.date = first.revisions[0].date
+        release.date = latest.date
+        release.raw_date = latest.raw_date
+        #release.revision = first.revisions[0].revision
+        release.revision = latest.revision
+
+        grouped.append(release)
+
+    return grouped
 
 
 def group_revisions_by_author(currentlog):
