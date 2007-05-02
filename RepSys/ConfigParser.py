@@ -388,14 +388,14 @@ class Config:
             return handler(section, option, walk=True)
         return self._config.walk(section, option, raw, vars)
 
-    def get(self, section, option, default=None, wrap=True):
+    def get(self, section, option, default=None, raw=False, wrap=True):
         if wrap:
             handler = self._wrapped.get(section)
             if handler:
                 handler = self._wrapped.get(section)
                 return handler(section, option, default)
         try:
-            return self._config.get(section, option)
+            return self._config.get(section, option, raw=raw)
         except Error:
             return default
     
