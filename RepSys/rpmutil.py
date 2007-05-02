@@ -1,5 +1,6 @@
 #!/usr/bin/python
 from RepSys import Error, config, RepSysTree
+from RepSys import mirror
 from RepSys.svn import SVN
 from RepSys.rpm import SRPM
 from RepSys.log import specfile_svn2rpm
@@ -357,7 +358,30 @@ def checkout(pkgdirurl, path=None, revision=None):
     current = os.path.join(pkgdirurl, "current")
     if path is None:
         _, path = os.path.split(pkgdirurl)
+    if mirror.enabled():
+        current = mirror.checkout_url(current)
+        print "checking out from mirror", current
     svn.checkout(current, path, rev=revision, show=1)
+
+def commit(target=".", message=None):
+    svn = SVN(noauth=True)
+    info = svn.info2(target)
+    url = info.get("URL")
+    if url is None:
+        raise Error, "working copy URL not provided by svn info"
+    if mirror.enabled():
+        newurl = mirror.switchto_parent(svn, url, target)
+        print "relocated to", newurl
+    try:
+        # we can't use the svn object here because pexpect hides VISUAL
+        mopt = ""
+        if message is not None:
+            mopt = "-m \"%s\"" % message
+        os.system("svn ci %s %s" % (mopt, target))
+    finally:
+        if mirror.enabled():
+            mirror.switchto_mirror(svn, newurl, target)
+            print "relocated back to", url
 
 def get_submit_info(path):
     path = os.path.abspath(path)

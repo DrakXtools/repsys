@@ -169,6 +169,12 @@ class SVN:
         if status == 0:
             return output.splitlines()
         return None
+
+    def info2(self, *args, **kwargs):
+        lines = self.info(*args, **kwargs)
+        pairs = [[w.strip() for w in line.split(":", 1)] for line in lines]
+        info = dict(pairs)
+        return info
           
     def ls(self, path, **kwargs):
         cmd = ["ls", path]
@@ -196,6 +202,19 @@ class SVN:
         if status == 0:
             return [x.split() for x in output.split()]
         return None
+
+    def switch(self, url, oldurl=None, path=None, relocate=False, **kwargs):
+        cmd = ["switch"]
+        if relocate:
+            if oldurl is None:
+                raise Error, "You must supply the old URL when "\
+                        "relocating working copies"
+            cmd.append("--relocate")
+            cmd.append(oldurl)
+        cmd.append(url)
+        if path is not None:
+            cmd.append(path)
+        return self._execsvn_success(*cmd, **kwargs)
 
     def update(self, path, **kwargs):
         cmd = ["update", path]

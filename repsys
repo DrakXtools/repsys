@@ -11,6 +11,7 @@ Usage: repsys COMMAND [COMMAND ARGUMENTS]
 
 Useful commands:
     co
+    ci
     submit
     create
     getspec
