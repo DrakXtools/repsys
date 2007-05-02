@@ -45,7 +45,7 @@ options in repsys.conf:
 
 When the searched option is not found, it will try in repsys.conf. All
 the values found.  (including from repsys.conf) will be cached between
-each configuration acess.
+each configuration access.
 
 This plugin requires the package python-ldap.
 
