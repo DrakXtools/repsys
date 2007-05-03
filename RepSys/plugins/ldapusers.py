@@ -15,28 +15,29 @@ options in the [global] section of repsys.conf:
     ldap-bindpw [optional] [default: empty]
         the password used to bind
     ldap-filterformat [optional] 
-                      [default: (&(objectClass=inetOrgPerson)(uid=%s))]
+            [default: (&(objectClass=inetOrgPerson)(uid=$username))]
         RFC-2254 filter string used in the search of the user entry.
-        Note that this is a python format string and will have the user
-        name as parameter. For example:
+        Note that this is a python template string and will have the 
+        user name as parameter. For example:
 
-           ldap-filterformat = (&(objectClass=inetOrgPerson)(uid=%s))
+           ldap-filterformat = (&(objectClass=inetOrgPerson)(uid=$username))
 
         Will result in the search filter:
 
            (&(objectClass=inetOrgPerson)(uid=john))
 
-    ldap-format [optional] [default: %(cn)s <%(mail)s>]
-        This is a python format string. This string will be 
+    ldap-format [optional] [default: $cn <$mail>]
+        This is a python template string. This string will be 
         formatted using one dict object containing the fields
         returned in the LDAP search, for example:
 
-          >>> format = "%(cn)s <%(mail)s>"
+          >>> format = Template("$cn <$mail>")
           >>> d = search(basedn, filter)
-          >>> d = {"cn": "John Doe", "mail": "john@mandriva.org", 
-                   "uidNumber": "1290", "loginShell": "/bin/bash", 
-                   ... many other attributes ... }
-          >>> value = format % d
+          >>> d
+          {"cn": "John Doe", "mail": "john@mandriva.org", 
+           "uidNumber": "1290", "loginShell": "/bin/bash", 
+            ... many other attributes ... }
+          >>> value = format.substitute(d)
           >>> print value
           John Doe <john@mandriva.org>
 
@@ -52,6 +53,8 @@ This plugin requires the package python-ldap.
 For more information, look http://qa.mandriva.com/show_bug.cgi?id=30549
 """
 from RepSys import Error, config
+
+import string
 
 users_cache = {}
 
@@ -69,8 +72,9 @@ def strip_entry(entry):
     return new
 
 def interpolate(optname, format, data):
+    tmpl = string.Template(format)
     try:
-        return format % data
+        return tmpl.substitute(data)
     except KeyError, e:
         raise Error, "the key %s was not found in LDAP search, " \
                 "check your %s configuration" % (e, optname)
@@ -85,8 +89,8 @@ def make_handler():
     binddn = config.get("global", "ldap-binddn")
     bindpw = config.get("global", "ldap-bindpw", "")
     filterformat = config.get("global", "ldap-filterformat",
-            "(&(objectClass=inetOrgPerson)(uid=%s))", raw=1)
-    format = config.get("global", "ldap-format", "%(cn)s <%(mail)s>", raw=1)
+            "(&(objectClass=inetOrgPerson)(uid=$username))", raw=1)
+    format = config.get("global", "ldap-format", "$cn <$mail>", raw=1)
 
     if server is None:
         def dummy_wrapper(section, option=None, default=None, walk=False):
@@ -117,7 +121,8 @@ def make_handler():
         except ldap.LDAPError, e:
             raise LDAPError(e)
 
-        filter = interpolate("ldap-filterformat", filterformat, option)
+        data = {"username": option}
+        filter = interpolate("ldap-filterformat", filterformat, data)
         try:
             found = l.search_s(basedn, ldap.SCOPE_SUBTREE, filter)
         except ldap.LDAPError, e:
