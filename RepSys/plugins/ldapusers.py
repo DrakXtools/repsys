@@ -55,11 +55,28 @@ from RepSys import Error, config
 
 users_cache = {}
 
+class LDAPError(Error):
+    def __init__(self, ldaperr):
+        self.ldaperr = ldaperr
+        name = ldaperr.__class__.__name__
+        desc = ldaperr.message["desc"]
+        self.message = "LDAP error %s: %s" % (name, desc)
+        self.args = self.message,
+
 def strip_entry(entry):
     "Leave only the first value in all keys in the entry"
     new = dict((key, value[0]) for key, value in entry.iteritems())
     return new
 
+def interpolate(optname, format, data):
+    try:
+        return format % data
+    except KeyError, e:
+        raise Error, "the key %s was not found in LDAP search, " \
+                "check your %s configuration" % (e, optname)
+    except (TypeError, ValueError), e:
+        raise Error, "LDAP response formatting error: %s. Check " \
+                "your %s configuration" % (e, optname)
 
 def make_handler():
     server = config.get("global", "ldap-server")
@@ -93,22 +110,22 @@ def make_handler():
         if value is not None:
             return value
 
-        l = ldap.open(server)
-        if binddn:
-            l.bind(binddn, bindpw)
-        filter = filterformat % option
-        found = l.search_s(basedn, ldap.SCOPE_SUBTREE, filter)
+        try:
+            l = ldap.open(server)
+            if binddn:
+                l.bind(binddn, bindpw)
+        except ldap.LDAPError, e:
+            raise LDAPError(e)
+
+        filter = interpolate("ldap-filterformat", filterformat, option)
+        try:
+            found = l.search_s(basedn, ldap.SCOPE_SUBTREE, filter)
+        except ldap.LDAPError, e:
+            raise LDAPError(e)
         if found:
             dn, entry = found[0]
             entry = strip_entry(entry)
-            try:
-                value = format % entry
-            except KeyError, e:
-                raise Error, "the key %s was not found in LDAP search, " \
-                        "check your ldap-format configuration" % e
-            except (TypeError, ValueError), e:
-                raise Error, "LDAP response formatting error: %s. Check " \
-                        "your ldap-format configuration" % e
+            value = interpolate("ldap-format", format, entry)
         else:
             # issue a warning?
             value = config.get(section, option, default, wrap=False)
