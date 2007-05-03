@@ -26,7 +26,7 @@ options in the [global] section of repsys.conf:
 
            (&(objectClass=inetOrgPerson)(uid=john))
 
-    ldap-format [optional] [default: $cn <$mail>]
+    ldap-resultformat [optional] [default: $cn <$mail>]
         This is a python template string. This string will be 
         formatted using one dict object containing the fields
         returned in the LDAP search, for example:
@@ -90,7 +90,7 @@ def make_handler():
     bindpw = config.get("global", "ldap-bindpw", "")
     filterformat = config.get("global", "ldap-filterformat",
             "(&(objectClass=inetOrgPerson)(uid=$username))", raw=1)
-    format = config.get("global", "ldap-format", "$cn <$mail>", raw=1)
+    format = config.get("global", "ldap-resultformat", "$cn <$mail>", raw=1)
 
     if server is None:
         def dummy_wrapper(section, option=None, default=None, walk=False):
@@ -130,7 +130,7 @@ def make_handler():
         if found:
             dn, entry = found[0]
             entry = strip_entry(entry)
-            value = interpolate("ldap-format", format, entry)
+            value = interpolate("ldap-resultformat", format, entry)
         else:
             # issue a warning?
             value = config.get(section, option, default, wrap=False)
