@@ -7,7 +7,7 @@
 ##+ Status: not released
  #end if
  #if not $rel.visible
-+ EMPTYLOG: Man is the only animal that blushes -- or needs to. -- Mark Twain
++ rebuild (emptylog)
  #end if
  #for $rev in $rel.release_revisions
   #for $line in $rev.lines
