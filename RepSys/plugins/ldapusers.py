@@ -76,9 +76,11 @@ def make_handler():
             return config.get(section, option, default, wrap=False)
         return dummy_wrapper
 
-    # only load ldap if it is enabled in configuration, this way we don't
-    # require everyone to have python-ldap installed
-    import ldap
+    try:
+        import ldap
+    except ImportError:
+        raise Error, "LDAP support needs the python-ldap package "\
+                "to be installed"
 
     def users_wrapper(section, option=None, default=None, walk=False):
         global users_cache
