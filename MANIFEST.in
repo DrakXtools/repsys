@@ -1,5 +1,6 @@
 recursive-include RepSys *.py
 include RepSys/plugins/*.txt
 include repsys repsys.conf MANIFEST.in 
+include README.LDAP
 include *.chlog
 include rebrand-mdk create-srpm getsrpm-mdk
