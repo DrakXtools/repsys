@@ -82,6 +82,18 @@ def interpolate(optname, format, data):
         raise Error, "LDAP response formatting error: %s. Check " \
                 "your %s configuration" % (e, optname)
 
+def used_attributes(format):
+    class DummyDict:
+        def __init__(self):
+            self.found = []
+        def __getitem__(self, key):
+            self.found.append(key)
+            return key
+    dd = DummyDict()
+    t = string.Template(format)
+    t.safe_substitute(dd)
+    return dd.found
+
 def make_handler():
     server = config.get("global", "ldap-server")
     port = config.get("global", "ldap-port", 389)
@@ -123,8 +135,10 @@ def make_handler():
 
         data = {"username": option}
         filter = interpolate("ldap-filterformat", filterformat, data)
+        attrs = used_attributes(format)
         try:
-            found = l.search_s(basedn, ldap.SCOPE_SUBTREE, filter)
+            found = l.search_s(basedn, ldap.SCOPE_SUBTREE, filter,
+                    attrlist=attrs)
         except ldap.LDAPError, e:
             raise LDAPError(e)
         if found:
