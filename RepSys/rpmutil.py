@@ -2,9 +2,10 @@
 from RepSys import Error, config, RepSysTree
 from RepSys import mirror
 from RepSys.svn import SVN
-from RepSys.rpm import SRPM
+from RepSys.simplerpm import SRPM
 from RepSys.log import specfile_svn2rpm
 from RepSys.util import execcmd
+import rpm
 import tempfile
 import shutil
 import glob
@@ -362,6 +363,57 @@ def checkout(pkgdirurl, path=None, revision=None):
         current = mirror.checkout_url(current)
         print "checking out from mirror", current
     svn.checkout(current, path, rev=revision, show=1)
+
+def sync(dryrun=False):
+    svn = SVN(noauth=True)
+    cwd = os.getcwd()
+    dirname = os.path.basename(cwd)
+    if dirname == "SPECS" or dirname == "SOURCES":
+        topdir = os.pardir
+    else:
+        topdir = ""
+    specsdir = os.path.join(topdir, "SPECS/")
+    sourcesdir = os.path.join(topdir, "SOURCES/")
+    for path in (specsdir, sourcesdir):
+        if not os.path.isdir(path):
+            raise Error, "%s directory not found" % path
+    specs = glob.glob(os.path.join(specsdir, "*.spec"))
+    if not specs:
+        raise Error, "no .spec files found in %s" % specsdir
+    specpath = specs[0] # FIXME better way?
+    try:
+        spec = rpm.TransactionSet().parseSpec(specpath)
+    except rpm.error, e:
+        raise Error, "could not load spec file: %s" % e
+    sources = [name for name, x, y in spec.sources()]
+    sourcesst = dict((os.path.basename(path), st)
+            for st, path in svn.status(sourcesdir, noignore=True))
+    toadd = []
+    for source in sources:
+        sourcepath = os.path.join(sourcesdir, source)
+        if sourcesst.get(source):
+            if os.path.isfile(sourcepath):
+                toadd.append(sourcepath)
+            else:
+                sys.stderr.write("warning: %s not found\n" % sourcepath)
+    # rm entries not found in sources and still in svn
+    found = os.listdir(sourcesdir)
+    toremove = []
+    for entry in found:
+        if entry == ".svn":
+            continue
+        status = sourcesst.get(entry)
+        if status is None and entry not in sources:
+            path = os.path.join(sourcesdir, entry)
+            toremove.append(path)
+    for path in toremove:
+        print "D\t%s" % path
+        if not dryrun:
+            svn.remove(path, local=True)
+    for path in toadd:
+        print "A\t%s" % path
+        if not dryrun:
+            svn.add(path, local=True)
 
 def commit(target=".", message=None):
     svn = SVN(noauth=True)

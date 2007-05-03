@@ -187,6 +187,8 @@ class SVN:
         cmd = ["status", path]
         if kwargs.get("verbose"):
             cmd.append("-v")
+        if kwargs.get("noignore"):
+            cmd.append("--no-ignore")
         status, output = self._execsvn(*cmd, **kwargs)
         if status == 0:
             return [x.split() for x in output.splitlines()]

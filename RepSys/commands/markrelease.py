@@ -9,7 +9,7 @@
 #
 from RepSys import Error
 from RepSys.command import *
-from RepSys.rpm import SRPM
+from RepSys.simplerpm import SRPM
 from RepSys.rpmutil import mark_release
 from RepSys.util import get_auth
 import getopt
