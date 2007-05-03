@@ -14,28 +14,29 @@ options in the [global] section of repsys.conf:
     ldap-bindpw [optional] [default: empty]
         the password used to bind
     ldap-filterformat [optional] 
-                      [default: (&(objectClass=inetOrgPerson)(uid=%s))]
+            [default: (&(objectClass=inetOrgPerson)(uid=$username))]
         RFC-2254 filter string used in the search of the user entry.
-        Note that this is a python format string and will have the user
-        name as parameter. For example:
+        Note that this is a python template string and will have the 
+        user name as parameter. For example:
 
-           ldap-filterformat = (&(objectClass=inetOrgPerson)(uid=%s))
+           ldap-filterformat = (&(objectClass=inetOrgPerson)(uid=$username))
 
         Will result in the search filter:
 
            (&(objectClass=inetOrgPerson)(uid=john))
 
-    ldap-format [optional] [default: %(cn)s <%(mail)s>]
-        This is a python format string. This string will be 
+    ldap-resultformat [optional] [default: $cn <$mail>]
+        This is a python template string. This string will be 
         formatted using one dict object containing the fields
         returned in the LDAP search, for example:
 
-          >>> format = "%(cn)s <%(mail)s>"
+          >>> format = Template("$cn <$mail>")
           >>> d = search(basedn, filter)
-          >>> d = {"cn": "John Doe", "mail": "john@mandriva.org", 
-                   "uidNumber": "1290", "loginShell": "/bin/bash", 
-                   ... many other attributes ... }
-          >>> value = format % d
+          >>> d
+          {"cn": "John Doe", "mail": "john@mandriva.org", 
+           "uidNumber": "1290", "loginShell": "/bin/bash", 
+            ... many other attributes ... }
+          >>> value = format.substitute(d)
           >>> print value
           John Doe <john@mandriva.org>
 
@@ -43,7 +44,7 @@ options in the [global] section of repsys.conf:
         used.
 
 When the searched option is not found, it will try in repsys.conf. All
-the values found (including from repsys.conf) will be cached between
+the values found.  (including from repsys.conf) will be cached between
 each configuration access.
 
 This plugin requires the package python-ldap.
