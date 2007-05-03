@@ -80,7 +80,7 @@ def interpolate(optname, format, data):
 
 def make_handler():
     server = config.get("global", "ldap-server")
-    port = config.get("global", "ldap-port")
+    port = config.get("global", "ldap-port", 389)
     basedn = config.get("global", "ldap-base")
     binddn = config.get("global", "ldap-binddn")
     bindpw = config.get("global", "ldap-bindpw", "")
@@ -111,7 +111,7 @@ def make_handler():
             return value
 
         try:
-            l = ldap.open(server)
+            l = ldap.open(server, port)
             if binddn:
                 l.bind(binddn, bindpw)
         except ldap.LDAPError, e:
