@@ -118,6 +118,8 @@ def make_handler():
     except ImportError:
         raise Error, "LDAP support needs the python-ldap package "\
                 "to be installed"
+    else:
+        from ldap.filter import escape_filter_chars
 
     def users_wrapper(section, option=None, default=None, walk=False):
         global users_cache
@@ -137,7 +139,7 @@ def make_handler():
         except ldap.LDAPError, e:
             raise LDAPError(e)
         try:
-            data = {"username": option}
+            data = {"username": escape_filter_chars(option)}
             filter = interpolate("ldap-filterformat", filterformat, data)
             attrs = used_attributes(format)
             try:
