@@ -136,24 +136,26 @@ def make_handler():
                 l.bind(binddn, bindpw)
         except ldap.LDAPError, e:
             raise LDAPError(e)
-
-        data = {"username": option}
-        filter = interpolate("ldap-filterformat", filterformat, data)
-        attrs = used_attributes(format)
         try:
-            found = l.search_s(basedn, ldap.SCOPE_SUBTREE, filter,
-                    attrlist=attrs)
-        except ldap.LDAPError, e:
-            raise LDAPError(e)
-        if found:
-            dn, entry = found[0]
-            entry = strip_entry(entry)
-            value = interpolate("ldap-resultformat", format, entry)
-        else:
-            # issue a warning?
-            value = config.get(section, option, default, wrap=False)
-        users_cache[option] = value
-        return value
+            data = {"username": option}
+            filter = interpolate("ldap-filterformat", filterformat, data)
+            attrs = used_attributes(format)
+            try:
+                found = l.search_s(basedn, ldap.SCOPE_SUBTREE, filter,
+                        attrlist=attrs)
+            except ldap.LDAPError, e:
+                raise LDAPError(e)
+            if found:
+                dn, entry = found[0]
+                entry = strip_entry(entry)
+                value = interpolate("ldap-resultformat", format, entry)
+            else:
+                # issue a warning?
+                value = config.get(section, option, default, wrap=False)
+            users_cache[option] = value
+            return value
+        finally:
+            l.unbind_s()
 
     return users_wrapper
 
