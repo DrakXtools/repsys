@@ -372,6 +372,9 @@ def sync(dryrun=False):
         topdir = os.pardir
     else:
         topdir = ""
+    # run svn info because svn st does not complain when topdir is not an
+    # working copy
+    svn.info(topdir or ".")
     specsdir = os.path.join(topdir, "SPECS/")
     sourcesdir = os.path.join(topdir, "SOURCES/")
     for path in (specsdir, sourcesdir):
