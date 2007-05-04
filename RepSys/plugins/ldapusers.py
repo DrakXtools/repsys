@@ -96,7 +96,11 @@ def used_attributes(format):
 
 def make_handler():
     server = config.get("global", "ldap-server")
-    port = config.get("global", "ldap-port", 389)
+    try:
+        port = int(config.get("global", "ldap-port", 389))
+    except ValueError:
+        raise Error, "the option ldap-port requires an integer, please "\
+                "check your configuration files"
     basedn = config.get("global", "ldap-base")
     binddn = config.get("global", "ldap-binddn")
     bindpw = config.get("global", "ldap-bindpw", "")
