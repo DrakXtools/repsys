@@ -69,10 +69,10 @@ def dispatch_command(command, argv, debug=0):
             traceback.print_exc()
             sys.exit(1)
         raise Error, "invalid command '%s'" % command
+    plugins.load()
     command_module.main()
     
 if __name__ == "__main__":
-    plugins.load()
     do_command(parse_options, dispatch_command)
 
 # vim:et:ts=4:sw=4
