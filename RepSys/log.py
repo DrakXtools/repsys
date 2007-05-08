@@ -65,7 +65,7 @@ def getrelease(pkgdirurl, rev=None, macros=[]):
             if found:
                 specpath = found[0]
                 options = rpm_macros_defs(macros)
-                command = (("rpm -q --qf '%%{VERSION}-%%{RELEASE}\n' "
+                command = (("rpm -q --qf '%%{EPOCH}:%%{VERSION}-%%{RELEASE}\n' "
                            "--specfile %s %s 2>/dev/null") % 
                            (specpath, options))
                 status, output = execcmd(command)
@@ -73,11 +73,17 @@ def getrelease(pkgdirurl, rev=None, macros=[]):
                     raise Error, "Error in command %s: %s" % (command, output)
                 releases = output.split()
                 try:
-                    version, release = releases[0].split("-", 1)
+                    epoch, vr = releases[0].split(":", 1)
+                    version, release = vr.split("-", 1)
                 except ValueError:
                     raise Error, "Invalid command output: %s: %s" % \
                             (command, output)
-                return version, release
+                #XXX check if this is the right way:
+                if epoch == "(none)":
+                    ev = version
+                else:
+                    ev = epoch + ":" + version
+                return ev, release
     finally:
         if os.path.isdir(tmpdir):
             shutil.rmtree(tmpdir)
