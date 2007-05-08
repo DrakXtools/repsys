@@ -3,7 +3,10 @@ from RepSys import Error, config, RepSysTree
 from RepSys.svn import SVN
 from RepSys.util import execcmd
 
-from Cheetah.Template import Template
+try:
+    from Cheetah.Template import Template
+except ImportError:
+    raise Error, "repsys requires the package python-cheetah"
 
 import sys
 import os
