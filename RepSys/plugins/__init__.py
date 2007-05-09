@@ -8,13 +8,13 @@ def load():
     for entry in os.listdir(pluginsdir):
         if entry != "__init__.py" and entry.endswith(".py"):
             name = entry[:-3]
-            loaded[name] = __import__("RepSys.plugins."+name,
-                    fromlist=[name])
+            loaded[name] = __import__("RepSys.plugins."+name, {}, {},
+                    [name])
         elif os.path.isdir(entry):
             initfile = os.path.join(entry, "__init__.py")
             if os.path.isfile(initfile):
-                loaded[entry] = __import__("RepSys.plugins."+entry,
-                        fromlist=[entry])
+                loaded[entry] = __import__("RepSys.plugins."+entry, {}, {},
+                        [entry])
 
 def list():
     return loaded.keys()
