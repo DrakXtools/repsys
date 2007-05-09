@@ -1,3 +1,7 @@
+* 1.6.17.1
+- fixed incompatibility of __import__ between Python 2.4 and 2.5
+- fixed plugin initialization and --help-plugins handling order
+
 * 1.6.17
 - brought from mdvsys world the sync command
 - ldapusers: the configuration format has changed, now it uses python
