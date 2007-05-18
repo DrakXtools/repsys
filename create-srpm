@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from RepSys import Error, config
+from RepSys import Error, config, plugins
 from RepSys.rpmutil import get_srpm
 from RepSys.cgiutil import get_targets
 from RepSys.util import mapurl, execcmd, get_helper
@@ -96,6 +96,7 @@ def parse_options():
 
 
 def main():
+    plugins.load()
     iface = CmdIface()
     opts, args = parse_options()
     try:
