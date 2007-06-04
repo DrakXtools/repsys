@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from RepSys import Error, config
+from RepSys import Error, config, plugins
 from RepSys.rpmutil import get_srpm
 from RepSys.cgiutil import get_targets
 from RepSys.util import mapurl, execcmd, get_helper
@@ -52,7 +52,8 @@ class CmdIface:
                      packager=packager,
                      revname=1,
                      svnlog=1,
-                     scripts=target.scripts)
+                     scripts=target.scripts, 
+                     macros=target.macros)
 
             uploadsrpm = get_helper("upload-srpm")
             if uploadsrpm:
@@ -63,8 +64,12 @@ class CmdIface:
                         upload_command.append(x)
                 upload_command.append(targetname)
                 upload_command.append(targetsrpms[0])
-                status, output = execcmd(" ".join(upload_command))
-                os.unlink(targetsrpms[0])
+                status, output = execcmd(" ".join(upload_command),
+                        noerror=1)
+                if os.path.isfile(targetsrpms[0]):
+                    os.unlink(targetsrpms[0])
+                else:
+                    sys.stderr.write("warning: upload ok; temp file '%s' removed unexpectedly\n" % (targetsrpms[0]))
                 if status != 0:
                     raise CmdError, "Failed to upload %s:\n%s" % (packageurl, output)
         return 1
@@ -91,9 +96,14 @@ def parse_options():
 
 
 def main():
+    plugins.load()
     iface = CmdIface()
     opts, args = parse_options()
-    iface.submit_package(args[0], opts.revision, opts.target, opts.urlmap, opts.define)
+    try:
+        iface.submit_package(args[0], opts.revision, opts.target, opts.urlmap, opts.define)
+    except Error, e:
+        sys.stderr.write("error: %s\n" % str(e))
+        sys.exit(1)
     
 
 if __name__ == "__main__":

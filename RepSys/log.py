@@ -1,9 +1,12 @@
 #!/usr/bin/python
-from RepSys import Error, config
+from RepSys import Error, config, RepSysTree
 from RepSys.svn import SVN
 from RepSys.util import execcmd
 
-from Cheetah.Template import Template
+try:
+    from Cheetah.Template import Template
+except ImportError:
+    raise Error, "repsys requires the package python-cheetah"
 
 import sys
 import os
@@ -14,8 +17,6 @@ import glob
 import tempfile
 import shutil
 
-
-locale.setlocale(locale.LC_ALL, "C")
 
 default_template = """
 #for $rel in $releases_by_author
@@ -42,7 +43,7 @@ default_template = """
 #end for
 """
 
-def getrelease(pkgdirurl, rev=None):
+def getrelease(pkgdirurl, rev=None, macros=[]):
     """Tries to obtain the version-release of the package for a 
     yet-not-markrelease revision of the package.
 
@@ -50,28 +51,37 @@ def getrelease(pkgdirurl, rev=None):
     will be used.
     """
     svn = SVN()
+    from RepSys.rpmutil import rpm_macros_defs
     tmpdir = tempfile.mktemp()
     try:
-        pkgname = os.path.basename(pkgdirurl)
+        pkgname = RepSysTree.pkgname(pkgdirurl)
         pkgcurrenturl = os.path.join(pkgdirurl, "current")
         specurl = os.path.join(pkgcurrenturl, "SPECS")
         if svn.exists(specurl):
-            svn.export(specurl, tmpdir, revision=SVN.revision(rev))
+            svn.export(specurl, tmpdir, revision=SVN.makerev(rev))
             found = glob.glob(os.path.join(tmpdir, "*.spec"))
             if found:
                 specpath = found[0]
-                command = (("rpm -q --qf '%%{VERSION}-%%{RELEASE}\n' "
-                           "--specfile %s") % specpath)
+                options = rpm_macros_defs(macros)
+                command = (("rpm -q --qf '%%{EPOCH}:%%{VERSION}-%%{RELEASE}\n' "
+                           "--specfile %s %s 2>/dev/null") % 
+                           (specpath, options))
                 status, output = execcmd(command)
                 if status != 0:
                     raise Error, "Error in command %s: %s" % (command, output)
                 releases = output.split()
                 try:
-                    version, release = releases[0].split("-", 1)
+                    epoch, vr = releases[0].split(":", 1)
+                    version, release = vr.split("-", 1)
                 except ValueError:
                     raise Error, "Invalid command output: %s: %s" % \
                             (command, output)
-                return version, release
+                #XXX check if this is the right way:
+                if epoch == "(none)":
+                    ev = version
+                else:
+                    ev = epoch + ":" + version
+                return ev, release
     finally:
         if os.path.isdir(tmpdir):
             shutil.rmtree(tmpdir)
@@ -88,16 +98,34 @@ class ChangelogRevision:
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 
+    def __repr__(self):
+        lines = repr(self.lines)[:30] + "...]" 
+        line = "<ChangelogRevision %d author=%r date=%r lines=%s>" % \
+                    (self.revision, self.author, self.date, lines)
+        return line
 
 class ChangelogRelease(ChangelogRevision):
     version = None
     release = None
-    revisions = None
+    revisions = []
+    release_revisions = []
+    authors = []
+    visible = False
 
     def __init__(self, **kwargs):
         ChangelogRevision.__init__(self, **kwargs)
         self.revisions = []
 
+    def __repr__(self):
+        line = "<ChangelogRelease v=%s r=%s revs=%r>" % \
+                    (self.version, self.release, self.revisions)
+        return line
+
+unescaped_macro_pat = re.compile(r"([^%])%([^%])")
+
+def escape_macros(text):
+    escaped = unescaped_macro_pat.sub("\\1%%\\2", text)
+    return escaped
 
 def format_lines(lines):
     first = 1
@@ -105,7 +133,7 @@ def format_lines(lines):
     perexpr = re.compile(r"([^%])%([^%])")
     for line in lines:
         if line:
-            line = perexpr.sub("\\1%%\\2", line)
+            line = escape_macros(line)
             if first:
                 first = 0
                 line = line.lstrip()
@@ -130,8 +158,10 @@ class ChangelogByAuthor:
 
 def group_releases_by_author(releases):
     allauthors = []
+    grouped = []
     for release in releases:
         authors = {}
+        latest = None
         for revision in release.revisions:
             authors.setdefault(revision.author, []).append(revision)
 
@@ -144,60 +174,114 @@ def group_releases_by_author(releases):
             revdeco = [(r.revision, r) for r in revs]
             revdeco.sort(reverse=1)
             author.revisions = [t[1] for t in revdeco]
-            decorated.append((max(revdeco)[0], author))
+            revlatest = author.revisions[0]
+            # keep the latest revision even for silented authors (below)
+            if latest is None or revlatest.revision > latest.revision:
+                latest = revlatest
+            count = sum(len(rev.lines) for rev in author.revisions)
+            if count == 0:
+                # skipping author with only silented lines
+                continue
+            decorated.append((revdeco[0][0], author))
+
+        if not decorated:
+            # skipping release with only authors with silented lines
+            continue
 
         decorated.sort(reverse=1)
         release.authors = [t[1] for t in decorated]
-        # the difference between a released and a not released
-        # ChangelogRelease is the way the release numbers is obtained. So,
-        # when this is a released, we already have it, but if we don't, we
-        # should get de version/release string using getrelease and then
-        # get the first
+        # the difference between a released and a not released _Release is
+        # the way the release numbers is obtained. So, when this is a
+        # released, we already have it, but if we don't, we should get de
+        # version/release string using getrelease and then get the first
         first, release.authors = release.authors[0], release.authors[1:]
         release.author_name = first.name
         release.author_email = first.email
-        release.date = first.revisions[0].date
-        release.raw_date = first.revisions[0].raw_date
         release.release_revisions = first.revisions
-        release.revision = first.revisions[0].revision
 
-    return releases
-            
+        #release.date = first.revisions[0].date
+        release.date = latest.date
+        release.raw_date = latest.raw_date
+        #release.revision = first.revisions[0].revision
+        release.revision = latest.revision
+
+        grouped.append(release)
+
+    return grouped
+
+
+def group_revisions_by_author(currentlog):
+    revisions = []
+    last_author = None
+    for entry in currentlog:
+        revision = ChangelogRevision()
+        revision.lines = format_lines(entry.lines)
+        revision.raw_date = entry.date
+        revision.date = parse_raw_date(entry.date)
+        revision.revision = entry.revision
+        if entry.author == last_author:
+            revisions[-1].revisions.append(revision)
+        else:
+            author = ChangelogByAuthor()
+            author.name, author.email = get_author_name(entry.author)
+            author.revisions = [revision]
+            revisions.append(author)
+        last_author = entry.author
+    return revisions
+
 
 emailpat = re.compile("(?P<name>.*?)\s*<(?P<email>.*?)>")
+
+def get_author_name(author):
+    found = emailpat.match(config.get("users", author, author))
+    name = ((found and found.group("name")) or author)
+    email = ((found and found.group("email")) or author)
+    return name, email
+
+def parse_raw_date(rawdate):
+    return time.strftime("%a %b %d %Y", rawdate)
+
+def filter_log_lines(lines):
+    # lines in commit messages containing SILENT at any position will be
+    # skipped; commits with their log messages beggining with SILENT in the
+    # first positionj of the first line will have all lines ignored.
+    ignstr = config.get("log", "ignore-string", "SILENT")
+    if len(lines) and lines[0].startswith(ignstr):
+        return []
+    filtered = [line for line in lines if ignstr not in line]
+    return filtered
 
 
 def make_release(author=None, revision=None, date=None, lines=None,
         entries=[], released=True, version=None, release=None):
     rel = ChangelogRelease()
     rel.author = author
-    found = emailpat.match(config.get("users", author, author or ""))
-    rel.author_name = (found and found.group("name")) or author
-    rel.author_email = (found and found.group("email")) or author
+    if author:
+        rel.author_name, rel.author_email = get_author_name(author)
     rel.revision = revision
     rel.version = version
     rel.release = release
-    rel.date = (date and time.strftime("%a %b %d %Y", date)) or None
+    rel.date = (date and parse_raw_date(date)) or None
     rel.lines = lines
     rel.released = released
+    rel.visible = False
     for entry in entries:
+        lines = filter_log_lines(entry.lines)
+        if lines:
+            rel.visible = True
         revision = ChangelogRevision()
         revision.revision = entry.revision
-        revision.lines = format_lines(entry.lines)
-        revision.date = time.strftime("%a %b %d %Y", entry.date)
+        revision.lines = format_lines(lines)
+        revision.date = parse_raw_date(entry.date)
         revision.raw_date = entry.date
         revision.author = entry.author
-        found = emailpat.match(config.get("users", entry.author, entry.author))
-        revision.author_name = ((found and found.group("name")) or
-                entry.author)
-        revision.author_email = ((found and found.group("email")) or
-                entry.author)
+        (revision.author_name, revision.author_email) = \
+                get_author_name(entry.author)
         rel.revisions.append(revision)
     return rel
 
 
-def dump_file(releases, template=None):
-    
+def dump_file(releases, currentlog=None, template=None):
     templpath = template or config.get("template", "path", None)
     params = {}
     if templpath is None or not os.path.exists(templpath):
@@ -207,10 +291,12 @@ def dump_file(releases, template=None):
     else:
         params["file"] = templpath
     releases_author = group_releases_by_author(releases)
+    revisions_author = group_revisions_by_author(currentlog)
     params["searchList"] = [{"releases_by_author" : releases_author,
-                             "releases" : releases}]
+                             "releases" : releases,
+                             "revisions_by_author": revisions_author}]
     t = Template(**params)
-    return repr(t)
+    return t.respond()
 
 
 class InvalidEntryError(Exception):
@@ -249,8 +335,30 @@ def get_revision_offset():
                       "file(s).")
     return revoffset or 0
 
+oldmsgpat = re.compile(
+        r"Copying release (?P<rel>[^\s]+) to (?P<dir>[^\s]+) directory\.")
 
-def svn2rpm(pkgdirurl, rev=None, size=None, submit=False, template=None):
+def parse_markrelease_log(relentry):
+    if not ((relentry.lines and oldmsgpat.match(relentry.lines[0]) \
+            or parse_repsys_entry(relentry))):
+        raise InvalidEntryError
+    from_rev = None
+    path = None
+    for changed in relentry.changed:
+        if changed["action"] == "A" and changed["from_rev"]:
+            from_rev = changed["from_rev"]
+            path = changed["path"]
+            break
+    else:
+        raise InvalidEntryError
+    # get the version and release from the names in the path, do not relay
+    # on log messages
+    version, release = path.rsplit(os.path.sep, 3)[-2:]
+    return version, release, from_rev
+
+
+def svn2rpm(pkgdirurl, rev=None, size=None, submit=False,
+        template=None, macros=[]):
     size = size or 0
     concat = config.get("log", "concat", "").split()
     revoffset = get_revision_offset()
@@ -261,68 +369,74 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False, template=None):
             strict_node_history=False, noerror=1)) or []
     currentlog = list(svn.log(pkgcurrenturl, 
             strict_node_history=False,
-            revision_start=SVN.revision(rev),
-            revision_end=SVN.revision(revoffset), limit=size))
-    lastauthor = None
-    previous_revision = 0
-    currelease = None
+            revision_start=SVN.makerev(rev),
+            revision_end=SVN.makerev(revoffset), limit=size))
+
+    # sort releases by copyfrom-revision, so that markreleases for same
+    # revisions won't look empty
+    releasesdata = []
+    if releaseslog:
+        for relentry in releaseslog[::-1]:
+            try:
+                (version, release, relrevision) = \
+                        parse_markrelease_log(relentry)
+            except InvalidEntryError:
+                continue
+            releasesdata.append((relrevision, -relentry.revision, relentry, 
+                version, release))
+        releasesdata.sort()
+
+    # collect valid releases using the versions provided by the changes and
+    # the packages
+    prevrevision = 0
     releases = []
-
-    # for the emergency bug fixer: the [].sort() is done using the 
-    # decorate-sort-undecorate pattern
-    releases_data = []
-    for relentry in releaseslog[::-1]:
-        try:
-            revinfo = parse_repsys_entry(relentry)
-        except InvalidEntryError:
+    for (relrevision, dummy, relentry, version, release) in releasesdata:
+        if prevrevision == relrevision: 
+            # ignore older markrelease of the same revision, since they
+            # will have no history
             continue
-        try:
-            release_number = int(revinfo["revision"])
-        except (KeyError, ValueError):
-            raise Error, "Error parsing data from log entry from r%s" % \
-                            relentry.revision  
-        releases_data.append((release_number, relentry, revinfo))
-    releases_data.sort()
-
-    for release_number, relentry, revinfo in releases_data:
-        # get entries newer than 'previous' and older than 'relentry'
         entries = [entry for entry in currentlog
-                    if release_number >= entry.revision and
-                      (previous_revision < entry.revision)]
+                    if relrevision >= entry.revision and
+                      (prevrevision < entry.revision)]
         if not entries:
             #XXX probably a forced release, without commits in current/,
-            # check if this is the right behavior and if some release is
-            # not being lost.
+            # check if this is the right behavior
+            sys.stderr.write("warning: skipping (possible) release "
+                    "%s-%s@%s, no commits since previous markrelease (r%r)\n" %
+                    (version, release, relrevision, prevrevision))
             continue
 
         release = make_release(author=relentry.author,
                 revision=relentry.revision, date=relentry.date,
                 lines=relentry.lines, entries=entries,
-                version=revinfo["version"], release=revinfo["release"])
+                version=version, release=release)
         releases.append(release)
-        previous_revision = release_number
-
+        prevrevision = relrevision
+            
     # look for commits that have been not submited (released) yet
     # this is done by getting all log entries newer (revision larger)
-    # than releaseslog[0]
-    latest_revision = releaseslog[0].revision
+    # than releaseslog[0] (in the case it exists)
+    if releaseslog:
+        latest_revision = releaseslog[0].revision
+    else:
+        latest_revision = 0
     notsubmitted = [entry for entry in currentlog 
                     if entry.revision > latest_revision]
     if notsubmitted:
         # if they are not submitted yet, what we have to do is to add
         # a release/version number from getrelease()
-        version, release = getrelease(pkgdirurl)
+        version, release = getrelease(pkgdirurl, macros=macros)
         toprelease = make_release(entries=notsubmitted, released=False,
                         version=version, release=release)
         releases.append(toprelease)
 
-    data = dump_file(releases[::-1], template=template)
+    data = dump_file(releases[::-1], currentlog=currentlog, template=template)
     return data
 
 
 
 def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
-        submit=False, template=None):
+        submit=False, template=None, macros=[]):
     newlines = []
     found = 0
     
@@ -339,7 +453,7 @@ def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
     # Create new changelog
     newlines.append("\n\n%changelog\n")
     newlines.append(svn2rpm(pkgdirurl, rev=rev, size=size, submit=submit,
-        template=template))
+        template=template, macros=macros))
 
     # Merge old changelog, if available
     oldurl = config.get("log", "oldurl")
@@ -347,15 +461,19 @@ def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
         svn = SVN()
         tmpdir = tempfile.mktemp()
         try:
-            pkgname = os.path.basename(pkgdirurl)
+            pkgname = RepSysTree.pkgname(pkgdirurl)
             pkgoldurl = os.path.join(oldurl, pkgname)
             if svn.exists(pkgoldurl):
-                svn.export(pkgoldurl, tmpdir, rev=rev)
+                # we're using HEAD here because fixes in misc/ (oldurl) may
+                # be newer than packages' last changed revision.
+                svn.export(pkgoldurl, tmpdir)
                 logfile = os.path.join(tmpdir, "log")
                 if os.path.isfile(logfile):
                     file = open(logfile)
                     newlines.append("\n")
-                    newlines.append(file.read())
+                    log = file.read()
+                    log = escape_macros(log)
+                    newlines.append(log)
                     file.close()
         finally:
             if os.path.isdir(tmpdir):

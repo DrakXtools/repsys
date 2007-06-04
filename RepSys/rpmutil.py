@@ -1,10 +1,12 @@
 #!/usr/bin/python
-from RepSys import Error, config
+from RepSys import Error, config, RepSysTree
+from RepSys import mirror
 from RepSys.svn import SVN
-from RepSys.rpm import SRPM
+from RepSys.simplerpm import SRPM
 from RepSys.log import specfile_svn2rpm
 from RepSys.util import execcmd
 import pysvn
+import rpm
 import tempfile
 import shutil
 import glob
@@ -26,6 +28,11 @@ def get_spec(pkgdirurl, targetdir=".", submit=False):
         if os.path.isdir(tmpdir):
             shutil.rmtree(tmpdir)
 
+def rpm_macros_defs(macros):
+    defs = ("--define \"%s %s\"" % macro for macro in macros)
+    args = " ".join(defs)
+    return args
+
 def get_srpm(pkgdirurl,
              mode = "current",
              targetdirs = None,
@@ -38,6 +45,7 @@ def get_srpm(pkgdirurl,
              scripts = [], 
              submit = False,
              template = None,
+             macros = [],
              verbose = 0):
     svn = SVN()
     tmpdir = tempfile.mktemp()
@@ -58,7 +66,7 @@ def get_srpm(pkgdirurl,
             geturl = os.path.join(pkgdirurl, "current")
         else:
             raise Error, "unsupported get_srpm mode: %s" % mode
-        svn.checkout(geturl, tmpdir, revision=SVN.revision(revision))
+        svn.export(geturl, tmpdir, revision=SVN.makerev(revision))
         srpmsdir = os.path.join(tmpdir, "SRPMS")
         os.mkdir(srpmsdir)
         specsdir = os.path.join(tmpdir, "SPECS")
@@ -69,9 +77,12 @@ def get_srpm(pkgdirurl,
         if svnlog:
             submit = not not revision
             specfile_svn2rpm(pkgdirurl, spec, revision, submit=submit,
-                    template=template)
-        revisionreal = svn.info(tmpdir).revision.number
+                    template=template, macros=macros)
+        #FIXME revisioreal not needed if revision is None
+        #FIXME use geturl instead of pkgdirurl
+        revisionreal = svn.revision(pkgdirurl)
         for script in scripts:
+            #FIXME revision can be "None"
             status, output = execcmd(script, tmpdir, spec, str(revision),
                                      noerror=1)
             if status != 0:
@@ -79,11 +90,13 @@ def get_srpm(pkgdirurl,
         if packager:
             packager = " --define 'packager %s'" % packager
 
-        execcmd("rpm -bs --nodeps %s %s %s %s %s %s %s %s %s" %
+        defs = rpm_macros_defs(macros)
+        execcmd("rpm -bs --nodeps %s %s %s %s %s %s %s %s %s %s" %
             (topdir, builddir, rpmdir, sourcedir, specdir, 
-             srcrpmdir, patchdir, packager, spec))
+             srcrpmdir, patchdir, packager, spec, defs))
 
         if revision and revisionreal:
+            #FIXME duplicate glob line
             srpm = glob.glob(os.path.join(srpmsdir, "*.src.rpm"))[0]
             srpminfo = SRPM(srpm)
             release = srpminfo.release
@@ -94,7 +107,8 @@ def get_srpm(pkgdirurl,
             targetdirs = (".",)
         targetsrpms = []
         for targetdir in targetdirs:
-            targetsrpm = os.path.join(os.path.realpath(targetdir), os.path.basename(srpm))
+            targetsrpm = os.path.join(os.path.realpath(targetdir), 
+                    os.path.basename(srpm))
             targetsrpms.append(targetsrpm)
             if verbose:
                 sys.stderr.write("Wrote: %s\n" %  targetsrpm)
@@ -226,7 +240,7 @@ def create_package(pkgdirurl, log="", verbose=0):
     svn = SVN()
     tmpdir = tempfile.mktemp()
     try:
-        basename = os.path.basename(pkgdirurl)
+        basename = RepSysTree.pkgname(pkgdirurl)
         if verbose:
             print "Creating package directory...",
         sys.stdout.flush()
@@ -269,7 +283,7 @@ def mark_release(pkgdirurl, version, release, revision):
     versionurl = "/".join([releasesurl, version])
     releaseurl = "/".join([versionurl, release])
     if svn.exists(releaseurl, noerror=1):
-        raise cncrep.Error, "release already exists"
+        raise Error, "release already exists"
     svn.mkdir(releasesurl, noerror=1,
               log="Created releases directory.")
     svn.mkdir(versionurl, noerror=1,
@@ -282,13 +296,13 @@ def mark_release(pkgdirurl, version, release, revision):
              log="Copying release %s-%s to pristine/ directory." %
                  (version, release))
     markreleaselog = create_markrelease_log(version, release, revision)
-    svn.copy(currenturl, releaseurl, rev=revision,
+    svn.copy(currenturl, releaseurl, revision=revision,
              log=markreleaselog)
 
-def check_changed(url, all=0, show=0, verbose=0):
+def check_changed(pkgdirurl, all=0, show=0, verbose=0):
     svn = SVN()
     if all:
-        baseurl = url
+        baseurl = pkgdirurl
         packages = []
         if verbose:
             print "Getting list of packages...",
@@ -299,7 +313,7 @@ def check_changed(url, all=0, show=0, verbose=0):
         if not packages:
             raise Error, "couldn't get list of packages"
     else:
-        baseurl, basename = os.path.split(url)
+        baseurl, basename = os.path.split(pkgdirurl)
         packages = [basename]
     clean = []
     changed = []
@@ -332,22 +346,103 @@ def check_changed(url, all=0, show=0, verbose=0):
                 if verbose:
                     print "clean"
                 clean.append(package)
-    if verbose and all:
-        print "Total clean packages: %s" % len(clean)
-        print "Total CHANGED packages: %d" % len(changed)
-        print "Total NO CURRENT packages: %s" % len(nocurrent)
-        print "Total NO PRISTINE packages: %s" % len(nopristine)
+    if verbose:
+        if not packages:
+            print "No packages found!"
+        elif all:
+            print "Total clean packages: %s" % len(clean)
+            print "Total CHANGED packages: %d" % len(changed)
+            print "Total NO CURRENT packages: %s" % len(nocurrent)
+            print "Total NO PRISTINE packages: %s" % len(nopristine)
     return {"clean": clean,
             "changed": changed,
             "nocurrent": nocurrent,
             "nopristine": nopristine}
 
-def checkout(url, path=None, revision=None):
+def checkout(pkgdirurl, path=None, revision=None):
     svn = SVN()
-    current = os.path.join(url, "current")
+    current = os.path.join(pkgdirurl, "current")
     if path is None:
-        _, path = os.path.split(url)
-    svn.checkout(current, path, revision=SVN.revision(revision), show=1)
+        _, path = os.path.split(pkgdirurl)
+    if mirror.enabled():
+        current = mirror.checkout_url(current)
+        print "checking out from mirror", current
+    svn.checkout(current, path, revision=SVN.makerev(revision), show=1)
+
+def sync(dryrun=False):
+    svn = SVN()
+    cwd = os.getcwd()
+    dirname = os.path.basename(cwd)
+    if dirname == "SPECS" or dirname == "SOURCES":
+        topdir = os.pardir
+    else:
+        topdir = ""
+    # run svn info because svn st does not complain when topdir is not an
+    # working copy
+    svn.info(topdir or ".")
+    specsdir = os.path.join(topdir, "SPECS/")
+    sourcesdir = os.path.join(topdir, "SOURCES/")
+    for path in (specsdir, sourcesdir):
+        if not os.path.isdir(path):
+            raise Error, "%s directory not found" % path
+    specs = glob.glob(os.path.join(specsdir, "*.spec"))
+    if not specs:
+        raise Error, "no .spec files found in %s" % specsdir
+    specpath = specs[0] # FIXME better way?
+    try:
+        spec = rpm.TransactionSet().parseSpec(specpath)
+    except rpm.error, e:
+        raise Error, "could not load spec file: %s" % e
+    sources = [os.path.basename(name)
+            for name, no, flags in spec.sources()]
+    sourcesst = dict((os.path.basename(st.path), st)
+            for st in svn.status(sourcesdir, get_all=False, ignore=True))
+    toadd = []
+    for source in sources:
+        sourcepath = os.path.join(sourcesdir, source)
+        if sourcesst.get(source):
+            if os.path.isfile(sourcepath):
+                toadd.append(sourcepath)
+            else:
+                sys.stderr.write("warning: %s not found\n" % sourcepath)
+    # rm entries not found in sources and still in svn
+    found = os.listdir(sourcesdir)
+    toremove = []
+    for entry in found:
+        if entry == ".svn":
+            continue
+        status = sourcesst.get(entry)
+        if status is None and entry not in sources:
+            path = os.path.join(sourcesdir, entry)
+            toremove.append(path)
+    for path in toremove:
+        print "D\t%s" % path
+        if not dryrun:
+            svn.remove(path)
+    for path in toadd:
+        print "A\t%s" % path
+        if not dryrun:
+            svn.add(path)
+
+def commit(target=".", message=None):
+    svn = SVN()
+    info = svn.info(target)
+    url = info.url
+    if url is None:
+        raise Error, "working copy URL not provided by svn info"
+    if mirror.enabled():
+        newurl = mirror.switchto_parent(svn, url, target)
+        print "relocated to", newurl
+    try:
+        # we can't use the svn object here because pexpect hides VISUAL
+        mopt = ""
+        if message is not None:
+            mopt = "-m \"%s\"" % message
+        os.system("svn ci %s %s" % (mopt, target))
+    finally:
+        if mirror.enabled():
+            mirror.switchto_mirror(svn, newurl, target)
+            print "relocated back to", url
 
 def get_submit_info(path):
     path = os.path.abspath(path)

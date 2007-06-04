@@ -25,7 +25,7 @@ def parse_options():
     opts, args = parser.parse_args()
     if len(args) != 1:
         raise Error, "invalid arguments"
-    opts.url = default_parent(args[0])
+    opts.pkgdirurl = default_parent(args[0])
     opts.verbose = 1 # Unconfigurable
     return opts
 

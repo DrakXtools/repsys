@@ -30,7 +30,8 @@ def parse_options():
 
 def editlog(pkgdirurl, revision):
     svn = SVN()
-    svn.propedit("svn:log", pkgdirurl, revision=revision, revprop=True)
+    svn.propedit("svn:log", pkgdirurl, revision=SVN.makerev(revision),
+            revprop=True)
 
 def main():
     do_command(parse_options, editlog)

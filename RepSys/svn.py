@@ -19,6 +19,7 @@ class SVNLogEntry:
         self.revision = revision
         self.author = author
         self.date = date
+        self.changed = []
         self.lines = []
 
     def __cmp__(self, other):
@@ -33,11 +34,23 @@ class SVN:
         self._client = pysvn.Client()
         self._client_lock = threading.Lock()
         self._client.callback_get_log_message = self._log_handler
+        self._client.callback_get_login = self._unsupported_auth
+        self._client.callback_ssl_client_cert_password_prompt = \
+                self._unsupported_auth
+        self._client.callback_ssl_client_cert_prompt = \
+                self._unsupported_auth
+        self._client.callback_ssl_server_prompt = \
+                self._unsupported_auth
 
     def _log_handler(self):
         if self._current_message is None:
+            #TODO make it use EDITOR
             raise ValueError, "No log message defined"
         return True, self._current_message
+
+    def _unsupported_auth(self, *args, **kwargs):
+        raise SVNError, "svn is trying to get login information, " \
+                "seems that you're not using ssh-agent"
 
     def _get_log_message(self, received_kwargs):
         message = received_kwargs.pop("log", None)
@@ -45,13 +58,18 @@ class SVN:
         if messagefile and not message:
             message = open(messagefile).read()
         return message
-            
-    def _make_wrapper(self, meth):
+
+    def _set_notify_callback(self, callback):
+        self._client.callback_notify = callback
+
+    def _make_wrapper(self, meth, notify=None):
         def wrapper(*args, **kwargs):
             self._client_lock.acquire()
             try:
                 self._current_message = self._get_log_message(kwargs)
                 ignore_errors = kwargs.pop("noerror", None)
+                if notify:
+                    self._client.callback_notify = notify
                 try:
                     return meth(*args, **kwargs)
                 except pysvn.ClientError, (msg,):
@@ -59,41 +77,63 @@ class SVN:
                         raise SVNError, msg
                     return None
             finally:
-                self._current_message = None
                 self._client_lock.release()
+                self._current_message = None
         return wrapper
 
-    def __getattr__(self, attrname):
+    def _client_wrap(self, attrname):
         meth = getattr(self._client, attrname)
         wrapper = self._make_wrapper(meth)
         return wrapper
 
-    def revision(number=None, head=None):
+    def __getattr__(self, attrname):
+        return self._client_wrap(attrname)
+    
+    def makerev(number=None, head=None):
         if number is not None:
             args = (pysvn.opt_revision_kind.number, number)
         else:
             args = (pysvn.opt_revision_kind.head,)
         return pysvn.Revision(*args)
-    revision = staticmethod(revision)
+    makerev = staticmethod(makerev)
+
+    def revision(self, url):
+        infos = self._client.info2(url, recurse=False)
+        revnum= infos[0][1].rev.number
+        return revnum
 
     # this override method fixed the problem in pysvn's mkdir which
     # requires a log_message parameter
     def mkdir(self, path, log=None, **kwargs):
-        meth = self.__getattr__("mkdir")
+        meth = self._client_wrap("mkdir")
         # we can't raise an error because pysvn's mkdir will use
         # log_message only if path is remote, but it *always* requires this
         # parameter. Also, 'log' is never used.
         log = log or "There's a silent bug in your code"
         return meth(path, log, log=None, **kwargs)
+    
+    def checkout(self, url, targetpath, show=False, **kwargs):
+        if show:
+            def callback(event):
+                types = pysvn.wc_notify_action
+                action = event["action"]
+                if action == types.update_add:
+                    print "A    %s" % event["path"]
+                elif action == types.update_completed:
+                    print "Checked out revision %d" % \
+                            event["revision"].number
+            self._set_notify_callback(callback)
+        meth = self._client_wrap("checkout")
+        meth(url, targetpath, **kwargs)
 
     def checkin(self, path, log, **kwargs):
         # XXX use EDITOR when log empty
-        meth = self.__getattr__("checkin")
+        meth = self._client_wrap("checkin")
         return meth(path, log, log=None, **kwargs)
-
+    
     def log(self, *args, **kwargs):
-        meth = self.__getattr__("log")
-        entries = meth(*args, **kwargs)
+        meth = self._client_wrap("log")
+        entries = meth(discover_changed_paths=True, *args, **kwargs)
         if entries is None:
             return
         for entrydic in entries:
@@ -101,10 +141,31 @@ class SVN:
                                 entrydic["author"],
                                 time.localtime(entrydic["date"]))
             entry.lines[:] = entrydic["message"].split("\n")
+            for cp in entrydic["changed_paths"]:
+                from_rev = cp["copyfrom_revision"]
+                if from_rev:
+                    from_rev = from_rev.number
+                changed = {
+                    "action": cp["action"],
+                    "path": cp["path"],
+                    "from_rev": from_rev,
+                    "from_path": cp["copyfrom_path"],
+                }
+                entry.changed.append(changed)
             yield entry
-
+    
     def exists(self, path):
         return self.ls(path, noerror=1) is not None
+
+    def diff(self, *args, **kwargs):
+        head = pysvn.Revision(pysvn.opt_revision_kind.head)
+        revision1 = kwargs.pop("revision1", head)
+        revision2 = kwargs.pop("revision2", head)
+        tmpdir = tempfile.gettempdir()
+        meth = self._client_wrap("diff")
+        diff_text = meth(tmpdir, revision1=revision1, revision2=revision2,
+                *args, **kwargs)
+        return diff_text
 
     def _edit_message(self, message):
         # argh!
@@ -116,8 +177,10 @@ class SVN:
             f.write(message)
             f.close()
             lastchange = os.stat(fpath).st_mtime
-            while 1:
-                os.system("%s %s" % (editor, fpath))
+            for i in xrange(10):
+                status = os.system("%s %s" % (editor, fpath))
+                if status != 0:
+                    raise SVNError, "the editor failed with %d" % status
                 newchange = os.stat(fpath).st_mtime
                 if newchange == lastchange:
                     print "Log message unchanged or not specified"
@@ -137,7 +200,7 @@ class SVN:
         return result
 
     def propedit(self, propname, pkgdirurl, revision, revprop=False):
-        revision = self.revision(revision)
+        revision = (revision)
         if revprop:
             propget = self.revpropget
             propset = self.revpropset

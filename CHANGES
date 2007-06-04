@@ -1,3 +1,36 @@
+* 1.6.18
+- initialize plugins in create-srpm too
+
+* 1.6.17
+- brought from mdvsys world the sync command
+- ldapusers: the configuration format has changed, now it uses python
+  template strings
+- ldapusers: many fixes: better error messages, ldap-port working, results
+  contain only the fields needed, unbinding after search, filters are
+  escaped
+
+* 1.6.16
+- introduced the plugin ldapusers: repsys user data obtained from LDAP;
+  this plugin is builtin
+- added support to plugins, and the hability to wrap configuration sections
+- added workaround in the template to ignore empty releases
+- added initial support to mirrors, as requested by mrl; it required the
+  new subcommand "ci"
+- changelogs from misc/ will now should come from HEAD and should be
+  escaped (%%)
+
+* 1.6.15
+- empty changelog entries are now shown, with a EMPTYLOG tag to allow
+  rpmlint warn the developer about it
+- check (and warn) if a temporary package has already been removed before
+  trying to remove it
+
+* 1.6.2b
+- make submit pass --define options to create-srpm script
+- print error message when create-srpm fails
+- make get_srpm return the srpms list
+- add upload-srpm support in create-srpm
+
 * 1.6.2a
 - moved revision-offset to [log] section and added a comment
 

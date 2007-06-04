@@ -1,0 +1,4 @@
+- we should have a generic fqdn here to use round-robin DNS
+  enhancement for repsys: support multiple ldap servers here
+ (from repsys.conf in kenobi)
+- support STARTTLS 
