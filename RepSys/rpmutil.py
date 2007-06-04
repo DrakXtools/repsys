@@ -77,8 +77,11 @@ def get_srpm(pkgdirurl,
             submit = not not revision
             specfile_svn2rpm(pkgdirurl, spec, revision, submit=submit,
                     template=template, macros=macros)
+        #FIXME revisioreal not needed if revision is None
+        #FIXME use geturl instead of pkgdirurl
         revisionreal = svn.revision(pkgdirurl)
         for script in scripts:
+            #FIXME revision can be "None"
             status, output = execcmd(script, tmpdir, spec, str(revision),
                                      noerror=1)
             if status != 0:
@@ -92,6 +95,7 @@ def get_srpm(pkgdirurl,
              srcrpmdir, patchdir, packager, spec, defs))
 
         if revision and revisionreal:
+            #FIXME duplicate glob line
             srpm = glob.glob(os.path.join(srpmsdir, "*.src.rpm"))[0]
             srpminfo = SRPM(srpm)
             release = srpminfo.release
