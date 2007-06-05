@@ -189,6 +189,8 @@ class SVN:
             cmd.append("-v")
         if kwargs.get("noignore"):
             cmd.append("--no-ignore")
+        if kwargs.get("quiet"):
+            cmd.append("--quiet")
         status, output = self._execsvn(*cmd, **kwargs)
         if status == 0:
             return [x.split() for x in output.splitlines()]

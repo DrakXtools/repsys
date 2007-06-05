@@ -368,14 +368,20 @@ def checkout(pkgdirurl, path=None, revision=None):
         print "checking out from mirror", current
     svn.checkout(current, path, rev=revision, show=1)
 
-def sync(dryrun=False):
-    svn = SVN(noauth=True)
+def _getpkgtopdir(basedir=None):
+    if basedir is None:
+        basedir = os.getcwd()
     cwd = os.getcwd()
     dirname = os.path.basename(cwd)
     if dirname == "SPECS" or dirname == "SOURCES":
         topdir = os.pardir
     else:
         topdir = ""
+    return topdir
+
+def sync(dryrun=False):
+    svn = SVN(noauth=True)
+    topdir = _getpkgtopdir()
     # run svn info because svn st does not complain when topdir is not an
     # working copy
     svn.info(topdir or ".")
@@ -425,11 +431,16 @@ def sync(dryrun=False):
 
 def commit(target=".", message=None):
     svn = SVN(noauth=True)
+    status = svn.status(target, quiet=True)
+    if not status:
+        print "nothing to commit"
+        return
     info = svn.info2(target)
     url = info.get("URL")
     if url is None:
         raise Error, "working copy URL not provided by svn info"
-    if mirror.enabled():
+    mirrored = mirror.enabled(url)
+    if mirrored:
         newurl = mirror.switchto_parent(svn, url, target)
         print "relocated to", newurl
     try:
@@ -439,9 +450,19 @@ def commit(target=".", message=None):
             mopt = "-m \"%s\"" % message
         os.system("svn ci %s %s" % (mopt, target))
     finally:
-        if mirror.enabled():
+        if mirrored:
             mirror.switchto_mirror(svn, newurl, target)
             print "relocated back to", url
+
+def switch(mirrorurl=None):
+    svn  = SVN(noauth=True)
+    topdir = _getpkgtopdir()
+    info = svn.info2(topdir)
+    wcurl = info.get("URL")
+    if wcurl is None:
+        raise Error, "working copy URL not provided by svn info"
+    newurl = mirror.autoswitch(svn, topdir, wcurl, mirrorurl)
+    print "switched to", newurl
 
 def get_submit_info(path):
     path = os.path.abspath(path)

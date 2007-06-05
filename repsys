@@ -21,6 +21,7 @@ Useful commands:
     changed
     authoremail
     putsrpm
+    switch
 
 Run "repsys COMMAND --help" for more information.
 
