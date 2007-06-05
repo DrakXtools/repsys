@@ -1,5 +1,7 @@
 * 1.6.18
+- added the subcommand "switch" to help with mirrors support
 - initialize plugins in create-srpm too
+- fixed bug of wrong paths when using mirrors
 
 * 1.6.17
 - brought from mdvsys world the sync command
