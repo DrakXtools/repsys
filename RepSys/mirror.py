@@ -1,7 +1,7 @@
 import os
 import urlparse
 
-from RepSys import config
+from RepSys import Error, config
 from RepSys.svn import SVN
 
 def _normdirurl(url):
