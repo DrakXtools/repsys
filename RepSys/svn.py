@@ -157,6 +157,19 @@ class SVN:
     def exists(self, path):
         return self.ls(path, noerror=1) is not None
 
+    def status(self, *args, **kwargs):
+        # add one keywork "silent" that workaround the strange behavior of
+        # pysvn's get_all, which seems to be broken, this way we also have
+        # the same interface of svn.py from repsys 1.6.x
+        meth = self._cllient_wrap("status")
+        silent = kwargs.pop("silent", None)
+        st = meth(*args, **kwargs)
+        if silent:
+            unversioned = pysvn.wc_status_kind.unversioned
+            st = [entry for entry in st
+                    if entry.text_status is not unversioned]
+        return st
+
     def diff(self, *args, **kwargs):
         head = pysvn.Revision(pysvn.opt_revision_kind.head)
         revision1 = kwargs.pop("revision1", head)
