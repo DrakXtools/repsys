@@ -159,8 +159,8 @@ class SVN:
         status, output = self._execsvn(local=True, *cmd, **kwargs)
         if status == 0:
             for line in output.splitlines():
-                if line.startswith("Revision: "):
-                    return int(line.split()[1])
+                if line.startswith("Last Changed Rev: "):
+                    return int(line.split()[3])
         return None
           
     def info(self, path, **kwargs):
