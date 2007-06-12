@@ -1,6 +1,8 @@
 * 1.6.18
 - added the subcommand "switch" to help with mirrors support
 - initialize plugins in create-srpm too
+- changelog: show epoch even in the entry not released
+- changelog: make default.chlog compatible with cheetah-2
 - fixed bug of wrong paths when using mirrors
 
 * 1.6.17
