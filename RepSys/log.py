@@ -242,13 +242,25 @@ def parse_raw_date(rawdate):
     return time.strftime("%a %b %d %Y", rawdate)
 
 def filter_log_lines(lines):
-    # lines in commit messages containing SILENT at any position will be
-    # skipped; commits with their log messages beggining with SILENT in the
-    # first positionj of the first line will have all lines ignored.
-    ignstr = config.get("log", "ignore-string", "SILENT")
-    if len(lines) and lines[0].startswith(ignstr):
-        return []
-    filtered = [line for line in lines if ignstr not in line]
+    # Lines in commit messages beginning with CLOG will be the only shown
+    # in the changelog. These lines will have the CLOG token and blanks
+    # stripped from the beginning.
+    onlylines = None
+    clogstr = config.get("log", "unignore-string")
+    if clogstr:
+        clogre = re.compile(r"(^%s[^ \t]?[ \t])" % clogstr)
+        onlylines = [clogre.sub("", line)
+                for line in lines if line.startswith(clogstr)]
+    if onlylines:
+        filtered = onlylines
+    else:
+        # Lines in commit messages containing SILENT at any position will be
+        # skipped; commits with their log messages beggining with SILENT in the
+        # first positionj of the first line will have all lines ignored.
+        ignstr = config.get("log", "ignore-string", "SILENT")
+        if len(lines) and lines[0].startswith(ignstr):
+            return []
+        filtered = [line for line in lines if ignstr not in line]
     return filtered
 
 
