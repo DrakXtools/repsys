@@ -150,6 +150,8 @@ def put_srpm(pkgdirurl, srpmfile, appendname=0, log=""):
             version = srpm.version
         versionurl = "/".join([pkgdirurl, "releases", version])
         releaseurl = "/".join([versionurl, srpm.release])
+        #FIXME when pre-commit hook fails, there's no clear way to know
+        # what happened
         ret = svn.mkdir(pkgdirurl, noerror=1, log="Created package directory")
         if ret:
             svn.checkout(pkgdirurl, tmpdir)
