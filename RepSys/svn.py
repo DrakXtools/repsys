@@ -161,7 +161,7 @@ class SVN:
         # add one keywork "silent" that workaround the strange behavior of
         # pysvn's get_all, which seems to be broken, this way we also have
         # the same interface of svn.py from repsys 1.6.x
-        meth = self._cllient_wrap("status")
+        meth = self._client_wrap("status")
         silent = kwargs.pop("silent", None)
         st = meth(*args, **kwargs)
         if silent:

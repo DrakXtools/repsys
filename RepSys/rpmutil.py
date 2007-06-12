@@ -6,6 +6,7 @@ from RepSys.simplerpm import SRPM
 from RepSys.log import specfile_svn2rpm
 from RepSys.util import execcmd
 import pysvn
+from RepSys.command import default_parent
 import rpm
 import tempfile
 import shutil
@@ -360,13 +361,17 @@ def check_changed(pkgdirurl, all=0, show=0, verbose=0):
             "nopristine": nopristine}
 
 def checkout(pkgdirurl, path=None, revision=None):
-    svn = SVN()
+    o_pkgdirurl = pkgdirurl
+    pkgdirurl = default_parent(o_pkgdirurl)
     current = os.path.join(pkgdirurl, "current")
     if path is None:
         _, path = os.path.split(pkgdirurl)
-    if mirror.enabled():
+    # if default_parent changed the URL, we can use mirrors because the
+    # user did not provided complete package URL
+    if (o_pkgdirurl != pkgdirurl) and mirror.enabled():
         current = mirror.checkout_url(current)
         print "checking out from mirror", current
+    svn = SVN()
     svn.checkout(current, path, revision=SVN.makerev(revision), show=1)
 
 def _getpkgtopdir(basedir=None):
