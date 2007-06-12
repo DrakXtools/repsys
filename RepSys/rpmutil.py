@@ -402,6 +402,7 @@ def sync(dryrun=False):
         raise Error, "no .spec files found in %s" % specsdir
     specpath = specs[0] # FIXME better way?
     try:
+        rpm.addMacro("_topdir", os.path.abspath(topdir))
         spec = rpm.TransactionSet().parseSpec(specpath)
     except rpm.error, e:
         raise Error, "could not load spec file: %s" % e
