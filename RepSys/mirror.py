@@ -47,6 +47,8 @@ def enabled(wcurl=None):
 def mirror_relocate(oldparent, newparent, url, wcpath):
     svn = SVN()
     newurl = relocate_path(oldparent, newparent, url)
+    # note that svn.relocate requires paths without trailling slashes,
+    # http://foo/svn/bar/baz/ will fail
     svn.relocate(url, newurl, wcpath)
     return newurl
 
