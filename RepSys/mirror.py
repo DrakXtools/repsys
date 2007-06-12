@@ -8,7 +8,6 @@ def _normdirurl(url):
     """normalize url for relocate_path needs"""
     parsed = urlparse.urlparse(url)
     path = os.path.normpath(parsed.path)
-    path += "/" # assuming we always deal with directories
     newurl = urlparse.urlunparse((parsed.scheme, parsed.netloc, path,
         parsed.params, parsed.query, parsed.fragment))
     return newurl
@@ -31,7 +30,7 @@ def relocate_path(oldparent, newparent, url):
     oldparent = _normdirurl(oldparent)
     newparent = _normdirurl(newparent)
     url = _normdirurl(url)
-    subpath = url[len(oldparent):]
+    subpath = url[len(oldparent)+1:]
     newurl = _joinurl(newparent,  subpath) # subpath usually gets / at begining
     return newurl
 
