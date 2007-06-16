@@ -451,16 +451,14 @@ def commit(target=".", message=None):
     if mirrored:
         newurl = mirror.switchto_parent(svn, url, target)
         print "relocated to", newurl
-    try:
-        # we can't use the svn object here because pexpect hides VISUAL
-        mopt = ""
-        if message is not None:
-            mopt = "-m \"%s\"" % message
-        os.system("svn ci %s %s" % (mopt, target))
-    finally:
-        if mirrored:
-            mirror.switchto_mirror(svn, newurl, target)
-            print "relocated back to", url
+    # we can't use the svn object here because pexpect hides VISUAL
+    mopt = ""
+    if message is not None:
+        mopt = "-m \"%s\"" % message
+    os.system("svn ci %s %s" % (mopt, target))
+    if mirrored:
+        print "use \"repsys switch\" in order to switch back to mirror "\
+                "later"
 
 def switch(mirrorurl=None):
     svn  = SVN(noauth=True)
