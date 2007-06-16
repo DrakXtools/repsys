@@ -9,6 +9,7 @@
 - changelog: make default.chlog compatible with cheetah-2
 - make "sync" compatible with rpm-4.4.8 behavior
 - "co" don't use mirror when URL is provided
+- "ci" don't relocate back to mirrors after commit (should use switch)
 - fixed use of __import__, incompatible with python2.4 in plugin support
 - fixed bug of wrong paths when using mirrors
 
