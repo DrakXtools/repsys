@@ -3,9 +3,9 @@
 #for $rel in $releases_by_author
 * $rel.date $rel.author_name <$rel.author_email> $rel.version-$rel.release
 + Revision: $rel.revision
- #if not $rel.released
+## #if not $rel.released
 ##+ Status: not released
- #end if
+## #end if
  #if not $rel.visible
 + rebuild (emptylog)
  #end if

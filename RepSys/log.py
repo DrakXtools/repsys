@@ -298,7 +298,7 @@ def dump_file(releases, currentlog=None, template=None):
                              "releases" : releases,
                              "revisions_by_author": revisions_author}]
     t = Template(**params)
-    return repr(t)
+    return t.respond()
 
 
 class InvalidEntryError(Exception):
