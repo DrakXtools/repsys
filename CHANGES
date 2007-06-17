@@ -1,6 +1,7 @@
 * 1.6.18
 - added the subcommand "switch" to help with mirrors support
 - initialize plugins in create-srpm too
+- changelog: perform less svn calls to obtain release number and oldlog
 - changelog: show epoch even in the entry not released
 - changelog: make default.chlog compatible with cheetah-2
 - make "sync" compatible with rpm-4.4.8 behavior
