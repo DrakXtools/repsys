@@ -78,7 +78,7 @@ def get_srpm(pkgdirurl,
         if svnlog:
             submit = not not revision
             specfile_svn2rpm(pkgdirurl, spec, revision, submit=submit,
-                    template=template, macros=macros)
+                    template=template, macros=macros, exported=tmpdir)
         #FIXME revisioreal not needed if revision is None
         #FIXME use geturl instead of pkgdirurl
         revisionreal = svn.revision(pkgdirurl)

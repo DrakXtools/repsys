@@ -43,7 +43,7 @@ default_template = """
 #end for
 """
 
-def getrelease(pkgdirurl, rev=None, macros=[]):
+def getrelease(pkgdirurl, rev=None, macros=[], exported=None):
     """Tries to obtain the version-release of the package for a 
     yet-not-markrelease revision of the package.
 
@@ -53,37 +53,40 @@ def getrelease(pkgdirurl, rev=None, macros=[]):
     svn = SVN()
     from RepSys.rpmutil import rpm_macros_defs
     tmpdir = tempfile.mktemp()
+    pkgcurrenturl = os.path.join(pkgdirurl, "current")
+    specurl = os.path.join(pkgcurrenturl, "SPECS")
+    if exported is None:
+        tmpdir = tempfile.mktemp()
+        svn.export(specurl, tmpdir, revision=SVN.makerev(rev))
+    else:
+        tmpdir = os.path.join(exported, "SPECS")
     try:
-        pkgname = RepSysTree.pkgname(pkgdirurl)
-        pkgcurrenturl = os.path.join(pkgdirurl, "current")
-        specurl = os.path.join(pkgcurrenturl, "SPECS")
-        if svn.exists(specurl):
-            svn.export(specurl, tmpdir, revision=SVN.makerev(rev))
-            found = glob.glob(os.path.join(tmpdir, "*.spec"))
-            if found:
-                specpath = found[0]
-                options = rpm_macros_defs(macros)
-                command = (("rpm -q --qf '%%{EPOCH}:%%{VERSION}-%%{RELEASE}\n' "
-                           "--specfile %s %s 2>/dev/null") % 
-                           (specpath, options))
-                status, output = execcmd(command)
-                if status != 0:
-                    raise Error, "Error in command %s: %s" % (command, output)
-                releases = output.split()
-                try:
-                    epoch, vr = releases[0].split(":", 1)
-                    version, release = vr.split("-", 1)
-                except ValueError:
-                    raise Error, "Invalid command output: %s: %s" % \
-                            (command, output)
-                #XXX check if this is the right way:
-                if epoch == "(none)":
-                    ev = version
-                else:
-                    ev = epoch + ":" + version
-                return ev, release
+        found = glob.glob(os.path.join(tmpdir, "*.spec"))
+        if not found:
+            raise Error, "no .spec file found inside %s" % specurl
+        specpath = found[0]
+        options = rpm_macros_defs(macros)
+        command = (("rpm -q --qf '%%{EPOCH}:%%{VERSION}-%%{RELEASE}\n' "
+                   "--specfile %s %s 2>/dev/null") % 
+                   (specpath, options))
+        status, output = execcmd(command)
+        if status != 0:
+            raise Error, "Error in command %s: %s" % (command, output)
+        releases = output.split()
+        try:
+            epoch, vr = releases[0].split(":", 1)
+            version, release = vr.split("-", 1)
+        except ValueError:
+            raise Error, "Invalid command output: %s: %s" % \
+                    (command, output)
+        #XXX check if this is the right way:
+        if epoch == "(none)":
+            ev = version
+        else:
+            ev = epoch + ":" + version
+        return ev, release
     finally:
-        if os.path.isdir(tmpdir):
+        if exported is None and os.path.isdir(tmpdir):
             shutil.rmtree(tmpdir)
             
 
@@ -370,7 +373,7 @@ def parse_markrelease_log(relentry):
 
 
 def svn2rpm(pkgdirurl, rev=None, size=None, submit=False,
-        template=None, macros=[]):
+        template=None, macros=[], exported=None):
     size = size or 0
     concat = config.get("log", "concat", "").split()
     revoffset = get_revision_offset()
@@ -437,7 +440,8 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False,
     if notsubmitted:
         # if they are not submitted yet, what we have to do is to add
         # a release/version number from getrelease()
-        version, release = getrelease(pkgdirurl, macros=macros)
+        version, release = getrelease(pkgdirurl, macros=macros,
+                exported=exported)
         toprelease = make_release(entries=notsubmitted, released=False,
                         version=version, release=release)
         releases.append(toprelease)
@@ -448,7 +452,7 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False,
 
 
 def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
-        submit=False, template=None, macros=[]):
+        submit=False, template=None, macros=[], exported=None):
     newlines = []
     found = 0
     
@@ -465,7 +469,7 @@ def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
     # Create new changelog
     newlines.append("\n\n%changelog\n")
     newlines.append(svn2rpm(pkgdirurl, rev=rev, size=size, submit=submit,
-        template=template, macros=macros))
+        template=template, macros=macros, exported=exported))
 
     # Merge old changelog, if available
     oldurl = config.get("log", "oldurl")
@@ -475,10 +479,13 @@ def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
         try:
             pkgname = RepSysTree.pkgname(pkgdirurl)
             pkgoldurl = os.path.join(oldurl, pkgname)
-            if svn.exists(pkgoldurl):
+            try:
                 # we're using HEAD here because fixes in misc/ (oldurl) may
                 # be newer than packages' last changed revision.
                 svn.export(pkgoldurl, tmpdir)
+            except Error:
+                pass
+            else:
                 logfile = os.path.join(tmpdir, "log")
                 if os.path.isfile(logfile):
                     file = open(logfile)
