@@ -4,7 +4,13 @@ A Repsys plugin for obtaining users from a LDAP server.
 In order to enable the plugin, the user must define the following 
 options in the [global] section of repsys.conf:
 
-    ldap-server [required]
+    ldap-uri [required if ldap-server is unset]
+        the URI of the server, you can refer to more than one server by
+        adding more URIs separated by spaces::
+
+          ldap-uri = ldap://ldap.network/ ldaps://backup.network:22389/
+
+    ldap-server [required if ldap-uri is unset]
         the host name of the LDAP server
     ldap-port [optional] [default: 389]
         the port of the LDAP server
@@ -14,6 +20,9 @@ options in the [global] section of repsys.conf:
         the DN used to bind
     ldap-bindpw [optional] [default: empty]
         the password used to bind
+    ldap-starttls [optional] [default: no]
+         use "yes" or "no" to enable or disable the use of the STARTTLS
+         LDAP extension
     ldap-filterformat [optional] 
             [default: (&(objectClass=inetOrgPerson)(uid=$username))]
         RFC-2254 filter string used in the search of the user entry.
@@ -95,12 +104,23 @@ def used_attributes(format):
     return dd.found
 
 def make_handler():
-    server = config.get("global", "ldap-server")
-    try:
-        port = int(config.get("global", "ldap-port", 389))
-    except ValueError:
-        raise Error, "the option ldap-port requires an integer, please "\
-                "check your configuration files"
+    uri = config.get("global", "ldap-uri")
+    if not uri:
+        server = config.get("global", "ldap-server")
+        if not server:
+            # ldap support is not enabled if ldap-uri nor ldap-server are
+            # defined
+            def dummy_wrapper(section, option=None, default=None, walk=False):
+                return config.get(section, option, default, wrap=False)
+            return dummy_wrapper
+
+        try:
+            port = int(config.get("global", "ldap-port", 389))
+        except ValueError:
+            raise Error, "the option ldap-port requires an integer, please "\
+                    "check your configuration files"
+        uri = "ldap://%s:%d" % (server, port)
+
     basedn = config.get("global", "ldap-base")
     binddn = config.get("global", "ldap-binddn")
     bindpw = config.get("global", "ldap-bindpw", "")
@@ -108,10 +128,13 @@ def make_handler():
             "(&(objectClass=inetOrgPerson)(uid=$username))", raw=1)
     format = config.get("global", "ldap-resultformat", "$cn <$mail>", raw=1)
 
-    if server is None:
-        def dummy_wrapper(section, option=None, default=None, walk=False):
-            return config.get(section, option, default, wrap=False)
-        return dummy_wrapper
+    valid = {"yes": True, "no": False}
+    raw = config.get("global", "ldap-starttls", "no")
+    try:
+        starttls = valid[raw]
+    except KeyError:
+        raise Error, "invalid value %r for ldap-starttls, use "\
+                "'yes' or 'no'" % raw
 
     try:
         import ldap
@@ -133,7 +156,9 @@ def make_handler():
             return value
 
         try:
-            l = ldap.open(server, port)
+            l = ldap.initialize(uri)
+            if starttls:
+                l.start_tls_s()
             if binddn:
                 l.bind(binddn, bindpw)
         except ldap.LDAPError, e:
