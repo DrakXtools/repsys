@@ -311,7 +311,12 @@ def dump_file(releases, currentlog=None, template=None):
                              "releases" : releases,
                              "revisions_by_author": revisions_author}]
     t = Template(**params)
-    return t.respond()
+    chlog = t.respond()
+    try:
+        chlog = chlog.decode("utf8")
+    except UnicodeError:
+        pass
+    return chlog
 
 
 class InvalidEntryError(Exception):
