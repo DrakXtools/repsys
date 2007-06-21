@@ -173,14 +173,16 @@ class SVN:
                     if entry.text_status is not unversioned]
         return st
 
-    def diff(self, *args, **kwargs):
+    def diff(self, path1, *args, **kwargs):
         head = pysvn.Revision(pysvn.opt_revision_kind.head)
         revision1 = kwargs.pop("revision1", head)
         revision2 = kwargs.pop("revision2", head)
+        if args:
+            kwargs["url_or_path2"] = args[0]
         tmpdir = tempfile.gettempdir()
         meth = self._client_wrap("diff")
-        diff_text = meth(tmpdir, revision1=revision1, revision2=revision2,
-                *args, **kwargs)
+        diff_text = meth(tmpdir, path1, revision1=revision1,
+                revision2=revision2, **kwargs)
         return diff_text
 
     def _edit_message(self, message):
