@@ -311,14 +311,13 @@ def check_changed(pkgdirurl, all=0, show=0, verbose=0):
         if not packages:
             raise Error, "couldn't get list of packages"
     else:
-        baseurl, basename = os.path.split(pkgdirurl)
-        packages = [basename]
+        packages = [pkgdirurl]
     clean = []
     changed = []
     nopristine = []
     nocurrent = []
-    for package in packages:
-        pkgdirurl = os.path.join(baseurl, package)
+    for pkgdirurl in packages:
+        package = os.path.basename(pkgdirurl)
         current = os.path.join(pkgdirurl, "current")
         pristine = os.path.join(pkgdirurl, "pristine")
         if verbose:
