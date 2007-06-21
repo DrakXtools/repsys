@@ -67,7 +67,7 @@ def get_srpm(pkgdirurl,
             geturl = os.path.join(pkgdirurl, "current")
         else:
             raise Error, "unsupported get_srpm mode: %s" % mode
-        svn.export(geturl, tmpdir, revision=SVN.makerev(revision))
+        exportedrev = svn.export(geturl, tmpdir, revision=SVN.makerev(revision))
         srpmsdir = os.path.join(tmpdir, "SRPMS")
         os.mkdir(srpmsdir)
         specsdir = os.path.join(tmpdir, "SPECS")
@@ -79,9 +79,6 @@ def get_srpm(pkgdirurl,
             submit = not not revision
             specfile_svn2rpm(pkgdirurl, spec, revision, submit=submit,
                     template=template, macros=macros, exported=tmpdir)
-        #FIXME revisioreal not needed if revision is None
-        #FIXME use geturl instead of pkgdirurl
-        revisionreal = svn.revision(pkgdirurl)
         for script in scripts:
             #FIXME revision can be "None"
             status, output = execcmd(script, tmpdir, spec, str(revision),
@@ -96,13 +93,13 @@ def get_srpm(pkgdirurl,
             (topdir, builddir, rpmdir, sourcedir, specdir, 
              srcrpmdir, patchdir, packager, spec, defs))
 
-        if revision and revisionreal:
+        if revision:
             #FIXME duplicate glob line
             srpm = glob.glob(os.path.join(srpmsdir, "*.src.rpm"))[0]
             srpminfo = SRPM(srpm)
             release = srpminfo.release
             srpmbase = os.path.basename(srpm)
-            os.rename(srpm, "%s/@%s:%s" % (srpmsdir, revisionreal, srpmbase))
+            os.rename(srpm, "%s/@%s:%s" % (srpmsdir, exportedrev.number, srpmbase))
         srpm = glob.glob(os.path.join(srpmsdir, "*.src.rpm"))[0]
         if not targetdirs:
             targetdirs = (".",)

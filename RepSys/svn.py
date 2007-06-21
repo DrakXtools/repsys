@@ -97,9 +97,12 @@ class SVN:
         return pysvn.Revision(*args)
     makerev = staticmethod(makerev)
 
-    def revision(self, url):
+    def revision(self, url, last_changed=False):
         infos = self._client.info2(url, recurse=False)
-        revnum= infos[0][1].rev.number
+        if last_changed:
+            revnum = infos[0][1].last_changed_rev.number
+        else:
+            revnum = infos[0][1].rev.number
         return revnum
 
     # this override method fixed the problem in pysvn's mkdir which
