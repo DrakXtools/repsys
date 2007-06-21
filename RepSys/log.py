@@ -13,10 +13,10 @@ import os
 import re
 import time
 import locale
+import codecs
 import glob
 import tempfile
 import shutil
-
 
 default_template = """
 #for $rel in $releases_by_author
@@ -460,6 +460,11 @@ def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
         submit=False, template=None, macros=[], exported=None):
     newlines = []
     found = 0
+
+    encoding = locale.getpreferredencoding()
+
+    def open(name, mode="r"):
+        return codecs.open(name, mode, encoding, errors="replace")
     
     # Strip old changelogs
     for line in open(specfile):
