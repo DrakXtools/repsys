@@ -3,6 +3,7 @@
   start with this token
 - fixed generation of unreleased commits, it was using the previous
   markrelease revision as reference
+- added option -o to 'co' to disable the use of mirror when checking out
 
 * 1.6.18
 - added the subcommand "switch" to help with mirrors support
