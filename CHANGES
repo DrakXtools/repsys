@@ -1,6 +1,8 @@
 * 1.6.19
 - added complement for SILENT: CLOG, which hides everything that does not
-  start with this token
+ start with this token
+- fixed generation of unreleased commits, it was using the previous
+  markrelease revision as reference
 
 * 1.6.18
 - added the subcommand "switch" to help with mirrors support
