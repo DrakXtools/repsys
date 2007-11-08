@@ -356,7 +356,7 @@ def check_changed(pkgdirurl, all=0, show=0, verbose=0):
             "nocurrent": nocurrent,
             "nopristine": nopristine}
 
-def checkout(pkgdirurl, path=None, revision=None):
+def checkout(pkgdirurl, path=None, revision=None, use_mirror=True):
     o_pkgdirurl = pkgdirurl
     pkgdirurl = default_parent(o_pkgdirurl)
     current = os.path.join(pkgdirurl, "current")
@@ -364,7 +364,7 @@ def checkout(pkgdirurl, path=None, revision=None):
         _, path = os.path.split(pkgdirurl)
     # if default_parent changed the URL, we can use mirrors because the
     # user did not provided complete package URL
-    if (o_pkgdirurl != pkgdirurl) and mirror.enabled():
+    if (o_pkgdirurl != pkgdirurl) and use_mirror and mirror.enabled():
         current = mirror.checkout_url(current)
         print "checking out from mirror", current
     svn = SVN()

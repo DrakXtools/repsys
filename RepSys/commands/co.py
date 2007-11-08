@@ -10,6 +10,7 @@ Usage: repsys co [OPTIONS] URL [LOCALPATH]
 
 Options:
     -r REV  Revision to checkout
+    -o      Do not use the mirror (use official server)
     -h      Show this message
 
 Examples:
@@ -20,6 +21,8 @@ Examples:
 def parse_options():
     parser = OptionParser(help=HELP)
     parser.add_option("-r", dest="revision")
+    parser.add_option("-o", dest="use_mirror", default=True,
+            action="store_false")
     opts, args = parser.parse_args()
     if len(args) not in (1, 2):
         raise Error, "invalid arguments"
