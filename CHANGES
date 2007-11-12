@@ -1,3 +1,6 @@
+* 1.6.20
+- fixed bad url used when using -v in getsrpm
+
 * 1.6.19
 - added complement for SILENT: CLOG, which hides everything that does not
   start with this token
