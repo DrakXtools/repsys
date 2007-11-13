@@ -483,33 +483,30 @@ def get_submit_info(path):
     if not os.path.isdir(os.path.join(path, ".svn")):
         raise Error, "subversion directory not found"
     
-    svn = SVN()
-
-
     # Now, extract the package name.
-    for line in svn.info(path):
-        if line.startswith("URL: "):
-            url = line.split()[1]
-            toks = url.split("/")
-            if len(toks) < 2 or toks[-1] != "current":
-                raise Error, "unexpected URL received from 'svn info'"
-            name = toks[-2]
-            break
-    else:
-        raise Error, "URL tag not found in 'svn info' output"
+    svn = SVN()
+    info = svn.info(path)
+
+    url = info.url
+    toks = url.split("/")
+    if len(toks) < 2 or toks[-1] != "current":
+        raise Error, "invalid package URL %s, needs current/" % url
+    name = toks[-2]
 
     # Finally, guess revision.
     max = -1
     files = []
     files.extend(glob.glob("%s/*" % specsdir))
     files.extend(glob.glob("%s/*" % sourcesdir))
-    for line in svn.info(" ".join(files)):
-        if line.startswith("Revision: "):
-            rev = int(line.split()[1])
-            if rev > max:
-                max = rev
+    for file in files: 
+        info = svn.info(file)
+        if info is None: # not in working copy
+            continue
+        rev = info.commit_revision.number
+        if rev > max:
+            max = rev
     if max == -1:
-        raise Error, "revision tag not found in 'svn info' output"
+        raise Error, "unable to find the latest revision"
     
     return name, max
 
