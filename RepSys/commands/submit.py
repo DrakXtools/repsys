@@ -20,6 +20,9 @@ Usage: repsys submit [OPTIONS] [URL [REVISION]]
 
 Submits the package from URL to the submit host.
 
+If no URL and revision are specified, the latest changed revision in 
+the package working copy of the current directory will be used.
+
 Options:
     -t TARGET  Submit given package URL to given target
     -l         Just list available targets
@@ -51,15 +54,8 @@ def parse_options():
     opts, args = parser.parse_args()
     if not args:
         name, rev = get_submit_info(".")
-        try:
-            yn = raw_input("Submit '%s', revision %d (y/N)? " % (name, rev))
-        except KeyboardInterrupt:
-            yn = "n"
-        if yn.lower() in ("y", "yes"):
-            args = name, str(rev)
-        else:
-            print "Cancelled."
-            sys.exit(1)
+        args = name, str(rev)
+        print "submitting %s at revision %s..." % args
     elif len(args) > 2:
         raise Error, "invalid arguments"
     opts.pkgdirurl = default_parent(args[0])

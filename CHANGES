@@ -1,5 +1,6 @@
 * 1.6.20
 - fixed bad url used when using -v in getsrpm
+- make 'repsys submit' without package name or revision number work again
 
 * 1.6.19
 - added complement for SILENT: CLOG, which hides everything that does not
