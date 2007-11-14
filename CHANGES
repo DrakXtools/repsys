@@ -1,4 +1,6 @@
 * 1.6.19.1
+- the fix for the unreleased commits problem in the previous release was
+  wrong, really fixed it
 
 * 1.6.19
 - added complement for SILENT: CLOG, which hides everything that does not
