@@ -435,9 +435,9 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False,
             
     # look for commits that have been not submitted (released) yet
     # this is done by getting all log entries newer (greater revision no.)
-    # than releasesdata[0] (in the case it exists)
+    # than releasesdata[-1] (in the case it exists)
     if releasesdata:
-        latest_revision = releasesdata[0][0] # "relrevision"
+        latest_revision = releasesdata[-1][0] # the latest copied rev
     else:
         latest_revision = 0
     notsubmitted = [entry for entry in currentlog 
