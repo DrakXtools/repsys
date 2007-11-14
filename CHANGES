@@ -1,4 +1,5 @@
 * 1.6.19.1
+- fixed bad url used when using -v in getsrpm
 - the fix for the unreleased commits problem in the previous release was
   wrong, really fixed it
 

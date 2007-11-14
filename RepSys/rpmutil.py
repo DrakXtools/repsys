@@ -58,7 +58,7 @@ def get_srpm(pkgdirurl,
     patchdir = "--define '_patchdir %s/%s'" % (tmpdir, "SOURCES")
     try:
         if mode == "version":
-            geturl = os.path.join(pkgdirurl, "versions",
+            geturl = os.path.join(pkgdirurl, "releases",
                                   version, release)
         elif mode == "pristine":
             geturl = os.path.join(pkgdirurl, "pristine")
