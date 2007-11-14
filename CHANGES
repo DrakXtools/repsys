@@ -3,6 +3,8 @@
 - make 'repsys submit' without package name or revision number work again
 - the fix for the unreleased commits problem in the previous release was
   wrong, really fixed it
+- don't give the wrong message "invalid command 'CMD'" when this is not
+  the case
 
 * 1.6.19
 - added complement for SILENT: CLOG, which hides everything that does not

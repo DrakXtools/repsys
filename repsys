@@ -65,11 +65,10 @@ def dispatch_command(command, argv, debug=0):
         commands_module = getattr(repsys_module, "commands")
         command_module = getattr(commands_module, command)
     except (ImportError, AttributeError):
-        if debug:
-            import traceback
-            traceback.print_exc()
-            sys.exit(1)
-        raise Error, "invalid command '%s'" % command
+        etype, exc, tb = sys.exc_info()
+        if tb.tb_next is None and not debug:
+            raise Error, "invalid command '%s'" % command
+        raise
     command_module.main()
     
 if __name__ == "__main__":
