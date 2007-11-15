@@ -14,7 +14,7 @@ import sys
 import os
 
 def get_spec(pkgdirurl, targetdir=".", submit=False):
-    svn = SVN(baseurl=pkgdirurl)
+    svn = SVN()
     tmpdir = tempfile.mktemp()
     try:
         geturl = "/".join([pkgdirurl, "current", "SPECS"])
@@ -47,7 +47,7 @@ def get_srpm(pkgdirurl,
              template = None,
              macros = [],
              verbose = 0):
-    svn = SVN(baseurl=pkgdirurl)
+    svn = SVN()
     tmpdir = tempfile.mktemp()
     topdir = "--define '_topdir %s'" % tmpdir
     builddir = "--define '_builddir %s/%s'" % (tmpdir, "BUILD")
@@ -120,7 +120,7 @@ def get_srpm(pkgdirurl,
             shutil.rmtree(tmpdir)
 
 def patch_spec(pkgdirurl, patchfile, log=""):
-    svn = SVN(baseurl=pkgdirurl)
+    svn = SVN()
     tmpdir = tempfile.mktemp()
     try:
         geturl = "/".join([pkgdirurl, "current", "SPECS"])
@@ -142,7 +142,7 @@ def put_srpm(pkgdirurl, srpmfile, appendname=0, log=""):
     srpm = SRPM(srpmfile)
     if appendname:
         pkgdirurl = "/".join([pkgdirurl, srpm.name])
-    svn = SVN(baseurl=pkgdirurl)
+    svn = SVN()
     tmpdir = tempfile.mktemp()
     try:
         if srpm.epoch:
@@ -239,7 +239,7 @@ def put_srpm(pkgdirurl, srpmfile, appendname=0, log=""):
                  (version, srpm.release))
 
 def create_package(pkgdirurl, log="", verbose=0):
-    svn = SVN(baseurl=pkgdirurl)
+    svn = SVN()
     tmpdir = tempfile.mktemp()
     try:
         basename = RepSysTree.pkgname(pkgdirurl)
@@ -280,7 +280,7 @@ revision: %s
     return log
 
 def mark_release(pkgdirurl, version, release, revision):
-    svn = SVN(baseurl=pkgdirurl)
+    svn = SVN()
     releasesurl = "/".join([pkgdirurl, "releases"])
     versionurl = "/".join([releasesurl, version])
     releaseurl = "/".join([versionurl, release])
@@ -302,7 +302,7 @@ def mark_release(pkgdirurl, version, release, revision):
              log=markreleaselog)
 
 def check_changed(pkgdirurl, all=0, show=0, verbose=0):
-    svn = SVN(baseurl=pkgdirurl)
+    svn = SVN()
     if all:
         baseurl = pkgdirurl
         packages = []
@@ -372,7 +372,7 @@ def checkout(pkgdirurl, path=None, revision=None, use_mirror=True):
     if (o_pkgdirurl != pkgdirurl) and use_mirror and mirror.enabled():
         current = mirror.checkout_url(current)
         print "checking out from mirror", current
-    svn = SVN(baseurl=pkgdirurl)
+    svn = SVN()
     svn.checkout(current, path, rev=revision, show=1)
 
 def _getpkgtopdir(basedir=None):
@@ -387,7 +387,7 @@ def _getpkgtopdir(basedir=None):
     return topdir
 
 def sync(dryrun=False):
-    svn = SVN(noauth=True)
+    svn = SVN()
     topdir = _getpkgtopdir()
     # run svn info because svn st does not complain when topdir is not an
     # working copy
@@ -438,7 +438,7 @@ def sync(dryrun=False):
             svn.add(path, local=True)
 
 def commit(target=".", message=None):
-    svn = SVN(noauth=True)
+    svn = SVN()
     status = svn.status(target, quiet=True)
     if not status:
         print "nothing to commit"
@@ -451,7 +451,8 @@ def commit(target=".", message=None):
     if mirrored:
         newurl = mirror.switchto_parent(svn, url, target)
         print "relocated to", newurl
-    # we can't use the svn object here because pexpect hides VISUAL
+    # we can't use the svn object here because svn --non-interactive option
+    # hides VISUAL
     mopt = ""
     if message is not None:
         mopt = "-m \"%s\"" % message
@@ -461,7 +462,7 @@ def commit(target=".", message=None):
                 "later"
 
 def switch(mirrorurl=None):
-    svn  = SVN(noauth=True)
+    svn  = SVN()
     topdir = _getpkgtopdir()
     info = svn.info2(topdir)
     wcurl = info.get("URL")
@@ -490,7 +491,7 @@ def get_submit_info(path):
     if not os.path.isdir(os.path.join(path, ".svn")):
         raise Error, "subversion directory not found"
     
-    svn = SVN(noauth=True)
+    svn = SVN()
 
     # Now, extract the package name.
     info = svn.info2(path)

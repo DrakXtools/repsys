@@ -45,7 +45,7 @@ def enabled(wcurl=None):
     return enabled
 
 def mirror_relocate(oldparent, newparent, url, wcpath):
-    svn = SVN(noauth=True)
+    svn = SVN()
     newurl = relocate_path(oldparent, newparent, url)
     svn.switch(newurl, url, path=wcpath, relocate="True")
     return newurl

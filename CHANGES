@@ -1,4 +1,11 @@
 * 1.6.20
+- dropped all authenticated access support: subversion authentication has
+  been broken for a long time and the workarounds weren't decent. It will
+  be back in 1.7.x.
+- added configuration option svn-command in the global section, allowing
+  to replace the default svn command
+- force svn+ssh:// URLs to be in BatchMode, in order to not have any
+  interactivity at all with ssh
 - fixed bad url used when using -v in getsrpm
 - make 'repsys submit' without package name or revision number work again
 - the fix for the unreleased commits problem in the previous release was
