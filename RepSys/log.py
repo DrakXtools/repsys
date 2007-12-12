@@ -164,49 +164,50 @@ def group_releases_by_author(releases):
     allauthors = []
     grouped = []
     for release in releases:
+
+        # group revisions of the release by author
         authors = {}
         latest = None
         for revision in release.revisions:
             authors.setdefault(revision.author, []).append(revision)
 
-        # all the mess below is to sort by author and by revision number
+        # create _Authors and sort them by their latest revisions
         decorated = []
         for authorname, revs in authors.iteritems():
             author = _Author()
             author.name = revs[0].author_name
             author.email = revs[0].author_email
-            revdeco = [(r.revision, r) for r in revs]
-            revdeco.sort(reverse=1)
-            author.revisions = [t[1] for t in revdeco]
+            author.revisions = revs
             revlatest = author.revisions[0]
-            # keep the latest revision even for silented authors (below)
+            # keep the latest revision even for completely invisible
+            # authors (below)
             if latest is None or revlatest.revision > latest.revision:
                 latest = revlatest
             count = sum(len(rev.lines) for rev in author.revisions)
             if count == 0:
-                # skipping author with only silented lines
+                # only sort those visible authors, invisible ones are used
+                # only in "latest"
                 continue
-            decorated.append((revdeco[0][0], author))
-
-        if not decorated:
-            # skipping release with only authors with silented lines
-            continue
-
+            decorated.append((revlatest.revision, author))
         decorated.sort(reverse=1)
-        release.authors = [t[1] for t in decorated]
-        # the difference between a released and a not released _Release is
-        # the way the release numbers is obtained. So, when this is a
-        # released, we already have it, but if we don't, we should get de
-        # version/release string using getrelease and then get the first
-        first, release.authors = release.authors[0], release.authors[1:]
-        release.author_name = first.name
-        release.author_email = first.email
-        release.release_revisions = first.revisions
 
-        #release.date = first.revisions[0].date
+        if release.visible:
+            release.authors = [t[1] for t in decorated]
+            firstrel, release.authors = release.authors[0], release.authors[1:]
+            release.author_name = firstrel.name
+            release.author_email = firstrel.email
+            release.release_revisions = firstrel.revisions
+        else:
+            # we don't care about other possible authors in completely
+            # invisible releases
+            firstrev = release.revisions[0]
+            release.author_name = firstrev.author_name
+            release.author_email = firstrev.author_email
+            release.raw_date = firstrev.raw_date
+            release.date = firstrev.date
+
         release.date = latest.date
         release.raw_date = latest.raw_date
-        #release.revision = first.revisions[0].revision
         release.revision = latest.revision
 
         grouped.append(release)

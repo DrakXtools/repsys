@@ -1,3 +1,7 @@
+* 1.6.19.2
+- fixed emptylog message, which was not being shown when needed
+- template: hide the first release when it has only invisible lines
+
 * 1.6.19.1
 - fixed bad url used when using -v in getsrpm
 - the fix for the unreleased commits problem in the previous release was
