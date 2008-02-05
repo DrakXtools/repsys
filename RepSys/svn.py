@@ -125,12 +125,14 @@ class SVN:
     def info(self, path, **kwargs):
         cmd = ["info", path]
         status, output = self._execsvn(local=True, *cmd, **kwargs)
-        if status == 0:
+        if status == 0 and "Not a versioned resource" not in output:
             return output.splitlines()
         return None
 
     def info2(self, *args, **kwargs):
         lines = self.info(*args, **kwargs)
+        if lines is None:
+            return None
         pairs = [[w.strip() for w in line.split(":", 1)] for line in lines]
         info = dict(pairs)
         return info
