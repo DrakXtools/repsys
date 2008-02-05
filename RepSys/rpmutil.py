@@ -33,6 +33,22 @@ def rpm_macros_defs(macros):
     args = " ".join(defs)
     return args
 
+def rev_touched_url(url, rev):
+    svn = SVN()
+    info = svn.info2(url)
+    if info is None:
+        raise Error, "can't fetch svn info about the URL: %s" % url
+    root = info["Repository Root"]
+    urlpath = url[len(root):]
+    touched = False
+    entries = svn.log(root, start=rev, limit=1)
+    entry = entries[0]
+    for change in entry.changed:
+        path = change.get("path")
+        if path and path.startswith(urlpath):
+            touched = True
+    return touched
+
 def get_srpm(pkgdirurl,
              mode = "current",
              targetdirs = None,
@@ -46,7 +62,8 @@ def get_srpm(pkgdirurl,
              submit = False,
              template = None,
              macros = [],
-             verbose = 0):
+             verbose = 0,
+             strict = False):
     svn = SVN()
     tmpdir = tempfile.mktemp()
     topdir = "--define '_topdir %s'" % tmpdir
@@ -66,6 +83,12 @@ def get_srpm(pkgdirurl,
             geturl = os.path.join(pkgdirurl, "current")
         else:
             raise Error, "unsupported get_srpm mode: %s" % mode
+        strict = strict or config.getbool("submit", "strict-revision", False)
+        if strict and not rev_touched_url(geturl, revision):
+            #FIXME would be nice to have the revision number even when
+            # revision is None
+            raise Error, "the revision %s does not change anything "\
+                    "inside %s" % (revision or "HEAD", geturl)
         svn.export(geturl, tmpdir, rev=revision)
         srpmsdir = os.path.join(tmpdir, "SRPMS")
         os.mkdir(srpmsdir)
