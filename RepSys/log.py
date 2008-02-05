@@ -23,17 +23,27 @@ locale.setlocale(locale.LC_ALL, "C")
 default_template = """
 #for $rel in $releases_by_author
 * $rel.date $rel.author_name <$rel.author_email> $rel.version-$rel.release
- ##
- #if not $rel.released
-  (not released yet)
++ Revision: $rel.revision
+## #if not $rel.released
+##+ Status: not released
+## #end if
+ #if not $rel.visible
++ rebuild (emptylog)
  #end if
  #for $rev in $rel.release_revisions
   #for $line in $rev.lines
-  $line
+$line
   #end for
  #end for
 
  #for $author in $rel.authors
+  #if $author.revisions and not $author.revisions[0].lines
+    #continue
+  #end if
+  ##alternatively, one could use:
+  ###if $author.email == "root"
+  ## #continue
+  ###end if
   + $author.name <$author.email>
   #for $rev in $author.revisions
     #for $line in $rev.lines
@@ -298,7 +308,8 @@ def make_release(author=None, revision=None, date=None, lines=None,
 
 
 def dump_file(releases, currentlog=None, template=None):
-    templpath = template or config.get("template", "path", None)
+    templpath = template or config.get("template", "path",
+            "/usr/share/repsys/default.chlog")
     params = {}
     if templpath is None or not os.path.exists(templpath):
         params["source"] = default_template
