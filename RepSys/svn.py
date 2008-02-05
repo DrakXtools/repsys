@@ -34,7 +34,7 @@ class SVN:
                         "Seems ssh-agent or ForwardAgent are not setup, see "
                         "http://wiki.mandriva.com/en/Development/Docs/Contributor_Tricks#SSH_configuration"
                         " for more information." % e)
-            elif "authorization failed":
+            elif "authorization failed" in e.message:
                 raise Error, ("%s\n"
                         "Note that repsys does not support any HTTP "
                         "authenticated access." % e)
