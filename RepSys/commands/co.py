@@ -8,12 +8,18 @@ import sys
 HELP = """\
 Usage: repsys co [OPTIONS] URL [LOCALPATH]
 
+Checkout the package source from the Mandriva repository.
+
+If the 'mirror' option is enabled, the package is obtained from the mirror
+repository.
+
 Options:
     -r REV  Revision to checkout
     -o      Do not use the mirror (use official server)
     -h      Show this message
 
 Examples:
+    repsys co pkgname
     repsys co http://repos/svn/cnc/snapshot/foo
     repsys co http://repos/svn/cnc/snapshot/foo foo-pkg
 """

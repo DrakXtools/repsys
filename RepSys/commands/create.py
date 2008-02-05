@@ -8,11 +8,14 @@ import sys
 HELP = """\
 Usage: repsys create [OPTIONS] URL
 
+Creates the minimal structure of a package in the repository.
+
 Options:
     -h      Show this message
 
 Examples:
-    repsys create http://repos/svn/cnc/snapshot/newpkg
+    repsys create newpkg
+    repsys create svn+ssh://svn.mandriva.com/svn/packages/cooker/newpkg
 """
 
 def parse_options():

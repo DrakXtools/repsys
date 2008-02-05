@@ -12,6 +12,8 @@ import sys
 HELP = """\
 Usage: repsys rpmlog [OPTIONS] REPPKGDIRURL
 
+Prints the RPM changelog of a given package.
+
 Options:
     -r REV   Collect logs from given revision to revision 0
     -n NUM   Output only last NUM entries
@@ -19,7 +21,8 @@ Options:
     -h       Show this message
 
 Examples:
-    repsys rpmlog https://repos/snapshot/python
+    repsys rpmlog python
+    repsys rpmlog http://svn.mandriva.com/svn/packages/cooker/python
 """
 
 def parse_options():

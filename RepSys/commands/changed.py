@@ -8,6 +8,8 @@ import sys
 HELP = """\
 Usage: repsys changed [OPTIONS] URL
 
+Shows if there are pending changes since the last package release.
+
 Options:
     -a      Check all packages in given URL
     -s      Show differences

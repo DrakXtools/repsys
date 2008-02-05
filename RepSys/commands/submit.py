@@ -20,6 +20,14 @@ Usage: repsys submit [OPTIONS] [URL [REVISION]]
 
 Submits the package from URL to the submit host.
 
+The submit host will try to build the package, and upon successful
+completion will 'tag' the package and upload it to the official
+repositories.
+
+The status of the submit can visualized at:
+
+http://kenobi.mandriva.com/bs/output.php
+
 If no URL and revision are specified, the latest changed revision in 
 the package working copy of the current directory will be used.
 
@@ -40,6 +48,7 @@ Examples:
     repsys submit https://repos/svn/mdv/cooker/foo 14800
     repsys submit -r 14800 https://repos/svn/mdv/cooker/foo
     repsys submit -l https://repos
+    repsys submit --define section=main/testing -t 2008.0
 """
 
 def parse_options():

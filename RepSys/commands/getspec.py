@@ -8,12 +8,15 @@ import sys
 HELP = """\
 Usage: repsys getspec [OPTIONS] REPPKGURL
 
+Prints the .spec file of a given package.
+
 Options:
     -t DIR  Use DIR as target for spec file (default is ".")
     -h      Show this message
 
 Examples:
-    repsys getspec http://repos/svn/cnc/snapshot/foo
+    repsys getspec pkgname
+    repsys getspec svn+ssh://svn.mandriva.com/svn/packages/cooker/pkgname
 """
 
 def parse_options():

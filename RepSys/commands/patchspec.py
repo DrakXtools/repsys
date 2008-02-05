@@ -11,6 +11,8 @@ import sys
 HELP = """\
 Usage: repsys patchspec [OPTIONS] REPPKGURL PATCHFILE
 
+It will try to patch a spec file from a given package url.
+
 Options:
     -l LOG  Use LOG as log message
     -h      Show this message

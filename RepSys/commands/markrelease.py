@@ -21,6 +21,11 @@ HELP = """\
 
 Usage: repsys markrelease [OPTIONS] REPPKGURL
 
+This subcommand creates a 'tag' for a given revision of a given package.
+
+The tag will be stored in the directory releases/ inside the package
+structure.
+
 Options:
     -f FILE Try to extract information from given file
     -r REV  Revision which will be used to make the release copy tag

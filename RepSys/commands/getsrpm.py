@@ -16,6 +16,8 @@ import os
 HELP = """\
 Usage: repsys getsrpm [OPTIONS] REPPKGURL
 
+Generates the source RPM (.srpm) file of a given package.
+
 Options:
     -c      Use files in current/ directory (default)
     -p      Use files in pristine/ directory
@@ -30,6 +32,8 @@ Options:
     -h      Show this message
 
 Examples:
+    repsys getsrpm python
+    repsys getsrpm -l python
     repsys getsrpm http://foo.bar/svn/cnc/snapshot/python
     repsys getsrpm -p http://foo.bar/svn/cnc/releases/8cl/python
     repsys getsrpm -r 1001 file:///svn/cnc/snapshot/python

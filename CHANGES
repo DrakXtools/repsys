@@ -16,6 +16,7 @@
 - fixed the use of file:/// URLs when using just the package name
 - don't give the wrong message "invalid command 'CMD'" when this is not
   the case
+- added more help messages in subcommands
 
 * 1.6.19
 - added complement for SILENT: CLOG, which hides everything that does not

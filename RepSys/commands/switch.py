@@ -5,9 +5,10 @@ from RepSys.rpmutil import switch
 HELP = """\
 Usage: repsys switch [URL]
 
-Relocates the working copy to the base location URL. If URL is not
-provided, it will use the option default_parent from repsys.conf as
-default, or, if the current working copy is already based in
+Relocates the working copy to the base location URL.
+
+If URL is not provided, it will use the option default_parent from
+repsys.conf as default, or, if the current working copy is already based in
 default_parent, it will use the location from the mirror option from
 repsys.conf. 
 
