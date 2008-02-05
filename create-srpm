@@ -89,8 +89,11 @@ def parse_options():
                       dest="urlmap", default=False, 
                       help="disable url mapping")
     parser.add_option("--define", action="append")
+    parser.add_option("--list", dest="list_targets", default=False,
+                      action="store_true",
+                      help="list submit targets available")
     opts, args = parser.parse_args()
-    if not args:
+    if not opts.list_targets and not args:
         parser.error("you must supply a package url")
     return opts, args
 
@@ -100,7 +103,12 @@ def main():
     iface = CmdIface()
     opts, args = parse_options()
     try:
-        iface.submit_package(args[0], opts.revision, opts.target, opts.urlmap, opts.define)
+        if opts.list_targets:
+            for target in iface.submit_targets():
+                print target
+        else:
+            iface.submit_package(args[0], opts.revision, opts.target,
+                    opts.urlmap, opts.define)
     except Error, e:
         sys.stderr.write("error: %s\n" % str(e))
         sys.exit(1)

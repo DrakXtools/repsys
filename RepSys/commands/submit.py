@@ -55,7 +55,7 @@ def parse_options():
     parser = OptionParser(help=HELP)
     parser.defaults["revision"] = ""
     parser.add_option("-t", dest="target", default="Cooker")
-    parser.add_option("-l", dest="list", action="store_true")
+    parser.add_option("-l", action="callback", callback=list_targets)
     parser.add_option("-r", dest="revision", type="string", nargs=1)
     parser.add_option("-s", dest="submithost", type="string", nargs=1,
             default=None)
@@ -76,6 +76,16 @@ def parse_options():
     elif not opts.list:
         raise Error, "provide -l or a revision number"
     return opts
+
+def list_targets(option, opt, val, parser):
+    host = config.get("submit", "host")
+    if host is None:
+        raise Error, "no submit host defined in repsys.conf"
+    createsrpm = get_helper("create-srpm")
+    #TODO make it configurable
+    command = "ssh %s %s --list" % (host, createsrpm)
+    execcmd(command, show=True)
+    sys.exit(0)
 
 def submit(pkgdirurl, revision, target, list=0, define=[], submithost=None):
     #if not NINZ:

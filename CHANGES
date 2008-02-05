@@ -15,6 +15,8 @@
   matches the package URL;
 - added boolean configuration option strict-revision in the submit
   section, to allow forcing the use of --strict
+- added option --list in create-srpm to list the available targets
+- make submit -l work on svn+ssh:// targets
 - the fix for the unreleased commits problem in the previous release was
   wrong, really fixed it
 - moved all configuration options that will hardly be changed to
