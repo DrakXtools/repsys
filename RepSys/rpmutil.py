@@ -437,7 +437,7 @@ def sync(dryrun=False):
         if not dryrun:
             svn.add(path, local=True)
 
-def commit(target=".", message=None):
+def commit(target=".", message=None, logfile=None):
     svn = SVN()
     status = svn.status(target, quiet=True)
     if not status:
@@ -453,10 +453,13 @@ def commit(target=".", message=None):
         print "relocated to", newurl
     # we can't use the svn object here because svn --non-interactive option
     # hides VISUAL
-    mopt = ""
+    opts = []
     if message is not None:
-        mopt = "-m \"%s\"" % message
-    os.system("svn ci %s %s" % (mopt, target))
+        opts.append("-m \"%s\"" % message)
+    if logfile is not None:
+        opts.append("-F \"%s\"" % logfile)
+    mopts = " ".join(opts)
+    os.system("svn ci %s %s" % (mopts, target))
     if mirrored:
         print "use \"repsys switch\" in order to switch back to mirror "\
                 "later"

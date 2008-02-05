@@ -8,6 +8,7 @@
   interactivity at all with ssh
 - fixed bad url used when using -v in getsrpm
 - make 'repsys submit' without package name or revision number work again
+- added option -F to repsys ci to set a log message file
 - the fix for the unreleased commits problem in the previous release was
   wrong, really fixed it
 - don't give the wrong message "invalid command 'CMD'" when this is not
