@@ -6,6 +6,7 @@
   to replace the default svn command
 - force svn+ssh:// URLs to be in BatchMode, in order to not have any
   interactivity at all with ssh
+- fixed incompatibility with Python-2.4 on urlparse
 - fixed bad url used when using -v in getsrpm
 - make 'repsys submit' without package name or revision number work again
 - if REPSYS_CONF is set, /etc/repsys.conf and ~/.repsys/config will not be
