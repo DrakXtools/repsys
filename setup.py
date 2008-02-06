@@ -28,8 +28,7 @@ setup(name="repsys",
               "oldfashion.chlog",
               "compatv15.chlog",
               "create-srpm",
-              "rebrand-mdk",
-              "repsys-example.conf"]),
+              "rebrand-mdk"]),
 	      ("/etc/", ["repsys.conf"])]
       )
 
