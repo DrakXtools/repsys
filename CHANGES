@@ -14,6 +14,7 @@
 - if REPSYS_CONF is set, /etc/repsys.conf and ~/.repsys/config will not be
   readed anymore
 - changed the built-in template to the current default.chlog
+- added option -d to repsys sync, to download the missing source files
 - added option -F to repsys ci to set a log message file
 - added option --strict to getsrpm to check if the revision provided
   matches the package URL;

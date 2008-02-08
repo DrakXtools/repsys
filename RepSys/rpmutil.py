@@ -9,6 +9,7 @@ from RepSys.command import default_parent
 import rpm
 import tempfile
 import shutil
+import string
 import glob
 import sys
 import os
@@ -409,7 +410,7 @@ def _getpkgtopdir(basedir=None):
         topdir = ""
     return topdir
 
-def sync(dryrun=False):
+def sync(dryrun=False, download=False):
     svn = SVN()
     topdir = _getpkgtopdir()
     # run svn info because svn st does not complain when topdir is not an
@@ -429,18 +430,34 @@ def sync(dryrun=False):
         spec = rpm.TransactionSet().parseSpec(specpath)
     except rpm.error, e:
         raise Error, "could not load spec file: %s" % e
-    sources = [os.path.basename(name)
-            for name, no, flags in spec.sources()]
-    sourcesst = dict((os.path.basename(path), st)
+    sources = dict((os.path.basename(name), name)
+            for name, no, flags in spec.sources())
+    sourcesst = dict((os.path.basename(path), (path, st))
             for st, path in svn.status(sourcesdir, noignore=True))
     toadd = []
-    for source in sources:
+    for source, url in sources.iteritems():
         sourcepath = os.path.join(sourcesdir, source)
-        if sourcesst.get(source):
+        pst = sourcesst.get(source)
+        if pst:
             if os.path.isfile(sourcepath):
                 toadd.append(sourcepath)
             else:
-                sys.stderr.write("warning: %s not found\n" % sourcepath)
+                sys.stderr.write("warning: %s not found, skipping\n" % sourcepath)
+        elif download and not os.path.isfile(sourcepath):
+            print "%s not found, downloading from %s" % (sourcepath, url)
+            fmt = config.get("global", "download-command",
+                    "wget -c -O '$dest' $url")
+            context = {"dest": sourcepath, "url": url}
+            try:
+                cmd = string.Template(fmt).substitute(context)
+            except KeyError, e:
+                raise Error, "invalid variable %r in download-command "\
+                        "configuration option" % e
+            execcmd(cmd, show=True)
+            if os.path.isfile(sourcepath):
+                toadd.append(sourcepath)
+            else:
+                raise Error, "file not found: %s" % sourcepath
     # rm entries not found in sources and still in svn
     found = os.listdir(sourcesdir)
     toremove = []
