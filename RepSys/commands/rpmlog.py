@@ -53,6 +53,7 @@ def rpmlog(pkgdirurl, revision, size, template, oldlog, usespec, sort):
     if usespec:
         svn = SVN()
         pkgname = RepSysTree.pkgname(pkgdirurl)
+        #FIXME don't hardcode current/, it may already be in the URL
         specurl = os.path.join(pkgdirurl, "current/SPECS", pkgname +
                     ".spec")
         rawspec = svn.cat(specurl, rev=revision)
