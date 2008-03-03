@@ -9,6 +9,10 @@
 - fixed incompatibility with Python-2.4 on urlparse
 - fixed emptylog message, which was not being shown when needed
 - template: hide the first release when it has only invisible lines
+- allow resorting changelog entries through the config option sort in the
+  log section
+- added rpmlog options: -o to append the old changelog, -p to append the
+  changelog found in the spec, and -s to resort all changelog entries
 - fixed bad url used when using -v in getsrpm
 - make 'repsys submit' without package name or revision number work again
 - if REPSYS_CONF is set, /etc/repsys.conf and ~/.repsys/config will not be
