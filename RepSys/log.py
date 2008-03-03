@@ -480,8 +480,11 @@ def _split_changelog(stream):
             except ValueError, e:
                 raise Error, "failed to parse spec changelog: %s" % e
             curlines = [line]
-            current = (date, -count, curlines)
-            count += 1 # used to ensure stable sorting when using tuples
+            current = (date, count, curlines)
+            # count used to ensure stable sorting when changelog entries
+            # have the same date, otherwise it would also compare the
+            # changelog lines
+            count -= 1
         elif current:
             curlines.append(line)
         else:
@@ -490,7 +493,7 @@ def _split_changelog(stream):
         yield current
 
 def sort_changelog(stream):
-    entries = list(_split_changelog(stream))
+    entries = _split_changelog(stream))
     log = StringIO()
     for time, count, elines in sorted(entries, reverse=True):
         log.writelines(elines)
