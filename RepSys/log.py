@@ -493,37 +493,32 @@ def _split_changelog(stream):
         yield current
 
 def sort_changelog(stream):
-    entries = _split_changelog(stream))
+    entries = _split_changelog(stream)
     log = StringIO()
     for time, count, elines in sorted(entries, reverse=True):
         log.writelines(elines)
     return log
 
-def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
-        submit=False, sort=False, template=None, macros=[], exported=None):
-    oldspec = StringIO()
-    newlog = StringIO()
-    oldlog = StringIO()
+def split_spec_changelog(stream):
+    chlog = StringIO()
+    spec = StringIO()
     found = 0
-    
-    # Strip old changelogs
-    for line in open(specfile):
+    for line in stream:
         if line.startswith("%changelog"):
             found = 1
         elif not found:
-            oldspec.write(line)
+            spec.write(line)
         elif found:
-            oldlog.write(line)
+            chlog.write(line)
         elif line.startswith("%"):
             found = 0
-            oldspec.write(line)
+            spec.write(line)
+    spec.seek(0)
+    chlog.seek(0)
+    return spec, chlog
 
-    rawsvnlog = svn2rpm(pkgdirurl, rev=rev, size=size, submit=submit,
-                        template=template, macros=macros,
-                        exported=exported)
-    newlog.write(rawsvnlog)
-
-    # Merge old changelog, if available
+def get_old_log(pkgdirurl):
+    chlog = StringIO()
     oldurl = config.get("log", "oldurl")
     if oldurl:
         svn = SVN()
@@ -541,31 +536,74 @@ def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
                 logfile = os.path.join(tmpdir, "log")
                 if os.path.isfile(logfile):
                     file = open(logfile)
-                    newlog.write("\n") # TODO needed?
+                    chlog.write("\n") # TODO needed?
                     log = file.read()
                     log = escape_macros(log)
-                    newlog.write(log)
+                    chlog.write(log)
                     file.close()
         finally:
             if os.path.isdir(tmpdir):
                 shutil.rmtree(tmpdir)
+    chlog.seek(0)
+    return chlog
 
-    if sort or config.getbool("log", "sort", False):
-        if config.getbool("log", "merge-spec", False):
-            oldlog.seek(0)
-            newlog.writelines(oldlog)
+def get_changelog(pkgdirurl, another=None, svn=True, rev=None, size=None,
+        submit=False, sort=False, template=None, macros=[], exported=None,
+        oldlog=False):
+    """Generates the changelog for a given package URL
+
+    @another:   a stream with the contents of a changelog to be merged with
+                the one generated
+    @svn:       enable changelog from svn
+    @rev:       generate the changelog with the changes up to the given
+                revision
+    @size:      the number of revisions to be used (as in svn log --limit)
+    @submit:    defines whether the latest unreleased log entries should have
+                the version parsed from the spec file
+    @sort:      should changelog entries be reparsed and sorted after appending
+                the oldlog?
+    @template:  the path to the cheetah template used to generate the
+                changelog from svn
+    @macros:    a list of tuples containing macros to be defined when
+                parsing the version in the changelog
+    @exported:  the path of a directory containing an already existing
+                checkout of the package, so that the spec file can be
+                parsed from there
+    @oldlog:    if set it will try to append the old changelog file defined
+                in oldurl in repsys.conf
+    """
+    newlog = StringIO()
+    if svn:
+        rawsvnlog = svn2rpm(pkgdirurl, rev=rev, size=size, submit=submit,
+                template=template, macros=macros, exported=exported)
+        newlog.write(rawsvnlog)
+    if another:
+        newlog.writelines(another)
+    if oldlog:
+        newlog.writelines(get_old_log(pkgdirurl))
+    if sort:
         newlog.seek(0)
         newlog = sort_changelog(newlog)
-
-    # Write new specfile
     newlog.seek(0)
-    oldspec.seek(0)
-    file = open(specfile, "w")
-    file.writelines(oldspec)
-    file.write("\n\n%changelog\n")
-    file.writelines(newlog)
-    file.close()
+    return newlog
 
+def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
+        submit=False, sort=False, template=None, macros=[], exported=None):
+    fi = open(specfile)
+    spec, oldchlog = split_spec_changelog(fi)
+    fi.close()
+    another = None
+    if config.getbool("log", "merge-spec", False):
+        another = oldchlog
+    sort = sort or config.getbool("log", "sort", False)
+    chlog = get_changelog(pkgdirurl, another=another, rev=rev, size=size,
+                submit=submit, sort=sort, template=template, macros=macros,
+                exported=exported, oldlog=True)
+    fo = open(specfile, "w")
+    fo.writelines(spec)
+    fo.write("\n\n%changelog\n")
+    fo.writelines(chlog)
+    fo.close()
 
 if __name__ == "__main__":
     l = svn2rpm(sys.argv[1])
