@@ -8,6 +8,8 @@ try:
 except ImportError:
     raise Error, "repsys requires the package python-cheetah"
 
+from cStringIO import StringIO
+
 import sys
 import os
 import re
@@ -464,11 +466,41 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False,
     data = dump_file(releases[::-1], currentlog=currentlog, template=template)
     return data
 
+def _split_changelog(stream):
+    current = None
+    count = 0
+    for line in stream:
+        if line.startswith("*"):
+            if current:
+                yield current
+            fields = line.split()
+            rawdate = " ".join(fields[:5])
+            try:
+                date = time.strptime(rawdate, "* %a %b %d %Y")
+            except ValueError, e:
+                raise Error, "failed to parse spec changelog: %s" % e
+            curlines = [line]
+            current = (date, -count, curlines)
+            count += 1 # used to ensure stable sorting when using tuples
+        elif current:
+            curlines.append(line)
+        else:
+            pass # not good, but ignore
+    if current:
+        yield current
 
+def sort_changelog(stream):
+    entries = list(_split_changelog(stream))
+    log = StringIO()
+    for time, count, elines in sorted(entries, reverse=True):
+        log.writelines(elines)
+    return log
 
 def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
-        submit=False, template=None, macros=[], exported=None):
-    newlines = []
+        submit=False, sort=False, template=None, macros=[], exported=None):
+    oldspec = StringIO()
+    newlog = StringIO()
+    oldlog = StringIO()
     found = 0
     
     # Strip old changelogs
@@ -476,15 +508,17 @@ def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
         if line.startswith("%changelog"):
             found = 1
         elif not found:
-            newlines.append(line)
+            oldspec.write(line)
+        elif found:
+            oldlog.write(line)
         elif line.startswith("%"):
             found = 0
-            newlines.append(line)
+            oldspec.write(line)
 
-    # Create new changelog
-    newlines.append("\n\n%changelog\n")
-    newlines.append(svn2rpm(pkgdirurl, rev=rev, size=size, submit=submit,
-        template=template, macros=macros, exported=exported))
+    rawsvnlog = svn2rpm(pkgdirurl, rev=rev, size=size, submit=submit,
+                        template=template, macros=macros,
+                        exported=exported)
+    newlog.write(rawsvnlog)
 
     # Merge old changelog, if available
     oldurl = config.get("log", "oldurl")
@@ -504,18 +538,29 @@ def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
                 logfile = os.path.join(tmpdir, "log")
                 if os.path.isfile(logfile):
                     file = open(logfile)
-                    newlines.append("\n")
+                    newlog.write("\n") # TODO needed?
                     log = file.read()
                     log = escape_macros(log)
-                    newlines.append(log)
+                    newlog.write(log)
                     file.close()
         finally:
             if os.path.isdir(tmpdir):
                 shutil.rmtree(tmpdir)
 
+    if sort or config.getbool("log", "sort", False):
+        if config.getbool("log", "merge-spec", False):
+            oldlog.seek(0)
+            newlog.writelines(oldlog)
+        newlog.seek(0)
+        newlog = sort_changelog(newlog)
+
     # Write new specfile
+    newlog.seek(0)
+    oldspec.seek(0)
     file = open(specfile, "w")
-    file.write("".join(newlines))
+    file.writelines(oldspec)
+    file.write("\n\n%changelog\n")
+    file.writelines(newlog)
     file.close()
 
 
