@@ -469,10 +469,18 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False,
 def _split_changelog(stream):
     current = None
     count = 0
+    def finish(entry):
+        lines = entry[2]
+        # strip newlines at the end
+        for i in xrange(len(lines)-1, -1, -1):
+            if lines[i] != "\n":
+                break
+            del lines[i]
+        return entry
     for line in stream:
         if line.startswith("*"):
             if current:
-                yield current
+                yield finish(current)
             fields = line.split()
             rawdate = " ".join(fields[:5])
             try:
@@ -490,13 +498,14 @@ def _split_changelog(stream):
         else:
             pass # not good, but ignore
     if current:
-        yield current
+        yield finish(current)
 
 def sort_changelog(stream):
     entries = _split_changelog(stream)
     log = StringIO()
     for time, count, elines in sorted(entries, reverse=True):
         log.writelines(elines)
+        log.write("\n")
     return log
 
 def split_spec_changelog(stream):
