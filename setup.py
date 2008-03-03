@@ -29,7 +29,8 @@ setup(name="repsys",
               "compatv15.chlog",
               "create-srpm",
               "rebrand-mdk"]),
-	      ("/etc/", ["repsys.conf"])]
+	      ("/etc/", ["repsys.conf"]),
+          ("share/man/man8/", ["repsys.8"])]
       )
 
 # vim:ts=4:sw=4:et

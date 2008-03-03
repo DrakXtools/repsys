@@ -9,6 +9,7 @@
 - fixed incompatibility with Python-2.4 on urlparse
 - fixed emptylog message, which was not being shown when needed
 - template: hide the first release when it has only invisible lines
+- added initial man page
 - allow resorting changelog entries through the config option sort in the
   log section
 - added rpmlog options: -o to append the old changelog, -p to append the
