@@ -13,6 +13,9 @@
 - make 'repsys submit' without package name or revision number work again
 - if REPSYS_CONF is set, /etc/repsys.conf and ~/.repsys/config will not be
   readed anymore
+- sort the final changelog by enabling the option sort in the log section
+- merge the changelog found in the spec by enabling the option merge-spec
+  in the log section
 - changed the built-in template to the current default.chlog
 - added option -d to repsys sync, to download the missing source files
 - added option -F to repsys ci to set a log message file
