@@ -37,6 +37,7 @@
 - moved all configuration options that will hardly be changed to
   repsys-example.conf; we now have a shorter repsys.conf
 - fixed the use of file:/// URLs when using just the package name
+- allow using submit with package URLs having usernames
 - don't give the wrong message "invalid command 'CMD'" when this is not
   the case
 - added more help messages in subcommands
