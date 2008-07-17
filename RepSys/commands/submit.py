@@ -98,11 +98,11 @@ def parse_options():
         args = expanded
     opts.urls = [layout.package_url(nameurl, distro=opts.distro, mirrored=False)
             for nameurl in args]
-    del opts.distro
-    if opts.target is None:
+    if opts.target is None and distro is None:
         target = layout.distro_branch(opts.urls[0]) or DEFAULT_TARGET
         print "Implicit target: %s" % target
         opts.target = target
+    del opts.distro
     return opts
 
 def expand_group(group):
