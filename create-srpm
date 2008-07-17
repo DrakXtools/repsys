@@ -9,8 +9,17 @@ import os
 import pwd
 import optparse
 import subprocess
+import urlparse
+import urllib
 
 class CmdError(Error): pass
+
+def strip_username(url):
+    parsed = list(urlparse.urlparse(url))
+    userpwd, hostport = urllib.splituser(parsed[1])
+    parsed[1] = hostport
+    newurl = urlparse.urlunparse(parsed)
+    return newurl
 
 class CmdIface:
     def author_email(self, author):
@@ -33,6 +42,7 @@ class CmdIface:
             else:
                 raise CmdError, "target not found"
             for url in urls:
+                url = strip_username(url)
                 for allowed in target.allowed:
                     if url.startswith(allowed):
                         break
