@@ -117,9 +117,10 @@ def get_srpm(pkgdirurl,
             packager = " --define 'packager %s'" % packager
 
         defs = rpm_macros_defs(macros)
-        execcmd("rpm -bs --nodeps %s %s %s %s %s %s %s %s %s %s" %
-            (topdir, builddir, rpmdir, sourcedir, specdir, 
-             srcrpmdir, patchdir, packager, spec, defs))
+        sourcecmd = config.get("helper", "rpmbuild", "rpmbuild")
+        execcmd("%s -bs --nodeps %s %s %s %s %s %s %s %s %s %s" %
+            (sourcecmd, topdir, builddir, rpmdir, sourcedir, specdir,
+                srcrpmdir, patchdir, packager, spec, defs))
 
         # copy the generated SRPMs to their target locations
         targetsrpms = []
