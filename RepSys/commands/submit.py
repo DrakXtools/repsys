@@ -49,7 +49,7 @@ Examples:
     repsys submit foo@14800 bar baz@11001
     repsys submit https://repos/svn/mdv/cooker/foo
     repsys submit -l https://repos
-    repsys submit -t 2008.1 my-python-packages@11011
+    repsys submit 2008.1/my-python-packages@11011
     repsys submit --define section=main/testing -t 2008.1
 """
 
