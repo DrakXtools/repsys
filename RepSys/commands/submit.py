@@ -38,6 +38,7 @@ Options:
     -s         The host in which the package URL will be submitted
                (defaults to the host in the URL)
     -h         Show this message
+    --distro   The distribution branch where the packages come from
     --define   Defines one variable to be used by the submit scripts 
                in the submit host
 
@@ -61,6 +62,8 @@ def parse_options():
     parser.add_option("-l", action="callback", callback=list_targets)
     parser.add_option("-r", dest="revision", type="string", nargs=1)
     parser.add_option("-s", dest="submithost", type="string", nargs=1,
+            default=None)
+    parser.add_option("--distro", dest="distro", type="string",
             default=None)
     parser.add_option("--define", action="append", default=[])
     opts, args = parser.parse_args()
@@ -93,7 +96,9 @@ def parse_options():
     if expanded != args:
         print "Submitting: %s" % " ".join(expanded)
         args = expanded
-    opts.urls = [layout.package_url(nameurl, mirrored=False) for nameurl in args]
+    opts.urls = [layout.package_url(nameurl, distro=opts.distro, mirrored=False)
+            for nameurl in args]
+    del opts.distro
     if opts.target is None:
         target = layout.distro_branch(opts.urls[0]) or DEFAULT_TARGET
         print "Implicit target: %s" % target
