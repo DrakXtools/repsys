@@ -10,6 +10,8 @@
 - fixed emptylog message, which was not being shown when needed
 - distributions can be specified by using <distro>/<package> in all
   commands
+- the user can define groups of packages to be submitted in the section
+  "submit-groups"
 - template: hide the first release when it has only invisible lines
 - added initial man page
 - allow resorting changelog entries through the config option sort in the
