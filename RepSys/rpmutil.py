@@ -545,6 +545,7 @@ def get_submit_info(path):
     if len(toks) < 2 or toks[-1] != "current":
         raise Error, "unexpected URL received from 'svn info'"
     name = toks[-2]
+    url = "/".join(toks[:-1])
 
     # Finally, guess revision.
     max = -1
@@ -563,6 +564,6 @@ def get_submit_info(path):
     if max == -1:
         raise Error, "revision tag not found in 'svn info' output"
     
-    return name, max
+    return name, url, max
 
 # vim:et:ts=4:sw=4
