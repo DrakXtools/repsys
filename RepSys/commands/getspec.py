@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from RepSys import Error
 from RepSys.command import *
+from RepSys.layout import package_url
 from RepSys.rpmutil import get_spec
 import getopt
 import sys
@@ -12,6 +13,7 @@ Prints the .spec file of a given package.
 
 Options:
     -t DIR  Use DIR as target for spec file (default is ".")
+    -M      Do not use the mirror (use the main repository)
     -h      Show this message
 
 Examples:
@@ -25,7 +27,7 @@ def parse_options():
     opts, args = parser.parse_args()
     if len(args) != 1:
         raise Error, "invalid arguments"
-    opts.pkgdirurl = default_parent(args[0])
+    opts.pkgdirurl = package_url(args[0])
     return opts
 
 def main():

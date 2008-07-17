@@ -8,12 +8,15 @@
   interactivity at all with ssh
 - fixed incompatibility with Python-2.4 on urlparse
 - fixed emptylog message, which was not being shown when needed
+- distributions can be specified by using <distro>/<package> in all
+  commands
 - template: hide the first release when it has only invisible lines
 - added initial man page
 - allow resorting changelog entries through the config option sort in the
   log section
 - added rpmlog options: -o to append the old changelog, -p to append the
   changelog found in the spec, and -s to resort all changelog entries
+- rpmlog, getsrpm, getspec and changed will use the mirror if enabled
 - don't hide authors with only the first revision SILENTed (#41117)
 - allow submitting many packages at once (#28352)
 - package revisions in submit are now specified with name@nnn

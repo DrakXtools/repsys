@@ -7,7 +7,7 @@ repsys \- Package souces repository management tool
 .SH "DESCRIPTION"
 \fBrepsys\fP is the tool used to manage RPM packages in a subversion repository. It is used to create, tag releases, generate .src.rpm, generate changelog, and request new package releases for build. It mostly acts as a interface to svn(1) commands and small task scripts run on the build system side over ssh(1).
 
-Most of the \fBrepsys\fP commands operate on a given package URL, these URLs can be omitted when the configuration option \fBdefault_parent\fP is set.
+Most of the \fBrepsys\fP commands operate on a given package URL, these URLs can be omitted when the configuration option \fBrepository\fP is set.
 
 Detailed help on commands is available running \fBrepsys <command> \-\-help\fP.
 .SH "BASIC USAGE"
@@ -24,6 +24,8 @@ Users that don't have an ssh account in the default repository URL can set the o
 .PP
 .IP "\fBrepsys co foo\fP"
 Obtains a working copy of the package foo.
+.IP "\fBrepsys co 2009.0/mutt\fP"
+Obtains a working copy of the package mutt of from the 2009.0 branch.
 .IP "\fBrepsys ci\fP"
 Commits pending changes in the working copy.
 .IP "\fBrepsys submit foo \-r 12345\fP"
@@ -111,10 +113,12 @@ The main configuration file is \fB/etc/repsys.conf\fP, it is in the .ini format.
 If existing, the file ~/.repsys/config is also loaded.
 .SS "[global] section"
 .PP
+.IP "\fBrepository = URL\fP"
+Contains the base URL used to access packages in the svn repository when only package names are used in repsys commands. For example, if \fBrepsys co trafshow\fP is run and repository is http://host/svn/, the URL http://host/svn/cooker/trafshow will be used ("cooker" is the default branch).
 .IP "\fBdefault_parent = URL\fP"
-Contains the base URL used to access packages in the svn repository when only package names are used in commands. For example, if \fBrepsys co trafshow\fP is run and default_parent is http://host/svn/cooker/, the URL http://host/svn/cooker/trafshow will be used.
-.IP "\fBmirror = URL\fP"
-The URL of an alternative and read\-only repository to be used when checking out packages. \fBrepsys ci\fP will automatically relocate to default_parent when comitting.
+Points to the base URL of the development branch of the svn repository. This option is deprecated as it has been replaced by "repository".
+.IP "\fBmirror = URL\fP" 
+The URL of an alternative and read\-only repository to be used when checking out packages. \fBrepsys ci\fP will automatically relocate to "repository" when comitting.
 .IP "\fBurl\-map = MATCH\-REGEXP REPLACE\-EXPR\fP"
 This option is used on server-side to remap remote URLs brought by the user when running \fBrepsys submit\fP to local (and probably faster) URLs. \fBMATCH\-REGEXP\fP is a Python regular expression matching the components that must be reused in the local URL. \fbREPLACE\-EXPR\fP is a replace expression that should expand in the final URL. Example: \fBsvn\+ssh://svn\.mandriva\.com/(.*) file:///\1\fP
 .IP "\fBtempdir = PATH\fP"
@@ -125,6 +129,10 @@ Command used to download generic remote URLs, it accepts the variables \fB$url\f
 The base command used to execute svn(1). Runs through system(3).
 .IP "\fBverbose = yes/no\fP"
 Increase the verbosity of repsys output, printing commands being run and complete traceback when unhanlded errors happen.
+.IP "\fBtrunk-dir\fP"
+Points to the default branch of the distro used in commands that do not have their branch or URL specified.
+.IP "\fBbranches-dir\fP"
+The directory inside the repository which contains all the branches of the distro. It is used to build the URL of packages referred using the branch notation BRANCH/PACKAGE, as in \fBrepsys co 2009.0/mutt\fP.
 .SS "[submit] section"
 .IP "\fBhost = HOST\fP"
 Defines the default host in which \fBrepsys submit\fP will run the submit helper.

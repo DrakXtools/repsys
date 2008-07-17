@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from RepSys import Error, plugins
+from RepSys import Error, plugins, config
 from RepSys.command import *
 import getopt
 import sys
@@ -50,8 +50,12 @@ def parse_options():
     parser.add_option("--help-plugins", action="callback", callback=plugin_help)
     parser.add_option("--help-plugin", type="string", dest="__ignore",
             action="callback", callback=plugin_help)
+    parser.add_option("--no-mirror", "-M", action="store_false",
+            dest="_mirror", default=True)
     opts, args = parser.parse_args()
+    config.set("global", "use-mirror", opts._mirror and "yes" or "no")
     del opts.__ignore
+    del opts._mirror
     if len(args) < 1:
         parser.print_help(sys.stderr)
         sys.exit(1)

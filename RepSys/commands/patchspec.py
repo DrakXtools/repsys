@@ -5,6 +5,7 @@
 from RepSys import Error
 from RepSys.rpmutil import patch_spec
 from RepSys.command import *
+from RepSys.layout import package_url
 import getopt
 import sys
 
@@ -27,7 +28,7 @@ def parse_options():
     opts, args = parser.parse_args()
     if len(args) != 2:
         raise Error, "invalid arguments"
-    opts.pkgdirurl = default_parent(args[0])
+    opts.pkgdirurl = package_url(args[0], mirrored=False)
     opts.patchfile = args[1]
     return opts
 

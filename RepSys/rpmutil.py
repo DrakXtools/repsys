@@ -1,6 +1,6 @@
 #!/usr/bin/python
-from RepSys import Error, config, RepSysTree
-from RepSys import mirror
+from RepSys import Error, config
+from RepSys import mirror, layout
 from RepSys.svn import SVN
 from RepSys.simplerpm import SRPM
 from RepSys.log import specfile_svn2rpm
@@ -19,7 +19,7 @@ def get_spec(pkgdirurl, targetdir=".", submit=False):
     svn = SVN()
     tmpdir = tempfile.mktemp()
     try:
-        geturl = "/".join([pkgdirurl, "current", "SPECS"])
+        geturl = layout.checkout_url(pkgdirurl, append_path="SPECS")
         svn.export("'%s'" % geturl, tmpdir)
         speclist = glob.glob(os.path.join(tmpdir, "*.spec"))
         if not speclist:
@@ -52,51 +52,6 @@ def rev_touched_url(url, rev):
             touched = True
     return touched
 
-def svn_url_rev(url, retrieve=True):
-    """Get the revision from a given URL
-
-    If the URL contains an explicit revision number (URL@REV), just use it
-    without even checking if the revision really exists.
-
-    The parameter retrieve defines whether it must ask the SVN server for
-    the revision number or not when it is not found in the URL.
-    """
-    parsed = urlparse.urlparse(url)
-    path = os.path.normpath(parsed[2])
-    dirs = path.rsplit("/", 1)
-    lastname = dirs[-1]
-    index = lastname.rfind("@")
-    rev = None
-    if index != -1:
-        rawrev = lastname[index+1:]
-        if rawrev:
-            try:
-                rev = int(rawrev)
-                if rev < 0:
-                    raise ValueError
-            except ValueError:
-                raise Error, "invalid revision specification on URL: %s" % url
-    if rev is None and retrieve:
-        # if no revspec was found, ask the server
-        svn = SVN()
-        rev = svn.revision(url)
-    return rev
-
-def strip_url_rev(url):
-    """Removes the @REV from a string in the URL@REV scheme"""
-    parsed = list(urlparse.urlparse(url))
-    path = os.path.normpath(parsed[2])
-    dirs = path.rsplit("/", 1)
-    name = lastname = dirs[-1]
-    try:
-        index = lastname.rindex("@")
-    except ValueError:
-        pass
-    else:
-        name = lastname[:index]
-    parsed[2] = os.path.join(dirs[0], name)
-    return urlparse.urlunparse(parsed)
-
 def get_srpm(pkgdirurl,
              mode = "current",
              targetdirs = None,
@@ -121,15 +76,16 @@ def get_srpm(pkgdirurl,
     specdir = "--define '_specdir %s/%s'" % (tmpdir, "SPECS")
     srcrpmdir = "--define '_srcrpmdir %s/%s'" % (tmpdir, "SRPMS")
     patchdir = "--define '_patchdir %s/%s'" % (tmpdir, "SOURCES")
+
     try:
         if mode == "version":
-            geturl = os.path.join(pkgdirurl, "releases",
-                                  version, release)
+            geturl = layout.checkout_url(pkgdirurl, version=version,
+                    release=release)
         elif mode == "pristine":
-            geturl = os.path.join(pkgdirurl, "pristine")
+            geturl = layout.checkout_url(pkgdirurl, pristine=True)
         elif mode == "current" or mode == "revision":
             #FIXME we should handle revisions specified using @REV
-            geturl = os.path.join(pkgdirurl, "current")
+            geturl = layout.checkout_url(pkgdirurl)
         else:
             raise Error, "unsupported get_srpm mode: %s" % mode
         strict = strict or config.getbool("submit", "strict-revision", False)
@@ -138,6 +94,7 @@ def get_srpm(pkgdirurl,
             # revision is None
             raise Error, "the revision %s does not change anything "\
                     "inside %s" % (revision or "HEAD", geturl)
+        mirror.info(geturl)
         svn.export(geturl, tmpdir, rev=revision)
         srpmsdir = os.path.join(tmpdir, "SRPMS")
         os.mkdir(srpmsdir)
@@ -168,7 +125,7 @@ def get_srpm(pkgdirurl,
         targetsrpms = []
         urlrev = None
         if revname:
-            urlrev = revision or svn_url_rev(geturl)
+            urlrev = revision or layout.get_url_revision(geturl)
         if not targetdirs:
             targetdirs = (".",)
         srpms = glob.glob(os.path.join(srpmsdir, "*.src.rpm"))
@@ -194,10 +151,11 @@ def get_srpm(pkgdirurl,
             shutil.rmtree(tmpdir)
 
 def patch_spec(pkgdirurl, patchfile, log=""):
+    #FIXME use get_spec
     svn = SVN()
     tmpdir = tempfile.mktemp()
     try:
-        geturl = "/".join([pkgdirurl, "current", "SPECS"])
+        geturl = layout.checkout_url(pkgdirurl, append_path="SPECS")
         svn.checkout(geturl, tmpdir)
         speclist = glob.glob(os.path.join(tmpdir, "*.spec"))
         if not speclist:
@@ -301,10 +259,10 @@ def put_srpm(pkgdirurl, srpmfile, appendname=0, log=""):
             shutil.rmtree(tmpdir)
 
     # Do revision and pristine tag copies
-    pristineurl = os.path.join(pkgdirurl, "pristine")
+    pristineurl = layout.checkout_url(pkgdirurl, pristine=True)
     svn.remove(pristineurl, noerror=1,
                log="Removing previous pristine/ directory.")
-    currenturl = os.path.join(pkgdirurl, "current")
+    currenturl = layout.checkout_url(pkgdirurl)
     svn.copy(currenturl, pristineurl,
              log="Copying release %s-%s to pristine/ directory." %
                  (version, srpm.release))
@@ -316,7 +274,7 @@ def create_package(pkgdirurl, log="", verbose=0):
     svn = SVN()
     tmpdir = tempfile.mktemp()
     try:
-        basename = RepSysTree.pkgname(pkgdirurl)
+        basename = layout.package_name(pkgdirurl)
         if verbose:
             print "Creating package directory...",
         sys.stdout.flush()
@@ -364,10 +322,10 @@ def mark_release(pkgdirurl, version, release, revision):
               log="Created releases directory.")
     svn.mkdir(versionurl, noerror=1,
               log="Created directory for version %s." % version)
-    pristineurl = os.path.join(pkgdirurl, "pristine")
+    pristineurl = layout.checkout_url(pkgdirurl, pristine=True)
     svn.remove(pristineurl, noerror=1,
                log="Removing previous pristine/ directory.")
-    currenturl = os.path.join(pkgdirurl, "current")
+    currenturl = layout.checkout_url(pkgdirurl)
     svn.copy(currenturl, pristineurl,
              log="Copying release %s-%s to pristine/ directory." %
                  (version, release))
@@ -397,8 +355,8 @@ def check_changed(pkgdirurl, all=0, show=0, verbose=0):
     nocurrent = []
     for package in packages:
         pkgdirurl = os.path.join(baseurl, package)
-        current = os.path.join(pkgdirurl, "current")
-        pristine = os.path.join(pkgdirurl, "pristine")
+        current = layout.checkout_url(pkgdirurl)
+        pristine = layout.checkout_url(pkgdirurl, pristine=True)
         if verbose:
             print "Checking package %s..." % package,
             sys.stdout.flush()
@@ -435,17 +393,14 @@ def check_changed(pkgdirurl, all=0, show=0, verbose=0):
             "nocurrent": nocurrent,
             "nopristine": nopristine}
 
-def checkout(pkgdirurl, path=None, revision=None, use_mirror=True):
+def checkout(pkgdirurl, path=None, revision=None, branch=None,
+        distro=None):
     o_pkgdirurl = pkgdirurl
-    pkgdirurl = default_parent(o_pkgdirurl)
-    current = os.path.join(pkgdirurl, "current")
+    pkgdirurl = layout.package_url(o_pkgdirurl, distro=distro)
+    current = layout.checkout_url(pkgdirurl, branch=branch)
     if path is None:
-        _, path = os.path.split(pkgdirurl)
-    # if default_parent changed the URL, we can use mirrors because the
-    # user did not provided complete package URL
-    if (o_pkgdirurl != pkgdirurl) and use_mirror and mirror.enabled():
-        current = mirror.checkout_url(current)
-        print "checking out from mirror", current
+        path = layout.package_name(pkgdirurl)
+    mirror.info(current)
     svn = SVN()
     svn.checkout(current, path, rev=revision, show=1)
 
@@ -537,7 +492,7 @@ def commit(target=".", message=None, logfile=None):
     url = info.get("URL")
     if url is None:
         raise Error, "working copy URL not provided by svn info"
-    mirrored = mirror.enabled(url)
+    mirrored = mirror.using_on(url)
     if mirrored:
         newurl = mirror.switchto_parent(svn, url, target)
         print "relocated to", newurl

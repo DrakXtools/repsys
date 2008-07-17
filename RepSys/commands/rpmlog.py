@@ -3,7 +3,7 @@
 # This program will convert the output of "svn log" to be suitable
 # for usage in an rpm %changelog session.
 #
-from RepSys import Error, RepSysTree
+from RepSys import Error, layout
 from RepSys.command import *
 from RepSys.svn import SVN
 from RepSys.log import get_changelog, split_spec_changelog
@@ -24,6 +24,7 @@ Options:
     -o       Append old package changelog
     -p       Append changelog found in .spec file
     -s       Sort changelog entries, even from the old log
+    -M       Do not use the mirror (use the main repository)
     -h       Show this message
 
 Examples:
@@ -45,17 +46,14 @@ def parse_options():
     opts, args = parser.parse_args()
     if len(args) != 1:
         raise Error, "invalid arguments"
-    opts.pkgdirurl = default_parent(args[0])
+    opts.pkgdirurl = layout.package_url(args[0])
     return opts
 
 def rpmlog(pkgdirurl, revision, size, template, oldlog, usespec, sort):
     another = None
     if usespec:
         svn = SVN()
-        pkgname = RepSysTree.pkgname(pkgdirurl)
-        #FIXME don't hardcode current/, it may already be in the URL
-        specurl = os.path.join(pkgdirurl, "current/SPECS", pkgname +
-                    ".spec")
+        specurl = layout.package_spec_url(pkgdirurl)
         rawspec = svn.cat(specurl, rev=revision)
         spec, another = split_spec_changelog(StringIO(rawspec))
     newlog = get_changelog(pkgdirurl, another=another, rev=revision,

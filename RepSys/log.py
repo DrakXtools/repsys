@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from RepSys import Error, config, RepSysTree
+from RepSys import Error, config, layout
 from RepSys.svn import SVN
 from RepSys.util import execcmd
 
@@ -400,8 +400,8 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False,
     concat = config.get("log", "concat", "").split()
     revoffset = get_revision_offset()
     svn = SVN()
-    pkgreleasesurl = os.path.join(pkgdirurl, "releases")
-    pkgcurrenturl = os.path.join(pkgdirurl, "current")
+    pkgreleasesurl = layout.checkout_url(pkgdirurl, releases=True)
+    pkgcurrenturl = layout.checkout_url(pkgdirurl)
     releaseslog = svn.log(pkgreleasesurl, noerror=1)
     currentlog = svn.log(pkgcurrenturl, limit=size, start=rev,
             end=revoffset)
@@ -535,7 +535,7 @@ def get_old_log(pkgdirurl):
         svn = SVN()
         tmpdir = tempfile.mktemp()
         try:
-            pkgname = RepSysTree.pkgname(pkgdirurl)
+            pkgname = layout.package_name(pkgdirurl)
             pkgoldurl = os.path.join(oldurl, pkgname)
             try:
                 # we're using HEAD here because fixes in misc/ (oldurl) may

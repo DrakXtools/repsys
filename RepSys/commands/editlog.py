@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from RepSys import Error
 from RepSys.command import *
+from RepSys.layout import package_url
 from RepSys.svn import SVN
 import re
 
@@ -24,7 +25,7 @@ def parse_options():
         pkgdirurl, revision = "", args[0]
     else:
         raise Error, "invalid arguments"
-    opts.pkgdirurl = default_parent(pkgdirurl)
+    opts.pkgdirurl = package_url(pkgdirurl, mirrored=False)
     opts.revision = re.compile(r".*?(\d+).*").sub(r"\1", revision)
     return opts
 

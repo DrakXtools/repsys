@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from RepSys import Error
 from RepSys.command import *
+from RepSys.layout import package_url
 from RepSys.rpmutil import create_package
 import getopt
 import sys
@@ -23,7 +24,7 @@ def parse_options():
     opts, args = parser.parse_args()
     if len(args) != 1:
         raise Error, "invalid arguments"
-    opts.pkgdirurl = default_parent(args[0])
+    opts.pkgdirurl = package_url(args[0], mirrored=False)
     opts.verbose = 1 # Unconfigurable
     return opts
 

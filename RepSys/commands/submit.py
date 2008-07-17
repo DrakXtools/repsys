@@ -1,7 +1,8 @@
 #!/usr/bin/python
 from RepSys import Error, config
 from RepSys.command import *
-from RepSys.rpmutil import get_spec, get_submit_info, svn_url_rev
+from RepSys.layout import package_url, distro_branch
+from RepSys.rpmutil import get_spec, get_submit_info
 from RepSys.util import get_auth, execcmd, get_helper
 import urllib
 import getopt
@@ -41,16 +42,19 @@ Options:
 Examples:
     repsys submit
     repsys submit foo
+    repsys submit 2009.1/foo
     repsys submit foo@14800 bar baz@11001
     repsys submit https://repos/svn/mdv/cooker/foo
     repsys submit -l https://repos
     repsys submit --define section=main/testing -t 2008.1
 """
 
+DEFAULT_TARGET = "Cooker"
+
 def parse_options():
     parser = OptionParser(help=HELP)
     parser.defaults["revision"] = None
-    parser.add_option("-t", dest="target", default="Cooker")
+    parser.add_option("-t", dest="target", default=None)
     parser.add_option("-l", action="callback", callback=list_targets)
     parser.add_option("-r", dest="revision", type="string", nargs=1)
     parser.add_option("-s", dest="submithost", type="string", nargs=1,
@@ -79,7 +83,11 @@ def parse_options():
         else:
             raise Error, "the format <name> <revision> is deprecated, "\
                     "use <name>@<revision> instead"
-    opts.urls = [default_parent(nameurl) for nameurl in args]
+    opts.urls = [package_url(nameurl, mirrored=False) for nameurl in args]
+    if opts.target is None:
+        target = distro_branch(opts.urls[0]) or DEFAULT_TARGET
+        print "Implicit target: %s" % target
+        opts.target = target
     return opts
 
 def list_targets(option, opt, val, parser):
