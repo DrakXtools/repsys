@@ -21,6 +21,8 @@ Notes
 
 - No support for using the <distro>/<package> format. The -d command line
   option should be used.
+  (actually it turned out to be really needed, as we can't use -d [I plan
+   to use -d for --define])
 
 
 TODO

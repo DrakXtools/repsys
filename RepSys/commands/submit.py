@@ -102,12 +102,19 @@ def parse_options():
 
 def expand_group(group):
     name, rev = layout.split_url_revision(group)
+    distro = None
+    if "/" in name:
+        distro, name = name.rsplit("/", 1)
     found = config.get("submit-groups", name)
     packages = [group]
     if found:
         packages = found.split()
         if rev:
-            packages = [("%s@%s" % package) for package in packages]
+            packages = [("%s@%s" % (package, rev))
+                    for package in packages]
+        if distro:
+            packages = ["%s/%s" % (distro, package)
+                    for package in packages]
     return packages
 
 def list_targets(option, opt, val, parser):
