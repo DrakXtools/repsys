@@ -14,7 +14,7 @@
   log section
 - added rpmlog options: -o to append the old changelog, -p to append the
   changelog found in the spec, and -s to resort all changelog entries
-- allow submitting many packages at once
+- allow submitting many packages at once (#28352)
 - package revisions in submit are now specified with name@nnn
 - fixed bad url used when using -v in getsrpm
 - make 'repsys submit' without package name or revision number work again
