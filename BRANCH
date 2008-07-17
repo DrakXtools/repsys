@@ -1,0 +1,37 @@
+Support package submit groups
+=============================
+
+It has been complained that repsys didn't have any way to submit more than
+one package at once. Now repsys allows it and another interesting may be
+useful: submitting package groups.
+
+Fedora has something like "package groups", when a given package group is
+requested to be rebuilt. It should ease a little the process of submitting
+packages.
+
+Brainstorm usage:
+
+  repsys submit -t 2008.0 kde-packages
+
+  repsys submit all-dkms
+
+
+Notes
+=====
+
+- No support for using the <distro>/<package> format. The -d command line
+  option should be used.
+
+
+TODO
+====
+
+- change submit to expand the list
+
+- add a configuration groups called "submit-groups" and each line defines
+  a groups with package names separated by space:
+
+  [submit-groups]
+  kde-games = kfoo kbar kbaz
+  gnome-craplets = gfoo gbar gbaz
+  python-twisted =  foo bar baz
