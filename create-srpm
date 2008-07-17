@@ -1,13 +1,14 @@
 #!/usr/bin/python
 
 from RepSys import Error, config, plugins
-from RepSys.rpmutil import get_srpm
+from RepSys.rpmutil import get_srpm, svn_url_rev, strip_url_rev
 from RepSys.cgiutil import get_targets
 from RepSys.util import mapurl, execcmd, get_helper
 import sys
 import os
 import pwd
 import optparse
+import subprocess
 
 class CmdError(Error): pass
 
@@ -15,15 +16,13 @@ class CmdIface:
     def author_email(self, author):
         return config.get("users", author)
 
-    def submit_package(self, packageurl, packagerev, targetname, 
-            dontmapurl_=0, define=[]):
+    def submit_package(self, urls, revision, targetname, dontmapurl_=0,
+            define=[]):
         pw = pwd.getpwuid(os.getuid())
         username = pw[0]
         packager = config.get("users", username) or pw[4]
         if not packager:
             raise CmdError, "your email was not found"
-        elif not packagerev:
-            raise CmdError, "no revision provided"
         elif not targetname:
             raise CmdError, "no target provided"
         else:
@@ -33,45 +32,48 @@ class CmdIface:
                     break
             else:
                 raise CmdError, "target not found"
-            try:
-                tmp = int(packagerev)
-            except ValueError:
-                raise CmdError, "invalid revision provided"
-            for allowed in target.allowed:
-                if packageurl.startswith(allowed):
-                    break
-            else:
-                raise CmdError, "%s is not allowed for this target" \
-                                % packageurl
-            newurl = packageurl
-            if not dontmapurl_:
-                newurl = mapurl(packageurl)
-            targetsrpms = get_srpm(newurl,
-                     revision=packagerev,
-                     targetdirs=target.target,
-                     packager=packager,
-                     revname=1,
-                     svnlog=1,
-                     scripts=target.scripts, 
-                     macros=target.macros)
-
-            uploadsrpm = get_helper("upload-srpm")
-            if uploadsrpm:
-                upload_command = [ uploadsrpm ]
+            for url in urls:
+                for allowed in target.allowed:
+                    if url.startswith(allowed):
+                        break
+                else:
+                    raise CmdError, "%s is not allowed for this target" \
+                                    % url
+            if not dontmapurl_: #FIXME don't use it!
+                urls = [mapurl(url) for url in urls]
+            uploadsrpms = []
+            for url in urls:
+                revision = revision or svn_url_rev(url)
+                url = strip_url_rev(url)
+                targetsrpms = get_srpm(url,
+                         revision=revision,
+                         targetdirs=target.target,
+                         packager=packager,
+                         svnlog=1,
+                         revname=1,
+                         scripts=target.scripts, 
+                         macros=target.macros)
+                uploadsrpms.extend(targetsrpms)
+            uploadcmd = get_helper("upload-srpm")
+            if uploadcmd:
+                upload_command = [uploadcmd]
                 if define:
                     for x in define:
                         upload_command.append("--define")
                         upload_command.append(x)
                 upload_command.append(targetname)
-                upload_command.append(targetsrpms[0])
-                status, output = execcmd(" ".join(upload_command),
-                        noerror=1)
-                if os.path.isfile(targetsrpms[0]):
-                    os.unlink(targetsrpms[0])
-                else:
-                    sys.stderr.write("warning: upload ok; temp file '%s' removed unexpectedly\n" % (targetsrpms[0]))
+                upload_command.extend(uploadsrpms)
+                command = subprocess.list2cmdline(upload_command)
+                status, output = execcmd(command, noerror=1)
+                for srpm in uploadsrpms:
+                    if os.path.isfile(srpm):
+                        os.unlink(srpm)
+                    else:
+                        sys.stderr.write("warning: temporary file "\
+                                "'%s' removed unexpectedly\n" % srpm)
                 if status != 0:
-                    raise CmdError, "Failed to upload %s:\n%s" % (packageurl, output)
+                    raise CmdError, "Failed to upload "\
+                        "%s:\n%s" % (" ".join(urls), output)
         return 1
 
     def submit_targets(self):
@@ -79,10 +81,8 @@ class CmdIface:
 
 
 def parse_options():
-    usage = "create-srpm <packageurl> -t <target> [-r <revision>]"
+    usage = "create-srpm <packageurl> -t <target>"
     parser = optparse.OptionParser(usage=usage)
-    parser.add_option("-r", "--revision", dest="revision", type="string",
-                      help="the revision number")
     parser.add_option("-t", "--target", type="string", dest="target",
                       help="target name")
     parser.add_option("-M", "--nomapping", action="store_true",
@@ -92,6 +92,8 @@ def parse_options():
     parser.add_option("--list", dest="list_targets", default=False,
                       action="store_true",
                       help="list submit targets available")
+    parser.add_option("-r", help="revision", dest="revision",
+            type="int", default=None)
     opts, args = parser.parse_args()
     if not opts.list_targets and not args:
         parser.error("you must supply a package url")
@@ -107,8 +109,8 @@ def main():
             for target in iface.submit_targets():
                 print target
         else:
-            iface.submit_package(args[0], opts.revision, opts.target,
-                    opts.urlmap, opts.define)
+            iface.submit_package(args, opts.revision, opts.target, opts.urlmap,
+                    opts.define)
     except Error, e:
         sys.stderr.write("error: %s\n" % str(e))
         sys.exit(1)

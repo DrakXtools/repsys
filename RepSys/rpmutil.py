@@ -7,6 +7,7 @@ from RepSys.log import specfile_svn2rpm
 from RepSys.util import execcmd
 from RepSys.command import default_parent
 import rpm
+import urlparse
 import tempfile
 import shutil
 import string
@@ -34,6 +35,7 @@ def rpm_macros_defs(macros):
     args = " ".join(defs)
     return args
 
+#FIXME move it to another module
 def rev_touched_url(url, rev):
     svn = SVN()
     info = svn.info2(url)
@@ -49,6 +51,51 @@ def rev_touched_url(url, rev):
         if path and path.startswith(urlpath):
             touched = True
     return touched
+
+def svn_url_rev(url, retrieve=True):
+    """Get the revision from a given URL
+
+    If the URL contains an explicit revision number (URL@REV), just use it
+    without even checking if the revision really exists.
+
+    The parameter retrieve defines whether it must ask the SVN server for
+    the revision number or not when it is not found in the URL.
+    """
+    parsed = urlparse.urlparse(url)
+    path = os.path.normpath(parsed[2])
+    dirs = path.rsplit("/", 1)
+    lastname = dirs[-1]
+    index = lastname.rfind("@")
+    rev = None
+    if index != -1:
+        rawrev = lastname[index+1:]
+        if rawrev:
+            try:
+                rev = int(rawrev)
+                if rev < 0:
+                    raise ValueError
+            except ValueError:
+                raise Error, "invalid revision specification on URL: %s" % url
+    if rev is None and retrieve:
+        # if no revspec was found, ask the server
+        svn = SVN()
+        rev = svn.revision(url)
+    return rev
+
+def strip_url_rev(url):
+    """Removes the @REV from a string in the URL@REV scheme"""
+    parsed = list(urlparse.urlparse(url))
+    path = os.path.normpath(parsed[2])
+    dirs = path.rsplit("/", 1)
+    name = lastname = dirs[-1]
+    try:
+        index = lastname.rindex("@")
+    except ValueError:
+        pass
+    else:
+        name = lastname[:index]
+    parsed[2] = os.path.join(dirs[0], name)
+    return urlparse.urlunparse(parsed)
 
 def get_srpm(pkgdirurl,
              mode = "current",
@@ -81,6 +128,7 @@ def get_srpm(pkgdirurl,
         elif mode == "pristine":
             geturl = os.path.join(pkgdirurl, "pristine")
         elif mode == "current" or mode == "revision":
+            #FIXME we should handle revisions specified using @REV
             geturl = os.path.join(pkgdirurl, "current")
         else:
             raise Error, "unsupported get_srpm mode: %s" % mode
@@ -102,9 +150,6 @@ def get_srpm(pkgdirurl,
             submit = not not revision
             specfile_svn2rpm(pkgdirurl, spec, revision, submit=submit,
                     template=template, macros=macros, exported=tmpdir)
-        #FIXME revisioreal not needed if revision is None
-        #FIXME use geturl instead of pkgdirurl
-        revisionreal = svn.revision(pkgdirurl)
         for script in scripts:
             #FIXME revision can be "None"
             status, output = execcmd(script, tmpdir, spec, str(revision),
@@ -119,25 +164,30 @@ def get_srpm(pkgdirurl,
             (topdir, builddir, rpmdir, sourcedir, specdir, 
              srcrpmdir, patchdir, packager, spec, defs))
 
-        if revision and revisionreal:
-            #FIXME duplicate glob line
-            srpm = glob.glob(os.path.join(srpmsdir, "*.src.rpm"))[0]
-            srpminfo = SRPM(srpm)
-            release = srpminfo.release
-            srpmbase = os.path.basename(srpm)
-            os.rename(srpm, "%s/@%s:%s" % (srpmsdir, revisionreal, srpmbase))
-        srpm = glob.glob(os.path.join(srpmsdir, "*.src.rpm"))[0]
+        # copy the generated SRPMs to their target locations
+        targetsrpms = []
+        urlrev = None
+        if revname:
+            urlrev = revision or svn_url_rev(geturl)
         if not targetdirs:
             targetdirs = (".",)
-        targetsrpms = []
-        for targetdir in targetdirs:
-            targetsrpm = os.path.join(os.path.realpath(targetdir), 
-                    os.path.basename(srpm))
-            targetsrpms.append(targetsrpm)
-            if verbose:
-                sys.stderr.write("Wrote: %s\n" %  targetsrpm)
-            execcmd("cp -f", srpm, targetdir)
-        os.unlink(srpm)
+        srpms = glob.glob(os.path.join(srpmsdir, "*.src.rpm"))
+        if not srpms:
+            # something fishy happened
+            raise Error, "no SRPMS were found at %s" % srpmsdir
+        for srpm in srpms:
+            name = os.path.basename(srpm)
+            if revname:
+                name = "@%s:%s" % (urlrev, name)
+            for targetdir in targetdirs:
+                newpath = os.path.join(targetdir, name)
+                targetsrpms.append(newpath)
+                if os.path.exists(newpath):
+                    # should we warn?
+                    os.unlink(newpath)
+                shutil.copy(srpm, newpath)
+                if verbose:
+                    sys.stderr.write("Wrote: %s\n" %  newpath)
         return targetsrpms
     finally:
         if os.path.isdir(tmpdir):

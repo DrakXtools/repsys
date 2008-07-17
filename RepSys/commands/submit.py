@@ -1,22 +1,18 @@
 #!/usr/bin/python
 from RepSys import Error, config
 from RepSys.command import *
-from RepSys.rpmutil import get_spec, get_submit_info
+from RepSys.rpmutil import get_spec, get_submit_info, svn_url_rev
 from RepSys.util import get_auth, execcmd, get_helper
 import urllib
 import getopt
 import sys
 import re
-
-#try:
-#    import NINZ.client
-#except ImportError:
-#    NINZ = None
+import subprocess
 
 import xmlrpclib
 
 HELP = """\
-Usage: repsys submit [OPTIONS] [URL [REVISION]]
+Usage: repsys submit [OPTIONS] [URL[@REVISION] ...]
 
 Submits the package from URL to the submit host.
 
@@ -28,8 +24,8 @@ The status of the submit can visualized at:
 
 http://kenobi.mandriva.com/bs/output.php
 
-If no URL and revision are specified, the latest changed revision in 
-the package working copy of the current directory will be used.
+If no URL and revision are specified, the latest changed revision in the
+package working copy of the current directory will be used.
 
 Options:
     -t TARGET  Submit given package URL to given target
@@ -44,39 +40,46 @@ Options:
 
 Examples:
     repsys submit
-    repsys submit foo 14800
-    repsys submit https://repos/svn/mdv/cooker/foo 14800
-    repsys submit -r 14800 https://repos/svn/mdv/cooker/foo
+    repsys submit foo
+    repsys submit foo@14800 bar baz@11001
+    repsys submit https://repos/svn/mdv/cooker/foo
     repsys submit -l https://repos
-    repsys submit --define section=main/testing -t 2008.0
+    repsys submit --define section=main/testing -t 2008.1
 """
 
 def parse_options():
     parser = OptionParser(help=HELP)
-    parser.defaults["revision"] = ""
+    parser.defaults["revision"] = None
     parser.add_option("-t", dest="target", default="Cooker")
     parser.add_option("-l", action="callback", callback=list_targets)
     parser.add_option("-r", dest="revision", type="string", nargs=1)
     parser.add_option("-s", dest="submithost", type="string", nargs=1,
             default=None)
-    parser.add_option("--define", action="append")
+    parser.add_option("--define", action="append", default=[])
     opts, args = parser.parse_args()
     if not args:
         name, url, rev = get_submit_info(".")
-        args = url, str(rev)
-        #FIXME bad place for output
+        args = ["%s@%s" % (url, str(rev))]
         print "Submitting %s at revision %s" % (name, rev)
-        print "URL: " + url
-    elif len(args) > 2:
-        raise Error, "invalid arguments"
-    opts.pkgdirurl = default_parent(args[0])
+        print "URL: %s" % url
+    if opts.revision is not None:
+        # backwards compatibility with the old -r usage
+        if len(args) == 1:
+            args[0] = args[0] + "@" + opts.revision
+        else:
+            raise Error, "can't use -r REV with more than one package name"
+    del opts.revision
     if len(args) == 2:
-        opts.revision = re.compile(r".*?(\d+).*").sub(r"\1", args[1])
-    elif len(args) == 1 and opts.revision:
-        # accepts -r 3123 http://foo/bar
-        pass
-    elif not opts.list:
-        raise Error, "provide -l or a revision number"
+        # prevent from using the old <name> <rev> syntax
+        try:
+            rev = int(args[1])
+        except ValueError:
+            # ok, it is a package name, let it pass
+            pass
+        else:
+            raise Error, "the format <name> <revision> is deprecated, "\
+                    "use <name>@<revision> instead"
+    opts.urls = [default_parent(nameurl) for nameurl in args]
     return opts
 
 def list_targets(option, opt, val, parser):
@@ -89,9 +92,7 @@ def list_targets(option, opt, val, parser):
     execcmd(command, show=True)
     sys.exit(0)
 
-def submit(pkgdirurl, revision, target, list=0, define=[], submithost=None):
-    #if not NINZ:
-    #    raise Error, "you must have NINZ installed to use this command"
+def submit(urls, target, define=[], submithost=None):
     if submithost is None:
         submithost = config.get("submit", "host")
         if submithost is None:
@@ -103,20 +104,19 @@ def submit(pkgdirurl, revision, target, list=0, define=[], submithost=None):
             del type, user, port, path, rest
     # runs a create-srpm in the server through ssh, which will make a
     # copy of the rpm in the export directory
-    if list:
-        raise Error, "unable to list targets from svn+ssh:// URLs"
     createsrpm = get_helper("create-srpm")
-    command = "ssh %s %s '%s' -r %s -t %s" % (
-            submithost, createsrpm, pkgdirurl, revision, target)
-    if define:
-        command += " " + " ".join([ "--define " + x for x in define ])
+    args = ["ssh", submithost, createsrpm, "-t", target]
+    for entry in define:
+        args.append("--define")
+        args.append(entry)
+    args.extend(urls)
+    command = subprocess.list2cmdline(args)
     status, output = execcmd(command)
     if status == 0:
         print "Package submitted!"
     else:
         sys.stderr.write(output)
         sys.exit(status)
-
 
 def main():
     do_command(parse_options, submit)
