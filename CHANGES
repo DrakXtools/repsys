@@ -35,6 +35,8 @@
 - added option -F to repsys ci to set a log message file
 - added option --strict to getsrpm to check if the revision provided
   matches the package URL;
+- added configuration option rpmbuild to the section helper, to define the
+  command used to build packages
 - added boolean configuration option strict-revision in the submit
   section, to allow forcing the use of --strict
 - added option --list in create-srpm to list the available targets
