@@ -1,7 +1,6 @@
 #!/usr/bin/python
-from RepSys import Error, config
+from RepSys import Error, config, layout
 from RepSys.command import *
-from RepSys.layout import package_url, distro_branch
 from RepSys.rpmutil import get_spec, get_submit_info
 from RepSys.util import get_auth, execcmd, get_helper
 import urllib
@@ -20,6 +19,9 @@ Submits the package from URL to the submit host.
 The submit host will try to build the package, and upon successful
 completion will 'tag' the package and upload it to the official
 repositories.
+
+The package name can refer to an alias to a group of packages defined in
+the section submit-groups of the configuration file.
 
 The status of the submit can visualized at:
 
@@ -46,6 +48,7 @@ Examples:
     repsys submit foo@14800 bar baz@11001
     repsys submit https://repos/svn/mdv/cooker/foo
     repsys submit -l https://repos
+    repsys submit -t 2008.1 my-python-packages@11011
     repsys submit --define section=main/testing -t 2008.1
 """
 
@@ -83,12 +86,29 @@ def parse_options():
         else:
             raise Error, "the format <name> <revision> is deprecated, "\
                     "use <name>@<revision> instead"
-    opts.urls = [package_url(nameurl, mirrored=False) for nameurl in args]
+    # expand group aliases
+    expanded = []
+    for nameurl in args:
+        expanded.extend(expand_group(nameurl))
+    if expanded != args:
+        print "Submitting: %s" % " ".join(expanded)
+        args = expanded
+    opts.urls = [layout.package_url(nameurl, mirrored=False) for nameurl in args]
     if opts.target is None:
-        target = distro_branch(opts.urls[0]) or DEFAULT_TARGET
+        target = layout.distro_branch(opts.urls[0]) or DEFAULT_TARGET
         print "Implicit target: %s" % target
         opts.target = target
     return opts
+
+def expand_group(group):
+    name, rev = layout.split_url_revision(group)
+    found = config.get("submit-groups", name)
+    packages = [group]
+    if found:
+        packages = found.split()
+        if rev:
+            packages = [("%s@%s" % package) for package in packages]
+    return packages
 
 def list_targets(option, opt, val, parser):
     host = config.get("submit", "host")
