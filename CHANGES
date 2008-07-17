@@ -10,8 +10,11 @@
 - fixed emptylog message, which was not being shown when needed
 - distributions can be specified by using <distro>/<package> in all
   commands
+- allow submitting many packages at once (#28352)
+- package revisions in submit are now specified with name@nnn
 - the user can define groups of packages to be submitted in the section
   "submit-groups"
+- make 'repsys submit' without package name or revision number work again
 - template: hide the first release when it has only invisible lines
 - added initial man page
 - allow resorting changelog entries through the config option sort in the
@@ -20,10 +23,7 @@
   changelog found in the spec, and -s to resort all changelog entries
 - rpmlog, getsrpm, getspec and changed will use the mirror if enabled
 - don't hide authors with only the first revision SILENTed (#41117)
-- allow submitting many packages at once (#28352)
-- package revisions in submit are now specified with name@nnn
 - fixed bad url used when using -v in getsrpm
-- make 'repsys submit' without package name or revision number work again
 - if REPSYS_CONF is set, /etc/repsys.conf and ~/.repsys/config will not be
   readed anymore
 - sort the final changelog by enabling the option sort in the log section
