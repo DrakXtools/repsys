@@ -35,6 +35,7 @@
 - added option -F to repsys ci to set a log message file
 - added option --strict to getsrpm to check if the revision provided
   matches the package URL;
+- changed the default command to build SRPMs to rpmbuild
 - added configuration option rpmbuild to the section helper, to define the
   command used to build packages
 - added boolean configuration option strict-revision in the submit
