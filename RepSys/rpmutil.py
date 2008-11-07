@@ -573,6 +573,9 @@ def get_submit_info(path):
                 max = rev
     if max == -1:
         raise Error, "revision tag not found in 'svn info' output"
+
+    if mirror.using_on(url):
+        url = mirror.switchto_parent_url(url)
     
     return name, url, max
 

@@ -81,6 +81,10 @@ def switchto_parent(svn, url, path):
     newurl = mirror_relocate(mirror_url(), layout.repository_url(), url, path)
     return newurl
 
+def switchto_parent_url(url):
+    newurl = relocate_path(mirror_url(), layout.repository_url(), url)
+    return newurl
+
 def switchto_mirror(svn, url, path):
     newurl = mirror_relocate(layout.repository_url(), mirror_url(), url, path)
     return newurl
