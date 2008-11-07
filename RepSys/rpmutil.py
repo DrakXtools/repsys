@@ -559,7 +559,11 @@ def get_submit_info(path):
     files.extend(glob.glob("%s/*" % specsdir))
     files.extend(glob.glob("%s/*" % sourcesdir))
     for file in files:
-        info = svn.info2(file)
+        try:
+            info = svn.info2(file)
+        except Error:
+            # possibly not tracked
+            continue
         if info is None:
             continue
         rawrev = info.get("Last Changed Rev")
