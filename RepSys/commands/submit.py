@@ -149,7 +149,14 @@ def submit(urls, target, define=[], submithost=None):
     for entry in define:
         args.append("--define")
         args.append(entry)
-    args.extend(urls)
+    if len(urls) == 1:
+        # be compatible with server-side repsys versions older than 1.6.90
+        url, rev = layout.split_url_revision(urls[0])
+        args.append(url)
+        args.append("-r")
+        args.append(str(rev))
+    else:
+        args.extend(urls)
     command = subprocess.list2cmdline(args)
     status, output = execcmd(command)
     if status == 0:
