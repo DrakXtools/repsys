@@ -16,6 +16,8 @@
   "submit-groups"
 - make 'repsys submit' without package name or revision number work again
 - added option --distro to submit
+- make putsrpm work again
+- added subcommand import as an alias to putsrpm
 - template: hide the first release when it has only invisible lines
 - added initial man page
 - allow resorting changelog entries through the config option sort in the
