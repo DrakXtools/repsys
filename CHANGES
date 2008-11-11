@@ -1,4 +1,4 @@
-* 1.6.90
+* 1.7
 - dropped all authenticated access support: subversion authentication has
   been broken for a long time and the workarounds weren't decent. It will
   be back in 1.7.x.
