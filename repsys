@@ -18,6 +18,7 @@ Useful commands:
     ci            commit changes
     sync          add-remove all file changes from the .spec
     submit        submit a package for build
+    putsrpm       import a source package to the repository
     getspec       prints the spec
     rpmlog        prints the RPM changelog
     getsrpm       creates the source RPM
