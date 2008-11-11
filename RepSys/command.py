@@ -40,6 +40,10 @@ def do_command(parse_options_func, main_func):
     except Error, e:
         sys.stderr.write("error: %s\n" % str(e))
         sys.exit(1)
+    except KeyboardInterrupt:
+        sys.stderr.write("interrupted\n")
+        sys.stderr.flush()
+        sys.exit(1)
 
 def default_parent(url):
     if url.find("://") == -1:
