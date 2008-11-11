@@ -9,6 +9,7 @@
 #
 from RepSys import Error
 from RepSys.command import *
+from RepSys.layout import package_url
 from RepSys.simplerpm import SRPM
 from RepSys.rpmutil import mark_release
 from RepSys.util import get_auth
@@ -20,6 +21,11 @@ HELP = """\
 *** WARNING --- You probably SHOULD NOT use this program! --- WARNING ***
 
 Usage: repsys markrelease [OPTIONS] REPPKGURL
+
+This subcommand creates a 'tag' for a given revision of a given package.
+
+The tag will be stored in the directory releases/ inside the package
+structure.
 
 Options:
     -f FILE Try to extract information from given file
@@ -55,7 +61,7 @@ def parse_options():
     if len(args) != 1:
         raise Error, "invalid arguments"
 
-    opts.pkgdirurl = default_parent(args[0])
+    opts.pkgdirurl = package_url(args[0], mirrored=False)
 
     filename = opts.filename
     appendname = opts.appendname

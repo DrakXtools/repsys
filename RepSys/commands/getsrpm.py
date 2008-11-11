@@ -5,6 +5,7 @@
 #
 from RepSys import Error, config
 from RepSys.command import *
+from RepSys.layout import package_url
 from RepSys.rpmutil import get_srpm
 import tempfile
 import shutil
@@ -16,20 +17,26 @@ import os
 HELP = """\
 Usage: repsys getsrpm [OPTIONS] REPPKGURL
 
+Generates the source RPM (.srpm) file of a given package.
+
 Options:
-    -c      Use files in current/ directory (default)
-    -p      Use files in pristine/ directory
-    -v VER  Use files from the version specified by VER (e.g. 2.2.1-2cl)
-    -r REV  Use files from current directory, in revision REV (e.g. 1001)
-    -t DIR  Put SRPM file in directory DIR when done (default is ".")
-    -P USER Define the RPM packager inforamtion to USER
-    -s FILE Run script with "FILE TOPDIR SPECFILE" command
-    -n      Rename the package to include the revision number
-    -l      Use subversion log to build rpm %changelog
-    -T FILE Template to be used to generate the %changelog
-    -h      Show this message
+    -c         Use files in current/ directory (default)
+    -p         Use files in pristine/ directory
+    -v VER     Use files from the version specified by VER (e.g. 2.2.1-2cl)
+    -r REV     Use files from current directory, in revision REV (e.g. 1001)
+    -t DIR     Put SRPM file in directory DIR when done (default is ".")
+    -P USER    Define the RPM packager inforamtion to USER
+    -s FILE    Run script with "FILE TOPDIR SPECFILE" command
+    -n         Rename the package to include the revision number
+    -l         Use subversion log to build rpm %changelog
+    -T FILE    Template to be used to generate the %changelog
+    -M         Do not use the mirror (use the main repository)
+    -h         Show this message
+    --strict   Check if the given revision contains changes in REPPKGURL
 
 Examples:
+    repsys getsrpm python
+    repsys getsrpm -l python
     repsys getsrpm http://foo.bar/svn/cnc/snapshot/python
     repsys getsrpm -p http://foo.bar/svn/cnc/releases/8cl/python
     repsys getsrpm -r 1001 file:///svn/cnc/snapshot/python
@@ -69,11 +76,13 @@ def parse_options():
     parser.add_option("-n", dest="revname", action="store_true")
     parser.add_option("-l", dest="svnlog", action="store_true")
     parser.add_option("-T", dest="template", type="string", default=None)
+    parser.add_option("--strict", dest="strict", default=False,
+            action="store_true")
     opts, args = parser.parse_args()
     del opts.__ignore
     if len(args) != 1:
         raise Error, "invalid arguments"
-    opts.pkgdirurl = default_parent(args[0])
+    opts.pkgdirurl = package_url(args[0])
     opts.verbose = 1
     return opts
 

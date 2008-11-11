@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from RepSys import Error, config
-import sys, os, urllib
+import sys, os
+import urlparse
 import optparse
 
 __all__ = ["OptionParser", "do_command", "default_parent"]
@@ -39,6 +40,10 @@ def do_command(parse_options_func, main_func):
     except Error, e:
         sys.stderr.write("error: %s\n" % str(e))
         sys.exit(1)
+    except KeyboardInterrupt:
+        sys.stderr.write("interrupted\n")
+        sys.stderr.flush()
+        sys.exit(1)
 
 def default_parent(url):
     if url.find("://") == -1:
@@ -46,8 +51,9 @@ def default_parent(url):
         if not default_parent:
             raise Error, "received a relative url, " \
                          "but default_parent was not setup"
-        type, rest = urllib.splittype(default_parent)
-        url = type+':'+os.path.normpath(rest+'/'+url)
+        parsed = list(urlparse.urlparse(default_parent))
+        parsed[2] = os.path.normpath(parsed[2] + "/" + url)
+        url = urlparse.urlunparse(parsed)
     return url
 
 # vim:et:ts=4:sw=4

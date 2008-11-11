@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from RepSys import Error
 from RepSys.command import *
+from RepSys.layout import package_url
 from RepSys.rpmutil import check_changed
 import getopt
 import sys
@@ -8,9 +9,12 @@ import sys
 HELP = """\
 Usage: repsys changed [OPTIONS] URL
 
+Shows if there are pending changes since the last package release.
+
 Options:
     -a      Check all packages in given URL
     -s      Show differences
+    -M      Do not use the mirror (use the main repository)
     -h      Show this message
 
 Examples:
@@ -25,7 +29,7 @@ def parse_options():
     opts, args = parser.parse_args()
     if len(args) != 1:
         raise Error, "invalid arguments"
-    opts.pkgdirurl = default_parent(args[0])
+    opts.pkgdirurl = package_url(args[0])
     opts.verbose = 1 # Unconfigurable
     return opts
 

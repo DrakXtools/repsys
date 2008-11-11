@@ -350,11 +350,12 @@ class Config:
         self._config = ConfigParser()
         self._wrapped = {}
         conffiles = []
-        conffiles.append("/etc/repsys.conf")
         repsys_conf = os.environ.get("REPSYS_CONF")
         if repsys_conf:
             conffiles.append(repsys_conf)
-        conffiles.append(os.path.expanduser("~/.repsys/config"))
+        else:
+            conffiles.append("/etc/repsys.conf")
+            conffiles.append(os.path.expanduser("~/.repsys/config"))
         for file in conffiles:
             if os.path.isfile(file):
                 self._config.read(file)

@@ -1,18 +1,10 @@
 from RepSys import Error, config
 from RepSys.util import execcmd, get_auth
-
 import sys
-import os
 import re
 import time
-import threading
-import tempfile
-import pysvn
 
-__all__ = ["SVN", "Revision", "SVNLogEntry", "SVNError"]
-
-class SVNError(Error):
-    pass
+__all__ = ["SVN", "SVNLook", "SVNLogEntry"]
 
 class SVNLogEntry:
     def __init__(self, revision, author, date):
@@ -26,208 +18,347 @@ class SVNLogEntry:
         return cmp(self.date, other.date)
 
 class SVN:
-    _client = None
-    _client_lock = None
-    _current_message = None
-
-    def __init__(self):
-        self._client = pysvn.Client()
-        self._client_lock = threading.Lock()
-        self._client.callback_get_log_message = self._log_handler
-        self._client.callback_get_login = self._unsupported_auth
-        self._client.callback_ssl_client_cert_password_prompt = \
-                self._unsupported_auth
-        self._client.callback_ssl_client_cert_prompt = \
-                self._unsupported_auth
-        self._client.callback_ssl_server_prompt = \
-                self._unsupported_auth
-
-    def _log_handler(self):
-        if self._current_message is None:
-            #TODO make it use EDITOR
-            raise ValueError, "No log message defined"
-        return True, self._current_message
-
-    def _unsupported_auth(self, *args, **kwargs):
-        raise SVNError, "svn is trying to get login information, " \
-                "seems that you're not using ssh-agent"
-
-    def _get_log_message(self, received_kwargs):
-        message = received_kwargs.pop("log", None)
-        messagefile = received_kwargs.pop("logfile", None)
-        if messagefile and not message:
-            message = open(messagefile).read()
-        return message
-
-    def _set_notify_callback(self, callback):
-        self._client.callback_notify = callback
-
-    def _make_wrapper(self, meth, notify=None):
-        def wrapper(*args, **kwargs):
-            self._client_lock.acquire()
-            try:
-                self._current_message = self._get_log_message(kwargs)
-                ignore_errors = kwargs.pop("noerror", None)
-                if notify:
-                    self._client.callback_notify = notify
-                try:
-                    return meth(*args, **kwargs)
-                except pysvn.ClientError, (msg,):
-                    if not ignore_errors:
-                        raise SVNError, msg
-                    return None
-            finally:
-                self._client_lock.release()
-                self._current_message = None
-        return wrapper
-
-    def _client_wrap(self, attrname):
-        meth = getattr(self._client, attrname)
-        wrapper = self._make_wrapper(meth)
-        return wrapper
-
-    def __getattr__(self, attrname):
-        return self._client_wrap(attrname)
-    
-    def makerev(number=None, head=None):
-        if number is not None:
-            args = (pysvn.opt_revision_kind.number, number)
-        else:
-            args = (pysvn.opt_revision_kind.head,)
-        return pysvn.Revision(*args)
-    makerev = staticmethod(makerev)
-
-    def revision(self, url, last_changed=False):
-        infos = self._client.info2(url, recurse=False)
-        if last_changed:
-            revnum = infos[0][1].last_changed_rev.number
-        else:
-            revnum = infos[0][1].rev.number
-        return revnum
-
-    # this override method fixed the problem in pysvn's mkdir which
-    # requires a log_message parameter
-    def mkdir(self, path, log=None, **kwargs):
-        meth = self._client_wrap("mkdir")
-        # we can't raise an error because pysvn's mkdir will use
-        # log_message only if path is remote, but it *always* requires this
-        # parameter. Also, 'log' is never used.
-        log = log or "There's a silent bug in your code"
-        return meth(path, log, log=None, **kwargs)
-    
-    def checkout(self, url, targetpath, show=False, **kwargs):
-        if show:
-            def callback(event):
-                types = pysvn.wc_notify_action
-                action = event["action"]
-                if action == types.update_add:
-                    print "A    %s" % event["path"]
-                elif action == types.update_completed:
-                    print "Checked out revision %d" % \
-                            event["revision"].number
-            self._set_notify_callback(callback)
-        meth = self._client_wrap("checkout")
-        meth(url, targetpath, **kwargs)
-
-    def checkin(self, path, log, **kwargs):
-        # XXX use EDITOR when log empty
-        meth = self._client_wrap("checkin")
-        return meth(path, log, log=None, **kwargs)
-    
-    def log(self, *args, **kwargs):
-        meth = self._client_wrap("log")
-        entries = meth(discover_changed_paths=True, *args, **kwargs)
-        if entries is None:
-            return
-        for entrydic in entries:
-            entry = SVNLogEntry(entrydic["revision"].number,
-                                entrydic["author"],
-                                time.localtime(entrydic["date"]))
-            entry.lines[:] = entrydic["message"].split("\n")
-            for cp in entrydic["changed_paths"]:
-                from_rev = cp["copyfrom_revision"]
-                if from_rev:
-                    from_rev = from_rev.number
-                changed = {
-                    "action": cp["action"],
-                    "path": cp["path"],
-                    "from_rev": from_rev,
-                    "from_path": cp["copyfrom_path"],
-                }
-                entry.changed.append(changed)
-            yield entry
-    
-    def exists(self, path):
-        return self.ls(path, noerror=1) is not None
-
-    def status(self, *args, **kwargs):
-        # add one keywork "silent" that workaround the strange behavior of
-        # pysvn's get_all, which seems to be broken, this way we also have
-        # the same interface of svn.py from repsys 1.6.x
-        meth = self._client_wrap("status")
-        silent = kwargs.pop("silent", None)
-        st = meth(*args, **kwargs)
-        if silent:
-            unversioned = pysvn.wc_status_kind.unversioned
-            st = [entry for entry in st
-                    if entry.text_status is not unversioned]
-        return st
-
-    def diff(self, path1, *args, **kwargs):
-        head = pysvn.Revision(pysvn.opt_revision_kind.head)
-        revision1 = kwargs.pop("revision1", head)
-        revision2 = kwargs.pop("revision2", head)
-        if args:
-            kwargs["url_or_path2"] = args[0]
-        tmpdir = tempfile.gettempdir()
-        meth = self._client_wrap("diff")
-        diff_text = meth(tmpdir, path1, revision1=revision1,
-                revision2=revision2, **kwargs)
-        return diff_text
-
-    def _edit_message(self, message):
-        # argh!
-        editor = os.getenv("EDITOR", "vim")
-        fd, fpath = tempfile.mkstemp(prefix="repsys")
-        result = (False, None)
+    def _execsvn(self, *args, **kwargs):
+        localcmds = ("add", "revert", "cleanup")
+        if not kwargs.get("show") and args[0] not in localcmds:
+            args = list(args)
+            args.append("--non-interactive")
+        svn_command = config.get("global", "svn-command",
+                        "SVN_SSH='ssh -o \"BatchMode yes\"' svn")
+        cmdstr = svn_command + " " + " ".join(args)
         try:
-            f = os.fdopen(fd, "w")
-            f.write(message)
-            f.close()
-            lastchange = os.stat(fpath).st_mtime
-            for i in xrange(10):
-                status = os.system("%s %s" % (editor, fpath))
-                if status != 0:
-                    raise SVNError, "the editor failed with %d" % status
-                newchange = os.stat(fpath).st_mtime
-                if newchange == lastchange:
-                    print "Log message unchanged or not specified"
-                    print "(a)bort, (c)ontinue, (e)dit"
-                    choice = raw_input()
-                    if not choice or choice[0] == 'e':
-                        continue
-                    elif choice[0] == 'a':
-                        break
-                    elif choice[0] == 'c':
-                        pass # ignore and go ahead
-                newmessage = open(fpath).read()
-                result = (True, newmessage)
-                break
-        finally:
-            os.unlink(fpath)
-        return result
+            return execcmd(cmdstr, **kwargs)
+        except Error, e:
+            if "Permission denied" in e.message:
+                raise Error, ("%s\n"
+                        "Seems ssh-agent or ForwardAgent are not setup, see "
+                        "http://wiki.mandriva.com/en/Development/Docs/Contributor_Tricks#SSH_configuration"
+                        " for more information." % e)
+            elif "authorization failed" in e.message:
+                raise Error, ("%s\n"
+                        "Note that repsys does not support any HTTP "
+                        "authenticated access." % e)
+            raise
 
-    def propedit(self, propname, pkgdirurl, revision, revprop=False):
-        revision = (revision)
-        if revprop:
-            propget = self.revpropget
-            propset = self.revpropset
+    def _execsvn_success(self, *args, **kwargs):
+        status, output = self._execsvn(*args, **kwargs)
+        return status == 0
+
+    def _add_log(self, cmd_args, received_kwargs, optional=0):
+        if (not optional or
+            received_kwargs.has_key("log") or
+            received_kwargs.has_key("logfile")):
+            ret = received_kwargs.get("log")
+            if ret is not None:
+                cmd_args.append("-m '%s'" % ret)
+            ret = received_kwargs.get("logfile")
+            if ret is not None:
+                cmd_args.append("-F '%s'" % ret)
+
+    def _add_revision(self, cmd_args, received_kwargs, optional=0):
+        if not optional or received_kwargs.has_key("rev"):
+            ret = received_kwargs.get("rev")
+            if isinstance(ret, basestring):
+                try:
+                    ret = int(ret)
+                except ValueError:
+                    raise Error, "invalid revision provided"
+            if ret:
+                cmd_args.append("-r %d" % ret)
+        
+    def add(self, path, **kwargs):
+        cmd = ["add", path]
+        return self._execsvn_success(noauth=1, *cmd, **kwargs)
+
+    def copy(self, pathfrom, pathto, **kwargs):
+        cmd = ["copy", pathfrom, pathto]
+        self._add_revision(cmd, kwargs, optional=1)
+        self._add_log(cmd, kwargs)
+        return self._execsvn_success(*cmd, **kwargs)
+
+    def remove(self, path, force=0, **kwargs):
+        cmd = ["remove", path]
+        self._add_log(cmd, kwargs)
+        if force:
+            cmd.append("--force")
+        return self._execsvn_success(*cmd, **kwargs)
+
+    def mkdir(self, path, **kwargs):
+        cmd = ["mkdir", path]
+        self._add_log(cmd, kwargs)
+        return self._execsvn_success(*cmd, **kwargs)
+
+    def commit(self, path, **kwargs):
+        cmd = ["commit", path]
+        self._add_log(cmd, kwargs)
+        return self._execsvn_success(*cmd, **kwargs)
+
+    def export(self, url, targetpath, **kwargs):
+        cmd = ["export", "'%s'" % url, targetpath]
+        self._add_revision(cmd, kwargs, optional=1)
+        return self._execsvn_success(*cmd, **kwargs)
+
+    def checkout(self, url, targetpath, **kwargs):
+        cmd = ["checkout", "'%s'" % url, targetpath]
+        self._add_revision(cmd, kwargs, optional=1)
+        return self._execsvn_success(*cmd, **kwargs)
+ 
+    def propset(self, propname, value, targets, **kwargs):
+        cmd = ["propset", propname, "'%s'" % value, targets]
+        return self._execsvn_success(*cmd, **kwargs)
+
+    def propedit(self, propname, target, **kwargs):
+        cmd = ["propedit", propname, target]
+        if kwargs.get("rev"):
+            cmd.append("--revprop")
+            self._add_revision(cmd, kwargs)
+        return self._execsvn_success(local=True, show=True, *cmd, **kwargs)
+
+    def revision(self, path, **kwargs):
+        cmd = ["info", path]
+        status, output = self._execsvn(local=True, *cmd, **kwargs)
+        if status == 0:
+            for line in output.splitlines():
+                if line.startswith("Last Changed Rev: "):
+                    return int(line.split()[3])
+        return None
+          
+    def info(self, path, **kwargs):
+        cmd = ["info", path]
+        status, output = self._execsvn(local=True, *cmd, **kwargs)
+        if status == 0 and "Not a versioned resource" not in output:
+            return output.splitlines()
+        return None
+
+    def info2(self, *args, **kwargs):
+        lines = self.info(*args, **kwargs)
+        if lines is None:
+            return None
+        pairs = [[w.strip() for w in line.split(":", 1)] for line in lines]
+        info = dict(pairs)
+        return info
+          
+    def ls(self, path, **kwargs):
+        cmd = ["ls", path]
+        status, output = self._execsvn(*cmd, **kwargs)
+        if status == 0:
+            return output.split()
+        return None
+
+    def status(self, path, **kwargs):
+        cmd = ["status", path]
+        if kwargs.get("verbose"):
+            cmd.append("-v")
+        if kwargs.get("noignore"):
+            cmd.append("--no-ignore")
+        if kwargs.get("quiet"):
+            cmd.append("--quiet")
+        status, output = self._execsvn(*cmd, **kwargs)
+        if status == 0:
+            return [x.split() for x in output.splitlines()]
+        return None
+
+    def cleanup(self, path, **kwargs):
+        cmd = ["cleanup", path]
+        return self._execsvn_success(*cmd, **kwargs)
+
+    def revert(self, path, **kwargs):
+        cmd = ["revert", path]
+        status, output = self._execsvn(*cmd, **kwargs)
+        if status == 0:
+            return [x.split() for x in output.split()]
+        return None
+
+    def switch(self, url, oldurl=None, path=None, relocate=False, **kwargs):
+        cmd = ["switch"]
+        if relocate:
+            if oldurl is None:
+                raise Error, "You must supply the old URL when "\
+                        "relocating working copies"
+            cmd.append("--relocate")
+            cmd.append(oldurl)
+        cmd.append(url)
+        if path is not None:
+            cmd.append(path)
+        return self._execsvn_success(*cmd, **kwargs)
+
+    def update(self, path, **kwargs):
+        cmd = ["update", path]
+        self._add_revision(cmd, kwargs, optional=1)
+        status, output = self._execsvn(*cmd, **kwargs)
+        if status == 0:
+            return [x.split() for x in output.split()]
+        return None
+
+    def merge(self, url1, url2=None, rev1=None, rev2=None, path=None, 
+            **kwargs):
+        cmd = ["merge"]
+        if rev1 and rev2 and not url2:
+            cmd.append("-r")
+            cmd.append("%s:%s" % (rev1, rev2))
+            cmd.append(url1)
         else:
-            propget = self.propget
-            propset = self.propset
-        revision, message = propget(propname, pkgdirurl, revision=revision)
-        changed, newmessage = self._edit_message(message)
-        if changed:
-            propset(propname, newmessage, pkgdirurl, revision=revision)
+            if not url2:
+                raise ValueError, \
+                      "url2 needed if two revisions are not provided"
+            if rev1:
+                cmd.append("%s@%s" % (url1, rev1))
+            else:
+                cmd.append(url1)
+            if rev2:
+                cmd.append("%s@%s" % (url2, rev2))
+            else:
+                cmd.append(url2)
+        if path:
+            cmd.append(path)
+        status, output = self._execsvn(*cmd, **kwargs)
+        if status == 0:
+            return [x.split() for x in output.split()]
+        return None
+
+    def diff(self, pathurl1, pathurl2=None, **kwargs):
+        cmd = ["diff", pathurl1]
+        self._add_revision(cmd, kwargs, optional=1)
+        if pathurl2:
+            cmd.append(pathurl2)
+        status, output = self._execsvn(*cmd, **kwargs)
+        if status == 0:
+            return output
+        return None
+
+    def cat(self, url, **kwargs):
+        cmd = ["cat", url]
+        self._add_revision(cmd, kwargs, optional=1)
+        status, output = self._execsvn(*cmd, **kwargs)
+        if status == 0:
+            return output
+        return None
+
+    def log(self, url, start=None, end=0, limit=None, **kwargs):
+        cmd = ["log", "-v", url]
+        if start is not None or end != 0:
+            if start is not None and type(start) is not type(0):
+                try:
+                    start = int(start)
+                except (ValueError, TypeError):
+                    raise Error, "invalid log start revision provided"
+            if type(end) is not type(0):
+                try:
+                    end = int(end)
+                except (ValueError, TypeError):
+                    raise Error, "invalid log end revision provided"
+            start = start or "HEAD"
+            cmd.append("-r %s:%s" % (start, end))
+        if limit is not None:
+            try:
+                limit = int(limit)
+            except (ValueError, TypeError):
+                raise Error, "invalid limit number provided"
+            cmd.append("--limit %d" % limit)
+        status, output = self._execsvn(*cmd, **kwargs)
+        if status != 0:
+            return None
+
+        revheader = re.compile("^r(?P<revision>[0-9]+) \| (?P<author>[^\|]+) \| (?P<date>[^\|]+) \| (?P<lines>[0-9]+) (?:line|lines)$")
+        changedpat = re.compile(r"^\s+(?P<action>[^\s]+) (?P<path>[^\s]+)(?: \([^\s]+ (?P<from_path>[^:]+)(?:\:(?P<from_rev>[0-9]+))?\))?$")
+        logseparator = "-"*72
+        linesleft = 0
+        entry = None
+        log = []
+        appendchanged = 0
+        changedheader = 0
+        for line in output.splitlines():
+            line = line.rstrip()
+            if changedheader:
+                appendchanged = 1
+                changedheader = 0
+            elif appendchanged:
+                if not line:
+                    appendchanged = 0
+                    continue
+                m = changedpat.match(line)
+                if m:
+                    changed = m.groupdict().copy()
+                    from_rev = changed.get("from_rev")
+                    if from_rev is not None:
+                        try:
+                            changed["from_rev"] = int(from_rev)
+                        except (ValueError, TypeError):
+                            raise Error, "invalid revision number in svn log"
+                    entry.changed.append(changed)
+            elif linesleft == 0:
+                if line != logseparator:
+                    m = revheader.match(line)
+                    if m:
+                        linesleft = int(m.group("lines"))
+                        timestr = " ".join(m.group("date").split()[:2])
+                        timetuple = time.strptime(timestr,
+                                                  "%Y-%m-%d %H:%M:%S")
+                        entry = SVNLogEntry(int(m.group("revision")),
+                                            m.group("author"), timetuple)
+                        log.append(entry)
+                        changedheader = 1
+            else:
+                entry.lines.append(line)
+                linesleft -= 1
+        log.sort()
+        log.reverse()
+        return log
+
+class SVNLook:
+    def __init__(self, repospath, txn=None, rev=None):
+        self.repospath = repospath
+        self.txn = txn
+        self.rev = rev
+
+    def _execsvnlook(self, cmd, *args, **kwargs):
+        execcmd_args = ["svnlook", cmd, self.repospath]
+        self._add_txnrev(execcmd_args, kwargs)
+        execcmd_args += args
+        execcmd_kwargs = {}
+        keywords = ["show", "noerror"]
+        for key in keywords:
+            if kwargs.has_key(key):
+                execcmd_kwargs[key] = kwargs[key]
+        return execcmd(*execcmd_args, **execcmd_kwargs)
+
+    def _add_txnrev(self, cmd_args, received_kwargs):
+        if received_kwargs.has_key("txn"):
+            txn = received_kwargs.get("txn")
+            if txn is not None:
+                cmd_args += ["-t", txn]
+        elif self.txn is not None:
+            cmd_args += ["-t", self.txn]
+        if received_kwargs.has_key("rev"):
+            rev = received_kwargs.get("rev")
+            if rev is not None:
+                cmd_args += ["-r", rev]
+        elif self.rev is not None:
+            cmd_args += ["-r", self.rev]
+
+    def changed(self, **kwargs):
+        status, output = self._execsvnlook("changed", **kwargs)
+        if status != 0:
+            return None
+        changes = []
+        for line in output.splitlines():
+            line = line.rstrip()
+            if not line:
+                continue
+            entry = [None, None, None]
+            changedata, changeprop, path = None, None, None
+            if line[0] != "_":
+                changedata = line[0]
+            if line[1] != " ":
+                changeprop = line[1]
+            path = line[4:]
+            changes.append((changedata, changeprop, path))
+        return changes
+
+    def author(self, **kwargs):
+        status, output = self._execsvnlook("author", **kwargs)
+        if status != 0:
+            return None
+        return output.strip()
 
 # vim:et:ts=4:sw=4

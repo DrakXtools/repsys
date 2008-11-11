@@ -1,0 +1,13 @@
+## Sample Changelog template
+##
+#import time
+#for $author in $revisions_by_author
+* $author.revisions[0].date $author.name <$author.email>
++ ${time.strftime("%Y-%m-%d %H:%M:%S", author.revisions[0].raw_date)} ($author.revisions[0].revision)
+ #for $rev in $author.revisions
+  #for $line in $rev.lines
+$line
+  #end for
+ #end for
+
+#end for

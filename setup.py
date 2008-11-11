@@ -18,16 +18,19 @@ setup(name="repsys",
       url = "http://qa.mandriva.com/twiki/bin/view/Main/RepositorySystem",
       license = "GPL",
       long_description = """Tools for Mandriva Linux repository access and management.""",
-      packages = ["RepSys", "RepSys.cgi", "RepSys.commands"],
+      packages = ["RepSys", "RepSys.cgi", "RepSys.commands",
+          "RepSys.plugins"],
       scripts = ["repsys", "getsrpm-mdk"],
       data_files = [
 	      ("/usr/share/repsys/", 
               ["default.chlog", 
               "revno.chlog",
               "oldfashion.chlog",
+              "compatv15.chlog",
               "create-srpm",
               "rebrand-mdk"]),
-	      ("/etc/", ["repsys.conf"])]
+	      ("/etc/", ["repsys.conf"]),
+          ("share/man/man8/", ["repsys.8"])]
       )
 
 # vim:ts=4:sw=4:et

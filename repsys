@@ -1,37 +1,38 @@
 #!/usr/bin/python
-from RepSys import Error, plugins
+from RepSys import Error, plugins, config
 from RepSys.command import *
 import getopt
 import sys
-import codecs
-import locale
 
-
-VERSION="1.7.r%s" % ("$Rev$".split()[-2].strip())
+VERSION="1.7"
 
 HELP = """\
 Usage: repsys COMMAND [COMMAND ARGUMENTS]
 
+Tool to access and manage a package repository structure.
+
+http://wiki.mandriva.com/en/Development/Packaging/RepositorySystem/Quickstart
+
 Useful commands:
-    co
-    sync
-    ci
-    submit
-    create
-    getspec
-    getsrpm
-    rpmlog
-    changed
-    authoremail
-    putsrpm
-    switch
+    co            checkout a package
+    ci            commit changes
+    sync          add-remove all file changes from the .spec
+    submit        submit a package for build
+    putsrpm       import a source package to the repository
+    getspec       prints the spec
+    rpmlog        prints the RPM changelog
+    getsrpm       creates the source RPM
+    create        create the structure of a new package
+    changed       shows changes not submitted
+    authoremail   prints the e-mail of a given author
+    switch        relocate to mirror or upstream repository
 
 Run "repsys COMMAND --help" for more information.
 
-Run "repsys --help-plugins" for help on loaded plugins.
-
 Written by Gustavo Niemeyer <gustavo@niemeyer.net>
 """
+
+command_aliases = {"import": "putsrpm"}
 
 def plugin_help(opt, val, parser, mode):
     if parser is None:
@@ -52,8 +53,12 @@ def parse_options():
     parser.add_option("--help-plugins", action="callback", callback=plugin_help)
     parser.add_option("--help-plugin", type="string", dest="__ignore",
             action="callback", callback=plugin_help)
+    parser.add_option("--no-mirror", "-M", action="store_false",
+            dest="_mirror", default=True)
     opts, args = parser.parse_args()
+    config.set("global", "use-mirror", opts._mirror and "yes" or "no")
     del opts.__ignore
+    del opts._mirror
     if len(args) < 1:
         parser.print_help(sys.stderr)
         sys.exit(1)
@@ -64,15 +69,18 @@ def parse_options():
 def dispatch_command(command, argv, debug=0):
     sys.argv = argv
     try:
+        command = command_aliases[command]
+    except KeyError:
+        pass
+    try:
         repsys_module = __import__("RepSys.commands."+command)
         commands_module = getattr(repsys_module, "commands")
         command_module = getattr(commands_module, command)
     except (ImportError, AttributeError):
-        if debug:
-            import traceback
-            traceback.print_exc()
-            sys.exit(1)
-        raise Error, "invalid command '%s'" % command
+        etype, exc, tb = sys.exc_info()
+        if tb.tb_next is None and not debug:
+            raise Error, "invalid command '%s'" % command
+        raise
     command_module.main()
     
 if __name__ == "__main__":
@@ -81,9 +89,6 @@ if __name__ == "__main__":
     except Error, e:
         sys.stderr.write("plugin initialization error: %s\n" % e)
         sys.exit(1)
-    encoding = locale.getpreferredencoding()
-    sys.stdout = codecs.getwriter(encoding)(sys.stdout, errors="replace")
-    sys.stderr = codecs.getwriter(encoding)(sys.stderr, errors="replace")
     do_command(parse_options, dispatch_command)
 
 # vim:et:ts=4:sw=4

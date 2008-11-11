@@ -7,6 +7,9 @@ import getopt
 HELP = """\
 Usage: repsys authoremail [OPTIONS] AUTHOR
 
+Shows the e-mail of an SVN author. It is just a simple interface to access
+the [authors] section of repsys.conf.
+
 Options:
     -h      Show this message
 

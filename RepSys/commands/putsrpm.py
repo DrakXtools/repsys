@@ -1,60 +1,54 @@
 #!/usr/bin/python
-#
-# This program will append a release to the Conectiva Linux package
-# repository system.  It's meant to be a startup system to include
-# pre-packaged SRPMS in the repository, thus, you should not commit
-# packages over an ongoing package structure (with changes in current/
-# directory and etc). Also, notice that packages must be included in
-# cronological order.
-#
 from RepSys import Error
 from RepSys.command import *
+from RepSys.layout import package_url
 from RepSys.rpmutil import put_srpm
 import getopt
 import sys, os
 
 HELP = """\
-*** WARNING --- You probably SHOULD NOT use this program! --- WARNING ***
+Usage: repsys putsrpm [OPTIONS] SOURCERPMS
 
-Usage: repsys putsrpm [OPTIONS] REPPKGURL
+Will import source RPMs into the SVN repository.
+
+If the package was already imported, it will add the new files and remove
+those not present in the source RPM.
 
 Options:
-    -n      Append package name to provided URL
-    -l LOG  Use log when commiting changes
+    -m LOG  Log message used when commiting changes
+    -t      Create version-release tag on releases/
+    -b NAME The distribution branch to place it
+    -d URL  The URL of base directory where packages will be placed
+    -c URL  The URL of the base directory where the changelog will be
+            placed
+    -s      Don't strip the changelog from the spec
     -h      Show this message
 
 Examples:
-    repsys putsrpm file://svn/cnc/snapshot/foo /cnc/d/SRPMS/foo-1.0.src.rpm
+    repsys putsrpm pkg/SRPMS/pkg-2.0-1.src.rpm
+    repsys putsrpm -b 2009.1 foo-1.1-1.src.rpm
 """
 
 def parse_options():
     parser = OptionParser(help=HELP)
-    parser.add_option("-l", dest="log", default="")
-    parser.add_option("-n", dest="appendname", action="store_true")
+    parser.add_option("-l", dest="logmsg", default="")
+    parser.add_option("-t", dest="markrelease", action="store_true",
+            default=False)
+    parser.add_option("-s", dest="striplog", action="store_false",
+            default=True)
+    parser.add_option("-b", dest="branch", type="string", default=None)
+    parser.add_option("-d", dest="baseurl", type="string", default=None)
+    parser.add_option("-c", dest="baseold", type="string", default=None)
     opts, args = parser.parse_args()
-    if len(args) != 2:
-        raise Error, "invalid arguments"
-    opts.pkgdirurl = default_parent(args[0])
-    opts.srpmfile = args[1]
+    opts.srpmfiles = args
     return opts
 
-def put_srpm_cmd(pkgdirurl, srpmfile, appendname=0, log=""):
-    if os.path.isdir(srpmfile):
-        dir = srpmfile
-        for entry in os.listdir(dir):
-            if entry[-8:] == ".src.rpm":
-                sys.stderr.write("Putting %s... " % entry)
-                sys.stderr.flush()
-                entrypath = os.path.join(dir, entry)
-                try:
-                    put_srpm(pkgdirurl, entrypath, appendname, log)
-                    sys.stderr.write("done\n")
-                except Error, e:
-                    sys.stderr.write("error: %s\n" % str(e))
-    else:
-        put_srpm(pkgdirurl, srpmfile, appendname, log)
-        
-                 
+def put_srpm_cmd(srpmfiles, markrelease=False, striplog=True, branch=None,
+        baseurl=None, baseold=None, logmsg=None):
+    for path in srpmfiles:
+        put_srpm(path, markrelease, striplog, branch, baseurl, baseold,
+                logmsg)
+
 def main():
     do_command(parse_options, put_srpm_cmd)
 

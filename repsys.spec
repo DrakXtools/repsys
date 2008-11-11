@@ -1,9 +1,9 @@
 Name: repsys
-Version: 1.6.2a
-Release: 1mdk
+Version: 1.6.15
+Release: %mkrel 1
 Summary: Tools for Mandriva Linux repository access and management
 Group: Development/Other
-Source: %{name}-%{repsys_version}.tar.bz2
+Source: %{name}-%{version}.tar.bz2
 License: GPL
 URL: http://qa.mandriva.com/twiki/bin/view/Main/RepositorySystem
 Prefix: %{_prefix}
@@ -12,14 +12,13 @@ Buildrequires: python-devel
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: python 
 BuildRequires: python-devel
-Requires: python-cheetah
-Requires: pysvn
+Requires: python-cheetah python-rpm
 
 %description
 Tools for Mandriva Linux repository access and management.
 
 %prep
-%setup -q -n %{name}-%{repsys_version}
+%setup -q
 
 %build
 python setup.py build
@@ -45,10 +44,21 @@ rm -rf %{buildroot}
 %{_bindir}/getsrpm-mdk
 %{_datadir}/repsys/rebrand-mdk
 %{_datadir}/repsys/create-srpm
+%{_datadir}/repsys/compatv15.chlog
+%{_datadir}/repsys/default.chlog
+%{_datadir}/repsys/revno.chlog
+%{_datadir}/repsys/oldfashion.chlog
+%{py_sitedir}/RepSys
 
 # MAKE THE CHANGES IN CVS: NO PATCH OR SOURCE ALLOWED
 
 %changelog
+* Wed Oct 18 2006 Olivier Blin <blino@mandriva.com> 1.6.6-1mdv2007.1
+- use a different "submit <target>" section per target in configuration file
+
+* Tue Oct 17 2006 Andreas Hasenack <andreas@mandriva.com> 1.6.5-1mdk
+- 1.6.5
+
 * Thu Feb 02 2006 Andreas Hasenack <andreas@mandriva.com> 1.6.0-1mdk
 - version 1.6.0, see CVS changelog
 
