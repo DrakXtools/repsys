@@ -22,6 +22,7 @@ Options:
     -c URL  The URL of the base directory where the changelog will be
             placed
     -s      Don't strip the changelog from the spec
+    -n      Don't try to rename the spec file
     -h      Show this message
 
 Examples:
@@ -39,15 +40,17 @@ def parse_options():
     parser.add_option("-b", dest="branch", type="string", default=None)
     parser.add_option("-d", dest="baseurl", type="string", default=None)
     parser.add_option("-c", dest="baseold", type="string", default=None)
+    parser.add_option("-n", dest="rename", action="store_false",
+            default=True)
     opts, args = parser.parse_args()
     opts.srpmfiles = args
     return opts
 
 def put_srpm_cmd(srpmfiles, markrelease=False, striplog=True, branch=None,
-        baseurl=None, baseold=None, logmsg=None):
+        baseurl=None, baseold=None, logmsg=None, rename=False):
     for path in srpmfiles:
         put_srpm(path, markrelease, striplog, branch, baseurl, baseold,
-                logmsg)
+                logmsg, rename)
 
 def main():
     do_command(parse_options, put_srpm_cmd)

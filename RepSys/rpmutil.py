@@ -171,7 +171,7 @@ def patch_spec(pkgdirurl, patchfile, log=""):
             shutil.rmtree(tmpdir)
 
 def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
-        baseurl=None, baseold=None, logmsg=None):
+        baseurl=None, baseold=None, logmsg=None, rename=True):
     svn = SVN()
     srpm = SRPM(srpmfile)
     tmpdir = tempfile.mktemp()
@@ -258,14 +258,34 @@ def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
             if os.path.isdir(unpackdir):
                 shutil.rmtree(unpackdir)
 
+        specs = glob.glob(os.path.join(specsdir, "*.spec"))
+        if not specs:
+            raise Error, "no spec file found on %s" % specsdir
+        if len(specs) > 1:
+            raise Error, "more than one spec file found on %s" % specsdir
+        specpath = specs[0]
+        if rename:
+            specfile = os.path.basename(specpath)
+            specname = specfile[:-len(".spec")]
+            if specname != srpm.name:
+                newname = srpm.name + ".spec"
+                newpath = os.path.join(specsdir, newname)
+                sys.stderr.write("warning: renaming spec file to '%s' "
+                        "(use -n to disable it)\n" % (newname))
+                os.rename(specpath, newpath)
+                try:
+                    svn.remove(specpath)
+                except Error:
+                    # file not tracked
+                    svn.revert(specpath)
+                svn.add(newpath)
+                specpath = newpath
+
         if striplog:
-            specs = glob.glob(os.path.join(specsdir, "*.spec"))
-            if not specs:
-                raise Error, "no spec file fount on %s" % specsdir
-            specpath = specs[0]
+            specpath = specpath
             fspec = open(specpath)
             spec, chlog = log.split_spec_changelog(fspec)
-            chlog.seek(0)
+            spec.seek(0)
             fspec.close()
             oldurl = baseold or config.get("log", "oldurl")
             pkgoldurl = mirror._joinurl(oldurl, srpm.name)
