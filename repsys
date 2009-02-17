@@ -27,7 +27,7 @@ Useful commands:
     authoremail   prints the e-mail of a given author
     switch        relocate to mirror or upstream repository
 
-Run "repsys COMMAND --help" for more information.
+Run "repsys COMMAND --help" and "man 8 repsys" for more information.
 
 Written by Gustavo Niemeyer <gustavo@niemeyer.net>
 """
