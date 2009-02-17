@@ -285,7 +285,11 @@ def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
             specpath = specpath
             fspec = open(specpath)
             spec, chlog = log.split_spec_changelog(fspec)
+            chlog.seek(0)
             spec.seek(0)
+            fspec.close()
+            fspec = open(specpath, "w")
+            fspec.writelines(spec)
             fspec.close()
             oldurl = baseold or config.get("log", "oldurl")
             pkgoldurl = mirror._joinurl(oldurl, srpm.name)
