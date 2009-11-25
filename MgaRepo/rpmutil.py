@@ -375,6 +375,43 @@ def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
                  log="Copying release %s-%s to releases/ directory." %
                      (version, srpm.release))
 
+def build_rpm(build_cmd="a",
+        verbose=False,
+        packager = "",
+        macros = []):
+    top = os.getcwd()
+    topdir = "_topdir %s" % top
+    builddir = "_builddir %s/%s" % (top, "BUILD")
+    rpmdir = "_rpmdir %s/%s" % (top, "RPMS")
+    sourcedir = "_sourcedir %s/%s" % (top, "SOURCES")
+    specdir = "_specdir %s/%s" % (top, "SPECS")
+    srcrpmdir = "_srcrpmdir %s/%s" % (top, "SRPMS")
+    patchdir = "_patchdir %s/%s" % (top, "SOURCES")
+
+    build = os.path.join(top, "BUILD")
+    if not os.path.exists(build):
+        os.mkdir(build)
+    specsdir = os.path.join(top, "SPECS")
+    speclist = glob.glob(os.path.join(specsdir, "*.spec"))
+    if not speclist:
+        raise Error("no spec files found")
+    spec = speclist[0]
+
+    rpmdefs = [("--define", expr) for expr in (topdir, builddir, rpmdir,
+        sourcedir, specdir, srcrpmdir, patchdir)]
+
+    if packager:
+        rpmdefs.append(("--define", "packager %s" % packager))
+
+    rpmbuild = config.get("helper", "rpmbuild", "rpmbuild")
+    args = [rpmbuild, "-bb", spec]
+    for pair in rpmdefs:
+        args.extend(pair)
+    for pair in macros:
+        args.extend(("--define", "%s %s" % pair))
+    os.environ["LC_ALL"] = "C"
+    execcmd(*args, show=verbose)
+
 def create_package(pkgdirurl, log="", verbose=0):
     svn = detectVCS(pkgdirurl)
     tmpdir = tempfile.mktemp()
