@@ -1,3 +1,6 @@
+* 1.9.2-binrepo
+- add .xz files in binrepo
+
 * 1.9.1-binrepo
 - fix problem with python threads on 2010.1
 
