@@ -107,7 +107,7 @@ def is_binary(path):
     raw = config.get("binrepo", "upload-match",
             "\.(7z|Z|bin|bz2|cpio|db|deb|egg|gem|gz|jar|jisp|lzma|"\
                "pdf|pgn\\.gz|pk3|rpm|rpm|run|sdz|smzip|tar|tbz|"\
-               "tbz2|tgz|ttf|uqm|wad|war|xar|xpi|zip)$")
+               "tbz2|tgz|ttf|uqm|wad|war|xar|xpi|xz|zip)$")
     maxsize = config.getint("binrepo", "upload-match-size", "1048576") # 1MiB
     expr = re.compile(raw)
     name = os.path.basename(path)
