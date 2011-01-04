@@ -22,6 +22,7 @@ Options:
     -c URL  The URL of the base directory where the changelog will be
             placed
     -s      Don't strip the changelog from the spec
+            (nor import it into misc/)
     -n      Don't try to rename the spec file
     -h      Show this message
 

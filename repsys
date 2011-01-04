@@ -4,7 +4,7 @@ from RepSys.command import *
 import getopt
 import sys
 
-VERSION="1.7"
+VERSION="1.9-binrepo"
 
 HELP = """\
 Usage: repsys COMMAND [COMMAND ARGUMENTS]
@@ -53,12 +53,8 @@ def parse_options():
     parser.add_option("--help-plugins", action="callback", callback=plugin_help)
     parser.add_option("--help-plugin", type="string", dest="__ignore",
             action="callback", callback=plugin_help)
-    parser.add_option("--no-mirror", "-M", action="store_false",
-            dest="_mirror", default=True)
     opts, args = parser.parse_args()
-    config.set("global", "use-mirror", opts._mirror and "yes" or "no")
     del opts.__ignore
-    del opts._mirror
     if len(args) < 1:
         parser.print_help(sys.stderr)
         sys.exit(1)
@@ -72,6 +68,8 @@ def dispatch_command(command, argv, debug=0):
         command = command_aliases[command]
     except KeyError:
         pass
+    if debug:
+        config.set("global", "verbose", "yes")
     try:
         repsys_module = __import__("RepSys.commands."+command)
         commands_module = getattr(repsys_module, "commands")
@@ -89,6 +87,7 @@ if __name__ == "__main__":
     except Error, e:
         sys.stderr.write("plugin initialization error: %s\n" % e)
         sys.exit(1)
+    config.set("global", "repsys-cmd", sys.argv[0])
     do_command(parse_options, dispatch_command)
 
 # vim:et:ts=4:sw=4

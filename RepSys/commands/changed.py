@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from RepSys import Error
+from RepSys import Error, disable_mirror
 from RepSys.command import *
 from RepSys.layout import package_url
 from RepSys.rpmutil import check_changed
@@ -26,6 +26,8 @@ def parse_options():
     parser = OptionParser(help=HELP)
     parser.add_option("-a", dest="all", action="store_true")
     parser.add_option("-s", dest="show", action="store_true")
+    parser.add_option("-M", "--no-mirror", action="callback",
+            callback=disable_mirror)
     opts, args = parser.parse_args()
     if len(args) != 1:
         raise Error, "invalid arguments"

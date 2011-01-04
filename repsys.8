@@ -101,6 +101,8 @@ One example layout:
         +\- 2007.1/
         +\- 2008.0/
 \fP
+.SS "Setting up a repository"
+The minimal setup is accomplished with a Subversion repository having three directories: \fBcooker/\fP, \fBmisc/\fP and \fBupdates/\fP. The name of this directories can be changed using the configuration options \fBtrunk\-dir\fP and \fBbranches-dir\fP. Having this you can start importing packages with \fBrepsys import\fP.
 \#.SH "THE SUBMIT PROCESS"
 \#.SS "Connecting"
 \#.SS "Changelog generation"
@@ -120,6 +122,8 @@ Contains the base URL used to access packages in the svn repository when only pa
 Points to the base URL of the development branch of the svn repository. This option is deprecated as it has been replaced by "repository".
 .IP "\fBmirror = URL\fP" 
 The URL of an alternative and read\-only repository to be used when checking out packages. \fBrepsys ci\fP will automatically relocate to "repository" when comitting.
+.IP "\fBuse-mirror = yes/no\fP"
+Disable the use of the mirror repository when checking out packages.
 .IP "\fBurl\-map = MATCH\-REGEXP REPLACE\-EXPR\fP"
 This option is used on server-side to remap remote URLs brought by the user when running \fBrepsys submit\fP to local (and probably faster) URLs. \fBMATCH\-REGEXP\fP is a Python regular expression matching the components that must be reused in the local URL. \fbREPLACE\-EXPR\fP is a replace expression that should expand in the final URL. Example: \fBsvn\+ssh://svn\.mandriva\.com/(.*) file:///\1\fP
 .IP "\fBtempdir = PATH\fP"
@@ -128,6 +132,8 @@ The directory to be used as base for temporay directories and files created by r
 Command used to download generic remote URLs, it accepts the variables \fB$url\fP and \fB$dest\fP. It is currently used when running \fBrepsys sync \-d\fP.
 .IP "\fBsvn\-command = COMMAND\fP"
 The base command used to execute svn(1). Runs through system(3).
+.IP "\fBsvn-env = VAR=VALUE ..\fP"
+The environment variables to use when running svn. More entries can be defined by using more lines. The variable defined by default is \fBSVN_SSH\fP, which points to the \fBrepsys-ssh\fP ssh wrapper.
 .IP "\fBverbose = yes/no\fP"
 Increase the verbosity of repsys output, printing commands being run and complete traceback when unhanlded errors happen.
 .IP "\fBtrunk-dir\fP"
@@ -182,6 +188,9 @@ The complement of the previous option. When this token is found, only those line
 .SS "[template] section"
 .IP "\fBpath = PATH\fP"
 The path of the template used to generate the changelog from svn commits.
+.SS "[srpm] section"
+.IP "\fBrun-prep = yes/no\fP"
+Repsys can check for the presence of a file named \fBMakefile\fP in the top directory of the package and run \fBmake prep-srpm\fP so that it can generate the actual files that must be distributed in in the srpm. This option enables this feature. (Note: the command is expected to run in an restricted environment, the Makefile must use only minimal funcionalities.)
 .SH "ENVIRONMENT VARIABLES"
 .PP
 .IP "\fBREPSYS_CONF\fP"

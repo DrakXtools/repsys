@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from RepSys import Error, config
+from RepSys import SilentError, Error, config
 import sys, os
 import urlparse
 import optparse
@@ -37,6 +37,8 @@ def do_command(parse_options_func, main_func):
     try:
         opt = parse_options_func()
         main_func(**opt.__dict__)
+    except SilentError:
+        sys.exit(1)
     except Error, e:
         sys.stderr.write("error: %s\n" % str(e))
         sys.exit(1)

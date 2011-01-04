@@ -1,6 +1,7 @@
-from RepSys import Error, config
+from RepSys import Error, SilentError, config
 from RepSys.util import execcmd, get_auth
 import sys
+import os
 import re
 import time
 
@@ -23,22 +24,62 @@ class SVN:
         if not kwargs.get("show") and args[0] not in localcmds:
             args = list(args)
             args.append("--non-interactive")
-        svn_command = config.get("global", "svn-command",
-                        "SVN_SSH='ssh -o \"BatchMode yes\"' svn")
+        else:
+            kwargs["geterr"] = True
+        kwargs["cleanerr"] = True
+        if kwargs.get("xml"):
+            args.append("--xml")
+        self._set_env()
+        svn_command = config.get("global", "svn-command", "svn")
         cmdstr = svn_command + " " + " ".join(args)
         try:
             return execcmd(cmdstr, **kwargs)
         except Error, e:
-            if "Permission denied" in e.message:
-                raise Error, ("%s\n"
-                        "Seems ssh-agent or ForwardAgent are not setup, see "
-                        "http://wiki.mandriva.com/en/Development/Docs/Contributor_Tricks#SSH_configuration"
-                        " for more information." % e)
-            elif "authorization failed" in e.message:
-                raise Error, ("%s\n"
-                        "Note that repsys does not support any HTTP "
-                        "authenticated access." % e)
+            msg = None
+            if e.args:
+                if "Permission denied" in e.args[0]:
+                    msg = ("It seems ssh-agent or ForwardAgent are not setup "
+                           "or your username is wrong. See "
+                           "http://wiki.mandriva.com/en/Development/Docs/Contributor_Tricks#SSH_configuration"
+                           " for more information.")
+                elif "authorization failed" in e.args[0]:
+                    msg = ("Note that repsys does not support any HTTP "
+                           "authenticated access.")
+            if kwargs.get("show") and \
+                    not config.getbool("global", "verbose", 0):
+                # svn has already dumped error messages, we don't need to
+                # do it too
+                if msg:
+                    sys.stderr.write("\n")
+                    sys.stderr.write(msg)
+                    sys.stderr.write("\n")
+                raise SilentError
+            elif msg:
+                raise Error, "%s\n%s" % (e, msg)
             raise
+
+    def _set_env(self):
+        wrapper = "repsys-ssh"
+        repsys = config.get("global", "repsys-cmd")
+        if repsys:
+            dir = os.path.dirname(repsys)
+            path = os.path.join(dir, wrapper)
+            if os.path.exists(path):
+                wrapper = path
+        defaults = {"SVN_SSH": wrapper}
+        os.environ.update(defaults)
+        raw = config.get("global", "svn-env")
+        if raw:
+            for line in raw.split("\n"):
+                env = line.strip()
+                if not env:
+                    continue
+                try:
+                    name, value = env.split("=", 1)
+                except ValueError:
+                    sys.stderr.write("invalid svn environment line: %r\n" % env)
+                    continue
+                os.environ[name] = value
 
     def _execsvn_success(self, *args, **kwargs):
         status, output = self._execsvn(*args, **kwargs)
@@ -59,12 +100,13 @@ class SVN:
         if not optional or received_kwargs.has_key("rev"):
             ret = received_kwargs.get("rev")
             if isinstance(ret, basestring):
-                try:
-                    ret = int(ret)
-                except ValueError:
-                    raise Error, "invalid revision provided"
+                if not ret.startswith("{"): # if not a datespec
+                    try:
+                        ret = int(ret)
+                    except ValueError:
+                        raise Error, "invalid revision provided"
             if ret:
-                cmd_args.append("-r %d" % ret)
+                cmd_args.append("-r '%s'" % ret)
         
     def add(self, path, **kwargs):
         cmd = ["add", path]
@@ -85,13 +127,29 @@ class SVN:
 
     def mkdir(self, path, **kwargs):
         cmd = ["mkdir", path]
+        if kwargs.get("parents"):
+            cmd.append("--parents")
         self._add_log(cmd, kwargs)
         return self._execsvn_success(*cmd, **kwargs)
 
+    def _execsvn_commit(self, *cmd, **kwargs):
+        status, output = self._execsvn(*cmd, **kwargs)
+        match = re.search("Committed revision (?P<rev>\\d+)\\.$", output)
+        if match:
+            rawrev = match.group("rev")
+            return int(rawrev)
+
     def commit(self, path, **kwargs):
         cmd = ["commit", path]
+        if kwargs.get("nonrecursive"):
+            cmd.append("-N")
         self._add_log(cmd, kwargs)
-        return self._execsvn_success(*cmd, **kwargs)
+        return self._execsvn_commit(*cmd, **kwargs)
+
+    def import_(self, path, url, **kwargs):
+        cmd = ["import", "'%s'" % path, "'%s'" % url]
+        self._add_log(cmd, kwargs)
+        return self._execsvn_commit(*cmd, **kwargs)
 
     def export(self, url, targetpath, **kwargs):
         cmd = ["export", "'%s'" % url, targetpath]
@@ -102,6 +160,14 @@ class SVN:
         cmd = ["checkout", "'%s'" % url, targetpath]
         self._add_revision(cmd, kwargs, optional=1)
         return self._execsvn_success(*cmd, **kwargs)
+
+    def propget(self, propname, targets, **kwargs):
+        cmd = ["propget", propname, targets]
+        if kwargs.get("revprop"):
+            cmd.append("--revprop")
+        self._add_revision(cmd, kwargs)
+        status, output = self._execsvn(local=True, *cmd, **kwargs)
+        return output
  
     def propset(self, propname, value, targets, **kwargs):
         cmd = ["propset", propname, "'%s'" % value, targets]
@@ -125,8 +191,8 @@ class SVN:
           
     def info(self, path, **kwargs):
         cmd = ["info", path]
-        status, output = self._execsvn(local=True, *cmd, **kwargs)
-        if status == 0 and "Not a versioned resource" not in output:
+        status, output = self._execsvn(local=True, noerror=True, *cmd, **kwargs)
+        if "Not a versioned resource" not in output:
             return output.splitlines()
         return None
 

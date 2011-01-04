@@ -3,7 +3,7 @@
 # This program will convert the output of "svn log" to be suitable
 # for usage in an rpm %changelog session.
 #
-from RepSys import Error, layout
+from RepSys import Error, layout, disable_mirror
 from RepSys.command import *
 from RepSys.svn import SVN
 from RepSys.log import get_changelog, split_spec_changelog
@@ -43,6 +43,8 @@ def parse_options():
             action="store_true")
     parser.add_option("-s", dest="sort", default=False,
             action="store_true")
+    parser.add_option("-M", "--no-mirror", action="callback",
+            callback=disable_mirror)
     opts, args = parser.parse_args()
     if len(args) != 1:
         raise Error, "invalid arguments"

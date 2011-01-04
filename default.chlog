@@ -1,4 +1,5 @@
-## Sample Changelog template
+##
+## Default changelog format for Mandriva Linux
 ##
 #if not $releases_by_author[-1].visible
   ## Hide the first release that contains no changes. It must be a

@@ -18,6 +18,7 @@ import locale
 import glob
 import tempfile
 import shutil
+import subprocess
 
 
 locale.setlocale(locale.LC_ALL, "C")
@@ -86,11 +87,15 @@ def getrelease(pkgdirurl, rev=None, macros=[], exported=None):
         specpath = found[0]
         options = rpm_macros_defs(macros)
         command = (("rpm -q --qf '%%{EPOCH}:%%{VERSION}-%%{RELEASE}\n' "
-                   "--specfile %s %s 2>/dev/null") % 
+                   "--specfile %s %s") %
                    (specpath, options))
-        status, output = execcmd(command)
-        if status != 0:
-            raise Error, "Error in command %s: %s" % (command, output)
+        pipe = subprocess.Popen(command, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE, shell=True)
+        pipe.wait()
+        output = pipe.stdout.read()
+        error = pipe.stderr.read()
+        if pipe.returncode != 0:
+            raise Error, "Error in command %s: %s" % (command, error)
         releases = output.split()
         try:
             epoch, vr = releases[0].split(":", 1)
@@ -514,18 +519,23 @@ def split_spec_changelog(stream):
     chlog = StringIO()
     spec = StringIO()
     found = 0
+    visible = 0
     for line in stream:
         if line.startswith("%changelog"):
             found = 1
         elif not found:
             spec.write(line)
         elif found:
+            if line.strip():
+                visible = 1
             chlog.write(line)
         elif line.startswith("%"):
             found = 0
             spec.write(line)
     spec.seek(0)
-    chlog.seek(0)
+    if not visible:
+        # when there are only blanks in the changelog, make it empty
+        chlog = StringIO()
     return spec, chlog
 
 def get_old_log(pkgdirurl):

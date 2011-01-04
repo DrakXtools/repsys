@@ -117,7 +117,7 @@ def remove_current(pkgdirurl):
 
 def repository_url(mirrored=False):
     url = None
-    if mirrored and config.getbool("global", "use-mirror"):
+    if mirrored and config.getbool("global", "use-mirror", "yes"):
         url = config.get("global", "mirror")
     if url is None:
         url = config.get("global", "repository")

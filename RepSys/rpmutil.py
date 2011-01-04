@@ -1,6 +1,6 @@
 #!/usr/bin/python
 from RepSys import Error, config
-from RepSys import mirror, layout, log
+from RepSys import mirror, layout, log, binrepo
 from RepSys.svn import SVN
 from RepSys.simplerpm import SRPM
 from RepSys.util import execcmd
@@ -19,12 +19,16 @@ def get_spec(pkgdirurl, targetdir=".", submit=False):
     tmpdir = tempfile.mktemp()
     try:
         geturl = layout.checkout_url(pkgdirurl, append_path="SPECS")
+        mirror.info(geturl)
         svn.export("'%s'" % geturl, tmpdir)
         speclist = glob.glob(os.path.join(tmpdir, "*.spec"))
         if not speclist:
             raise Error, "no spec files found"
         spec = speclist[0]
         shutil.copy(spec, targetdir)
+        name = os.path.basename(spec)
+        path = os.path.join(targetdir, name)
+        print "Wrote %s" % (name)
     finally:
         if os.path.isdir(tmpdir):
             shutil.rmtree(tmpdir)
@@ -65,7 +69,9 @@ def get_srpm(pkgdirurl,
              template = None,
              macros = [],
              verbose = 0,
-             strict = False):
+             strict = False,
+             use_binrepo = False,
+             binrepo_check = True):
     svn = SVN()
     tmpdir = tempfile.mktemp()
     topdir = "--define '_topdir %s'" % tmpdir
@@ -95,10 +101,19 @@ def get_srpm(pkgdirurl,
                     "inside %s" % (revision or "HEAD", geturl)
         mirror.info(geturl)
         svn.export(geturl, tmpdir, rev=revision)
+        if use_binrepo:
+            binrepo_check = (binrepo_check or 
+                    config.getbool("binrepo", "getsrpm-check", False))
+            download_binaries(tmpdir, geturl, revision=revision,
+                    export=True, check=binrepo_check)
         srpmsdir = os.path.join(tmpdir, "SRPMS")
         os.mkdir(srpmsdir)
         specsdir = os.path.join(tmpdir, "SPECS")
         speclist = glob.glob(os.path.join(specsdir, "*.spec"))
+        if config.getbool("srpm", "run-prep", False):
+            makefile = os.path.join(tmpdir, "Makefile")
+            if os.path.exists(makefile):
+                execcmd("make", "-C", tmpdir, "srpm-prep")
         if not speclist:
             raise Error, "no spec files found"
         spec = speclist[0]
@@ -285,29 +300,32 @@ def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
             specpath = specpath
             fspec = open(specpath)
             spec, chlog = log.split_spec_changelog(fspec)
-            chlog.seek(0)
-            spec.seek(0)
             fspec.close()
             fspec = open(specpath, "w")
             fspec.writelines(spec)
             fspec.close()
-            oldurl = baseold or config.get("log", "oldurl")
-            pkgoldurl = mirror._joinurl(oldurl, srpm.name)
-            svn.mkdir(pkgoldurl, noerror=1,
-                    log="created old log directory for %s" % srpm.name)
-            logtmp = tempfile.mktemp()
-            try:
-                svn.checkout(pkgoldurl, logtmp)
-                miscpath = os.path.join(logtmp, "log")
-                fmisc = open(miscpath, "w+")
-                fmisc.writelines(chlog)
-                fmisc.close()
-                svn.add(miscpath)
-                svn.commit(logtmp,
-                        log="imported old log for %s" % srpm.name)
-            finally:
-                if os.path.isdir(logtmp):
-                    shutil.rmtree(logtmp)
+            chlog.seek(0, os.SEEK_END)
+            if chlog.tell() != 0:
+                chlog.seek(0)
+                #FIXME move it to layout.py
+                oldurl = baseold or config.get("log", "oldurl")
+                pkgoldurl = mirror._joinurl(oldurl, srpm.name)
+                svn.mkdir(pkgoldurl, noerror=1,
+                        log="created old log directory for %s" % srpm.name)
+                logtmp = tempfile.mktemp()
+                try:
+                    svn.checkout(pkgoldurl, logtmp)
+                    miscpath = os.path.join(logtmp, "log")
+                    fmisc = open(miscpath, "w+")
+                    fmisc.writelines(chlog)
+                    fmisc.close()
+                    svn.add(miscpath)
+                    svn.commit(logtmp,
+                            log="imported old log for %s" % srpm.name)
+                finally:
+                    if os.path.isdir(logtmp):
+                        shutil.rmtree(logtmp)
+        binrepo.import_binaries(currentdir, srpm.name)
         svn.commit(tmpdir,
                 log=logmsg or ("imported package %s" % srpm.name))
     finally:
@@ -370,9 +388,11 @@ revision: %s
 
 def mark_release(pkgdirurl, version, release, revision):
     svn = SVN()
-    releasesurl = "/".join([pkgdirurl, "releases"])
+    releasesurl = layout.checkout_url(pkgdirurl, releases=True)
     versionurl = "/".join([releasesurl, version])
     releaseurl = "/".join([versionurl, release])
+    currenturl = layout.checkout_url(pkgdirurl)
+    binrepo.markrelease(currenturl, releasesurl, version, release, revision)
     if svn.ls(releaseurl, noerror=1):
         raise Error, "release already exists"
     svn.mkdir(releasesurl, noerror=1,
@@ -382,7 +402,6 @@ def mark_release(pkgdirurl, version, release, revision):
     pristineurl = layout.checkout_url(pkgdirurl, pristine=True)
     svn.remove(pristineurl, noerror=1,
                log="Removing previous pristine/ directory.")
-    currenturl = layout.checkout_url(pkgdirurl)
     svn.copy(currenturl, pristineurl,
              log="Copying release %s-%s to pristine/ directory." %
                  (version, release))
@@ -450,34 +469,51 @@ def check_changed(pkgdirurl, all=0, show=0, verbose=0):
             "nocurrent": nocurrent,
             "nopristine": nopristine}
 
-def checkout(pkgdirurl, path=None, revision=None, branch=None,
-        distro=None):
+def checkout(pkgdirurl, path=None, revision=None, branch=None, distro=None,
+        spec=False, use_binrepo=False, binrepo_check=True, binrepo_link=True):
     o_pkgdirurl = pkgdirurl
     pkgdirurl = layout.package_url(o_pkgdirurl, distro=distro)
-    current = layout.checkout_url(pkgdirurl, branch=branch)
+    append = None
+    if spec:
+        append = "SPECS"
+    current = layout.checkout_url(pkgdirurl, branch=branch,
+            append_path=append)
     if path is None:
         path = layout.package_name(pkgdirurl)
-    mirror.info(current)
+    mirror.info(current, write=True)
     svn = SVN()
     svn.checkout(current, path, rev=revision, show=1)
-
-def _getpkgtopdir(basedir=None):
+    if use_binrepo:
+        download_binaries(path, revision=revision, symlinks=binrepo_link,
+                check=binrepo_check)
+    
+def getpkgtopdir(basedir=None):
+    #FIXME this implementation doesn't work well with relative path names,
+    # which is something we need in order to have a friendlier output
     if basedir is None:
-        basedir = os.getcwd()
-    cwd = os.getcwd()
-    dirname = os.path.basename(cwd)
-    if dirname == "SPECS" or dirname == "SOURCES":
-        topdir = os.pardir
-    else:
-        topdir = ""
-    return topdir
+        basedir = os.path.curdir
+    while not ispkgtopdir(basedir):
+        if os.path.abspath(basedir) == "/":
+            raise Error, "can't find top package directories SOURCES and SPECS"
+        basedir = os.path.join(basedir, os.path.pardir)
+    if basedir.startswith("./"):
+        basedir = basedir[2:]
+    return basedir
 
-def sync(dryrun=False, download=False):
+def ispkgtopdir(path=None):
+    if path is None:
+        path = os.getcwd()
+    names = os.listdir(path)
+    return (".svn" in names and "SPECS" in names and "SOURCES" in names)
+
+def sync(dryrun=False, ci=False, download=False):
+    # TODO FIXME XXX fix it!
+    raise Error, "sync is not expected to work these days"
     svn = SVN()
-    topdir = _getpkgtopdir()
+    topdir = getpkgtopdir()
     # run svn info because svn st does not complain when topdir is not an
     # working copy
-    svn.info(topdir or ".")
+    svn.info(topdir)
     specsdir = os.path.join(topdir, "SPECS/")
     sourcesdir = os.path.join(topdir, "SOURCES/")
     for path in (specsdir, sourcesdir):
@@ -496,15 +532,28 @@ def sync(dryrun=False, download=False):
             for name, no, flags in spec.sources())
     sourcesst = dict((os.path.basename(path), (path, st))
             for st, path in svn.status(sourcesdir, noignore=True))
-    toadd = []
+    toadd_br = []
+    toadd_svn = []
+    toremove_svn = []
+    toremove_br = []
+    # add the spec file itself, in case of a new package
+    specstl = svn.status(specpath, noignore=True)
+    if specstl:
+        specst, _ = specstl[0]
+        if specst == "?":
+            toadd_svn.append(specpath)
+    # add source files:
     for source, url in sources.iteritems():
         sourcepath = os.path.join(sourcesdir, source)
-        pst = sourcesst.get(source)
-        if pst:
-            if os.path.isfile(sourcepath):
-                toadd.append(sourcepath)
+        if sourcesst.get(source):
+            if not os.path.islink(sourcepath):
+                if not binrepo.is_tracked(sourcepath):
+                    if binrepo.is_binary(sourcepath):
+                        toadd_br.append(sourcepath)
+                    else:
+                        toadd_svn.append(sourcepath)
             else:
-                sys.stderr.write("warning: %s not found, skipping\n" % sourcepath)
+                sys.stderr.write("warning: %s not found\n" % sourcepath)
         elif download and not os.path.isfile(sourcepath):
             print "%s not found, downloading from %s" % (sourcepath, url)
             fmt = config.get("global", "download-command",
@@ -517,29 +566,47 @@ def sync(dryrun=False, download=False):
                         "configuration option" % e
             execcmd(cmd, show=True)
             if os.path.isfile(sourcepath):
-                toadd.append(sourcepath)
+                if binrepo.is_binary(sourcepath):
+                    toadd_br.append(sourcepath)
+                else:
+                    toadd_svn.append(sourcepath)
             else:
                 raise Error, "file not found: %s" % sourcepath
     # rm entries not found in sources and still in svn
     found = os.listdir(sourcesdir)
-    toremove = []
     for entry in found:
-        if entry == ".svn":
+        if entry == ".svn" or entry == "sources":
             continue
         status = sourcesst.get(entry)
-        if status is None and entry not in sources:
-            path = os.path.join(sourcesdir, entry)
-            toremove.append(path)
-    for path in toremove:
+        path = os.path.join(sourcesdir, entry)
+        if entry not in sources:
+            if status is None: # file is tracked by svn
+                toremove_svn.append(path)
+            elif binrepo.is_tracked(path):
+                toremove_br.append(path)
+    for path in toremove_svn:
         print "D\t%s" % path
         if not dryrun:
             svn.remove(path, local=True)
-    for path in toadd:
+    for path in toremove_br:
+        print "DB\t%s" % path
+        if not dryrun:
+            binrepo.delete_pending(path)
+    for path in toadd_svn:
         print "A\t%s" % path
         if not dryrun:
             svn.add(path, local=True)
+    for path in toadd_br:
+        print "AB\t%s" % path
+        if not dryrun:
+            binrepo.upload_pending(path)
+    if commit:
+        commit(topdir)
 
 def commit(target=".", message=None, logfile=None):
+    topdir = getpkgtopdir(target)
+    sourcesdir = os.path.join(topdir, "SOURCES")
+    binrepo.commit(sourcesdir) #TODO make it optional
     svn = SVN()
     status = svn.status(target, quiet=True)
     if not status:
@@ -566,9 +633,63 @@ def commit(target=".", message=None, logfile=None):
         print "use \"repsys switch\" in order to switch back to mirror "\
                 "later"
 
+def spec_sources(topdir):
+    specs = glob.glob(os.path.join(topdir, "SPECS/*.spec"))
+    spec_path = specs[0] # FIXME use svn info to ensure which one
+    ts = rpm.ts()
+    spec = ts.parseSpec(spec_path)
+    sources = [name for name, x, y in spec.sources()]
+    return sources
+    
+def download_binaries(target, pkgdirurl=None, export=False, revision=None,
+        symlinks=True, check=False):
+    refurl = pkgdirurl
+    if refurl is None:
+        refurl = binrepo.svn_root(target)
+    if binrepo.enabled(refurl):
+        binrepo.download(target, pkgdirurl, export=export,
+                revision=revision, symlinks=symlinks, check=check)
+
+def update(target=None):
+    svn = SVN()
+    info = None
+    svn_target = None
+    br_target = None
+    if target:
+        svn_target = target
+    else:
+        top = getpkgtopdir()
+        svn_target = top
+        br_target = top
+    if svn_target:
+        svn.update(svn_target, show=True)
+    if br_target:
+        info = svn.info2(svn_target) 
+        if not br_target and not svn_target:
+            raise Error, "target not in SVN nor in binaries "\
+                    "repository: %s" % target
+        url = info["URL"]
+        download_binaries(br_target, url)
+
+def upload(paths):
+    for path in paths:
+        binrepo.upload(path)
+
+def binrepo_delete(paths, commit=False):
+    #TODO handle files tracked by svn
+    refurl = binrepo.svn_root(paths[0])
+    if not binrepo.enabled(refurl):
+        raise Error, "binary repository is not enabled for %s" % refurl
+    added, deleted = binrepo.remove(paths)
+    if commit:
+        svn = SVN()
+        spath = binrepo.sources_path(paths[0])
+        log = _sources_log(added, deleted)
+        svn.commit(spath, log=log)
+
 def switch(mirrorurl=None):
     svn  = SVN()
-    topdir = _getpkgtopdir()
+    topdir = getpkgtopdir()
     info = svn.info2(topdir)
     wcurl = info.get("URL")
     if wcurl is None:

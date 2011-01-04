@@ -5,12 +5,13 @@ from RepSys.rpmutil import sync
 HELP = """\
 Usage: repsys sync
 
-Will add or removed from the working copy new files added or removed
-from the spec file.
+Will add or remove from the working copy those files added or removed
+in the spec file.
 
-"No changes are commited."
+It will not commit the changes.
 
 Options:
+    -c           Commit the changes, as in ci
     --dry-run    Print results without changing the working copy
     --download -d
                  Try to download the source files not found
@@ -23,6 +24,8 @@ Examples:
 def parse_options():
     parser = OptionParser(help=HELP)
     parser.add_option("--dry-run", dest="dryrun", default=False,
+            action="store_true")
+    parser.add_option("-c", dest="ci", default=False,
             action="store_true")
     parser.add_option("-d", "--download", dest="download", default=False,
             action="store_true")

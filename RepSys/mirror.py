@@ -66,9 +66,12 @@ def using_on(url):
         using = False
     return using
 
-def info(url, stream=sys.stderr):
+def info(url, write=False, stream=sys.stderr):
     if using_on(url):
-        stream.write("using mirror\n")
+        stream.write("Using the svn mirror.\n")
+        if write:
+            stream.write("To be able to commit changes, use "
+                    "'repsys switch' first.\n")
 
 def mirror_relocate(oldparent, newparent, url, wcpath):
     svn = SVN()
