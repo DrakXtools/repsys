@@ -1,0 +1,41 @@
+##
+## Default changelog format for Mandriva Linux
+##
+#if not $releases_by_author[-1].visible
+  ## Hide the first release that contains no changes. It must be a
+  ## reimported package and the log gathered from misc/ already should
+  ## contain a correct entry for the version-release:
+  #set $releases_by_author = $releases_by_author[:-1]
+#end if
+#for $rel in $releases_by_author
+* $rel.date $rel.author_name <$rel.author_email> $rel.version-$rel.release
++ Revision: $rel.revision
+## #if not $rel.released
+##+ Status: not released
+## #end if
+ #if not $rel.visible
++ rebuild (emptylog)
+ #end if
+ #for $rev in $rel.release_revisions
+  #for $line in $rev.lines
+$line
+  #end for
+ #end for
+
+ #for $author in $rel.authors
+  #if not $author.visible
+    #continue
+  #end if
+  ##alternatively, one could use:
+  ###if $author.email == "root"
+  ## #continue
+  ###end if
+  + $author.name <$author.email>
+  #for $rev in $author.revisions
+    #for $line in $rev.lines
+    $line
+    #end for
+  #end for
+
+ #end for
+#end for

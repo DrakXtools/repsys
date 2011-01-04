@@ -1,0 +1,61 @@
+A Repsys plugin for obtaining users from a LDAP server.
+
+In order to enable the plugin, the user must define the following 
+options in the [global] section of repsys.conf:
+
+    ldap-uri [required if ldap-server is unset]
+        the URI of the server, you can refer to more than one server by
+        adding more URIs separated by spaces::
+
+          ldap-uri = ldap://ldap.network/ ldaps://backup.network:22389/
+
+    ldap-server [required if ldap-uri is unset]
+        the host name of the LDAP server
+    ldap-port [optional] [default: 389]
+        the port of the LDAP server
+    ldap-base [required]
+        the base DN where the search will be performed
+    ldap-binddn [optional] [default: empty]
+        the DN used to bind
+    ldap-bindpw [optional] [default: empty]
+        the password used to bind
+    ldap-starttls [optional] [default: no]
+         use "yes" or "no" to enable or disable the use of the STARTTLS
+         LDAP extension
+    ldap-filterformat [optional] 
+            [default: (&(objectClass=inetOrgPerson)(uid=$username))]
+        RFC-2254 filter string used in the search of the user entry.
+        Note that this is a python template string and will have the 
+        user name as parameter. For example:
+
+           ldap-filterformat = (&(objectClass=inetOrgPerson)(uid=$username))
+
+        Will result in the search filter:
+
+           (&(objectClass=inetOrgPerson)(uid=john))
+
+    ldap-resultformat [optional] [default: $cn <$mail>]
+        This is a python template string. This string will be 
+        formatted using one dict object containing the fields
+        returned in the LDAP search, for example:
+
+          >>> format = Template("$cn <$mail>")
+          >>> d = search(basedn, filter)
+          >>> d
+          {"cn": "John Doe", "mail": "john@mandriva.org", 
+           "uidNumber": "1290", "loginShell": "/bin/bash", 
+            ... many other attributes ... }
+          >>> value = format.substitute(d)
+          >>> print value
+          John Doe <john@mandriva.org>
+
+        Note that only the first value of the attributes will be 
+        used.
+
+When the searched option is not found, it will try in repsys.conf. All
+the values found.  (including from repsys.conf) will be cached between
+each configuration access.
+
+This plugin requires the package python-ldap.
+
+For more information, look http://qa.mandriva.com/show_bug.cgi?id=30549

@@ -1,0 +1,12 @@
+repsys is the tool used to manage RPM packages in a subversion repository.
+It is used to create, tag releases, generate .src.rpm, generate changelog,
+and request new package releases for build. It mostly acts as a interface
+to svn(1) commands and small task scripts run that on the build system side
+over ssh(1).
+
+For more information, see repsys(8) and
+http://wiki.mandriva.com/en/Development/Packaging/RepositorySystem
+
+The discussion on the development of repsys takes place on the
+"maintainers" mailing list:
+http://wiki.mandriva.com/en/Development/Mailinglists

@@ -1,0 +1,126 @@
+#!/usr/bin/python
+
+from RepSys import Error, config, plugins, layout
+from RepSys.mirror import strip_username
+from RepSys.rpmutil import get_srpm
+from RepSys.cgiutil import get_targets
+from RepSys.util import mapurl, execcmd, get_helper
+import sys
+import os
+import pwd
+import optparse
+import subprocess
+import urlparse
+import urllib
+
+class CmdError(Error): pass
+
+class CmdIface:
+    def author_email(self, author):
+        return config.get("users", author)
+
+    def submit_package(self, urls, revision, targetname, dontmapurl_=0,
+            define=[]):
+        pw = pwd.getpwuid(os.getuid())
+        username = pw[0]
+        packager = config.get("users", username) or pw[4]
+        if not packager:
+            raise CmdError, "your email was not found"
+        elif not targetname:
+            raise CmdError, "no target provided"
+        else:
+            targetname = targetname.lower()
+            for target in get_targets():
+                if target.name.lower() == targetname:
+                    break
+            else:
+                raise CmdError, "target not found"
+            for url in urls:
+                url = strip_username(url)
+                for allowed in target.allowed:
+                    if url.startswith(allowed):
+                        break
+                else:
+                    raise CmdError, "%s is not allowed for this target" \
+                                    % url
+            if not dontmapurl_: #FIXME don't use it!
+                urls = [mapurl(url) for url in urls]
+            uploadsrpms = []
+            for url in urls:
+                urlrev = revision or layout.get_url_revision(url)
+                url, _ = layout.split_url_revision(url)
+                targetsrpms = get_srpm(url,
+                         revision=urlrev,
+                         targetdirs=target.target,
+                         packager=packager,
+                         svnlog=1,
+                         revname=1,
+                         scripts=target.scripts, 
+                         macros=target.macros)
+                uploadsrpms.extend(targetsrpms)
+            uploadcmd = get_helper("upload-srpm")
+            if uploadcmd:
+                upload_command = [uploadcmd]
+                if define:
+                    for x in define:
+                        upload_command.append("--define")
+                        upload_command.append(x)
+                upload_command.append(targetname)
+                upload_command.extend(uploadsrpms)
+                command = subprocess.list2cmdline(upload_command)
+                status, output = execcmd(command, noerror=1)
+                for srpm in uploadsrpms:
+                    if os.path.isfile(srpm):
+                        os.unlink(srpm)
+                    else:
+                        sys.stderr.write("warning: temporary file "\
+                                "'%s' removed unexpectedly\n" % srpm)
+                if status != 0:
+                    raise CmdError, "Failed to upload "\
+                        "%s:\n%s" % (" ".join(urls), output)
+        return 1
+
+    def submit_targets(self):
+        return [x.name for x in get_targets()]
+
+
+def parse_options():
+    usage = "create-srpm <packageurl> -t <target>"
+    parser = optparse.OptionParser(usage=usage)
+    parser.add_option("-t", "--target", type="string", dest="target",
+                      help="target name")
+    parser.add_option("-M", "--nomapping", action="store_true",
+                      dest="urlmap", default=False, 
+                      help="disable url mapping")
+    parser.add_option("--define", action="append")
+    parser.add_option("--list", dest="list_targets", default=False,
+                      action="store_true",
+                      help="list submit targets available")
+    parser.add_option("-r", help="revision", dest="revision",
+            type="int", default=None)
+    opts, args = parser.parse_args()
+    if not opts.list_targets and not args:
+        parser.error("you must supply a package url")
+    return opts, args
+
+
+def main():
+    plugins.load()
+    iface = CmdIface()
+    opts, args = parse_options()
+    try:
+        if opts.list_targets:
+            for target in iface.submit_targets():
+                print target
+        else:
+            iface.submit_package(args, opts.revision, opts.target, opts.urlmap,
+                    opts.define)
+    except Error, e:
+        sys.stderr.write("error: %s\n" % str(e))
+        sys.exit(1)
+    
+
+if __name__ == "__main__":
+    main()
+
+# vim:ts=4:sw=4:et
