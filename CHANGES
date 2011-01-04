@@ -1,0 +1,166 @@
+* 1.9.1-binrepo
+- fix problem with python threads on 2010.1
+
+* 1.9-binrepo
+- added support to "binary repository"
+- added new commands upload, up and del to help handling tarballs in the
+  binaries repository
+
+* 1.9
+- really fixed -M
+- new command log: shows the svn log for a given package
+- added option -s to co, to allow checking out only SPECS
+- use a better message when checking out from the mirror
+- show the path where getspec wrote the spec file
+
+* 1.8
+- make the -M option work again
+- sync now adds the spec file (pointed by blino)
+- fixed putsrpm to not create old log files for packages without changelog
+- submit now can fetch the revision number if not specified (it also shows
+  the author and the first line of the commit)
+- allow submitting many packages at once, even without support on server
+  side (the same behavior as running repsys submit for each package)
+- append a parameter sid=UUID for every set of packages submitted
+- strip username from package URL on submit (#53939)
+- clearer error message when svn co fails
+- svn authentication errors are handled, pointing to the wiki page on
+  configuration
+- svn commands will not be shown on error messages, unless using --debug
+- repsys uses the wrapper repsys-ssh for svn, to handle signals and also
+  set BatchMode
+- added the configuration option svn-env
+- show the error from rpm when fetching the version from a spec fails
+
+* 1.7
+- dropped all authenticated access support: subversion authentication has
+  been broken for a long time and the workarounds weren't decent. It will
+  be back in 1.7.x.
+- added configuration option svn-command in the global section, allowing
+  to replace the default svn command
+- force svn+ssh:// URLs to be in BatchMode, in order to not have any
+  interactivity at all with ssh
+- fixed incompatibility with Python-2.4 on urlparse
+- fixed emptylog message, which was not being shown when needed
+- distributions can be specified by using <distro>/<package> in all
+  commands
+- allow submitting many packages at once (#28352)
+- package revisions in submit are now specified with name@nnn
+- the user can define groups of packages to be submitted in the section
+  "submit-groups"
+- make 'repsys submit' without package name or revision number work again
+- added option --distro to submit
+- make putsrpm work again
+- added subcommand import as an alias to putsrpm
+- template: hide the first release when it has only invisible lines
+- added initial man page
+- allow resorting changelog entries through the config option sort in the
+  log section
+- added rpmlog options: -o to append the old changelog, -p to append the
+  changelog found in the spec, and -s to resort all changelog entries
+- rpmlog, getsrpm, getspec and changed will use the mirror if enabled
+- don't hide authors with only the first revision SILENTed (#41117)
+- fixed bad url used when using -v in getsrpm
+- if REPSYS_CONF is set, /etc/repsys.conf and ~/.repsys/config will not be
+  readed anymore
+- sort the final changelog by enabling the option sort in the log section
+- merge the changelog found in the spec by enabling the option merge-spec
+  in the log section
+- changed the built-in template to the current default.chlog
+- added option -d to repsys sync, to download the missing source files
+- added option -F to repsys ci to set a log message file
+- added option --strict to getsrpm to check if the revision provided
+  matches the package URL;
+- changed the default command to build SRPMs to rpmbuild
+- added configuration option rpmbuild to the section helper, to define the
+  command used to build packages
+- added boolean configuration option strict-revision in the submit
+  section, to allow forcing the use of --strict
+- added option --list in create-srpm to list the available targets
+- make submit -l work on svn+ssh:// targets
+- the fix for the unreleased commits problem in the previous release was
+  wrong, really fixed it
+- moved all configuration options that will hardly be changed to
+  repsys-example.conf; we now have a shorter repsys.conf
+- fixed the use of file:/// URLs when using just the package name
+- allow using submit with package URLs having usernames
+- don't give the wrong message "invalid command 'CMD'" when this is not
+  the case
+- added more help messages in subcommands
+
+* 1.6.19
+- added complement for SILENT: CLOG, which hides everything that does not
+  start with this token
+- fixed generation of unreleased commits, it was using the previous
+  markrelease revision as reference
+- added option -o to 'co' to disable the use of mirror when checking out
+
+* 1.6.18
+- added the subcommand "switch" to help with mirrors support
+- initialize plugins in create-srpm too
+- changelog: perform less svn calls to obtain release number and oldlog
+- changelog: show epoch even in the entry not released
+- changelog: make default.chlog compatible with cheetah-2
+- make "sync" compatible with rpm-4.4.8 behavior
+- "co" don't use mirror when URL is provided
+- "ci" don't relocate back to mirrors after commit (should use switch)
+- ldapusers: added options ldap-uri and ldap-starttls
+- fixed use of __import__, incompatible with python2.4 in plugin support
+- fixed bug of wrong paths when using mirrors
+
+* 1.6.17
+- brought from mdvsys world the sync command
+- ldapusers: the configuration format has changed, now it uses python
+  template strings
+- ldapusers: many fixes: better error messages, ldap-port working, results
+  contain only the fields needed, unbinding after search, filters are
+  escaped
+
+* 1.6.16
+- introduced the plugin ldapusers: repsys user data obtained from LDAP;
+  this plugin is builtin
+- added support to plugins, and the hability to wrap configuration sections
+- added workaround in the template to ignore empty releases
+- added initial support to mirrors, as requested by mrl; it required the
+  new subcommand "ci"
+- changelogs from misc/ will come from HEAD and should be escaped (%%)
+
+* 1.6.15
+- empty changelog entries are now shown, with a EMPTYLOG tag to allow
+  rpmlint warn the developer about it
+- check (and warn) if a temporary package has already been removed before
+  trying to remove it
+
+* 1.6.2b
+- make submit pass --define options to create-srpm script
+- print error message when create-srpm fails
+- make get_srpm return the srpms list
+- add upload-srpm support in create-srpm
+
+* 1.6.2a
+- moved revision-offset to [log] section and added a comment
+
+* 1.6.2
+- reimplemented the option -n for rpmlog, which now uses the svn option
+  --limit.
+- added the option revision-offset, for the Zero Day Revision issue. 
+- small fix in main repsys help message
+
+* 1.6.1
+- added option url-map, as an workaround for svn+ssh:// urls problems
+- added configuration sectiom "helper"
+- added getsrpm-mdk and create-srpm to setup.py
+- added option -r to submit
+
+* 1.6.0
+- improved markrelease command line parsing
+- changelogs entries are now groupped by author, and sorted by revision
+  number
+- the changelog now is generated using the Cheetah Template Engine, to
+  allow quick modifications without spending time reading code and
+  introducing new bugs
+- consequently, was added an option "-T <file>" to rpmlog and getsrpm to 
+  allow choosing the path of the template to be used
+- added options noauth=0, and baseurl=None in order to disable the
+  authentication in some url schemes (http:// and file://)
+- replaced some "cl" references to "mdv"
