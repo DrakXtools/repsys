@@ -1,3 +1,7 @@
+* 1.9.3
+- enable binrepo in create-srpm
+- update repsys.conf for Mageia
+
 * 1.9.2-binrepo
 - add .xz files in binrepo
 
