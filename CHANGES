@@ -1,4 +1,10 @@
-* Development
+* 1.9.2-binrepo
+- add .xz files in binrepo
+
+* 1.9.1-binrepo
+- fix problem with python threads on 2010.1
+
+* 1.9-binrepo
 - added support to "binary repository"
 - added new commands upload, up and del to help handling tarballs in the
   binaries repository
