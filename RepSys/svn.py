@@ -109,24 +109,24 @@ class SVN:
                 cmd_args.append("-r '%s'" % ret)
         
     def add(self, path, **kwargs):
-        cmd = ["add", path]
+        cmd = ["add", path + '@']
         return self._execsvn_success(noauth=1, *cmd, **kwargs)
 
     def copy(self, pathfrom, pathto, **kwargs):
-        cmd = ["copy", pathfrom, pathto]
+        cmd = ["copy", pathfrom + '@', pathto + '@']
         self._add_revision(cmd, kwargs, optional=1)
         self._add_log(cmd, kwargs)
         return self._execsvn_success(*cmd, **kwargs)
 
     def remove(self, path, force=0, **kwargs):
-        cmd = ["remove", path]
+        cmd = ["remove", path + '@']
         self._add_log(cmd, kwargs)
         if force:
             cmd.append("--force")
         return self._execsvn_success(*cmd, **kwargs)
 
     def mkdir(self, path, **kwargs):
-        cmd = ["mkdir", path]
+        cmd = ["mkdir", path + '@']
         if kwargs.get("parents"):
             cmd.append("--parents")
         self._add_log(cmd, kwargs)
@@ -140,7 +140,7 @@ class SVN:
             return int(rawrev)
 
     def commit(self, path, **kwargs):
-        cmd = ["commit", path]
+        cmd = ["commit", path + '@']
         if kwargs.get("nonrecursive"):
             cmd.append("-N")
         self._add_log(cmd, kwargs)
@@ -181,7 +181,7 @@ class SVN:
         return self._execsvn_success(local=True, show=True, *cmd, **kwargs)
 
     def revision(self, path, **kwargs):
-        cmd = ["info", path]
+        cmd = ["info", path + '@']
         status, output = self._execsvn(local=True, *cmd, **kwargs)
         if status == 0:
             for line in output.splitlines():
@@ -190,7 +190,7 @@ class SVN:
         return None
           
     def info(self, path, **kwargs):
-        cmd = ["info", path]
+        cmd = ["info", path + '@']
         status, output = self._execsvn(local=True, noerror=True, *cmd, **kwargs)
         if "Not a versioned resource" not in output:
             return output.splitlines()
@@ -205,14 +205,14 @@ class SVN:
         return info
           
     def ls(self, path, **kwargs):
-        cmd = ["ls", path]
+        cmd = ["ls", path + '@']
         status, output = self._execsvn(*cmd, **kwargs)
         if status == 0:
             return output.split()
         return None
 
     def status(self, path, **kwargs):
-        cmd = ["status", path]
+        cmd = ["status", path + '@']
         if kwargs.get("verbose"):
             cmd.append("-v")
         if kwargs.get("noignore"):
@@ -225,11 +225,11 @@ class SVN:
         return None
 
     def cleanup(self, path, **kwargs):
-        cmd = ["cleanup", path]
+        cmd = ["cleanup", path + '@']
         return self._execsvn_success(*cmd, **kwargs)
 
     def revert(self, path, **kwargs):
-        cmd = ["revert", path]
+        cmd = ["revert", path + '@']
         status, output = self._execsvn(*cmd, **kwargs)
         if status == 0:
             return [x.split() for x in output.split()]
@@ -249,7 +249,7 @@ class SVN:
         return self._execsvn_success(*cmd, **kwargs)
 
     def update(self, path, **kwargs):
-        cmd = ["update", path]
+        cmd = ["update", path + '@']
         self._add_revision(cmd, kwargs, optional=1)
         status, output = self._execsvn(*cmd, **kwargs)
         if status == 0:
