@@ -106,7 +106,7 @@ def translate_topdir(path):
 def is_binary(path):
     raw = config.get("binrepo", "upload-match",
             "\.(7z|Z|bin|bz2|cpio|db|deb|egg|gem|gz|jar|jisp|lzma|"\
-               "pdf|pgn\\.gz|pk3|rpm|rpm|run|sdz|smzip|tar|tbz|"\
+               "pdf|pgn\\.gz|pk3|png|rpm|run|sdz|smzip|tar|tbz|"\
                "tbz2|tgz|ttf|uqm|wad|war|xar|xpi|xz|zip|wav|mp3|ogg|"\
 	       "jpg|png|gif|avi|mpg|mpeg|rar)$")
     maxsize = config.getint("binrepo", "upload-match-size", "1048576") # 1MiB
