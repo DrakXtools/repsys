@@ -1,5 +1,5 @@
 ##
-## Default changelog format for Mandriva Linux
+## Default changelog format for Mageia
 ##
 #if not $releases_by_author[-1].visible
   ## Hide the first release that contains no changes. It must be a

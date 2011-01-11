@@ -1,10 +1,10 @@
-recursive-include RepSys *.py
-include RepSys/plugins/*.txt
-include repsys repsys.conf MANIFEST.in 
-include repsys.8
+recursive-include MgaRepo *.py
+include MgaRepo/plugins/*.txt
+include mgarepo mgarepo.conf MANIFEST.in 
+include mgarepo.8
 include README
 include CHANGES
 include README.LDAP
-include repsys-example.conf
+include mgarepo-example.conf
 include *.chlog
-include create-srpm repsys-ssh
+include create-srpm mgarepo-ssh
