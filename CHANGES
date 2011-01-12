@@ -1,3 +1,8 @@
+* 1.9.5
+- rename repsys files to mgarepo, RepSys directory to MgaRepo, and
+  update docs and examples for Mageia
+- fix svn syntax problems in case of paths containing '@'
+
 * 1.9.4
 - add more extentions for files belonging in binrepo
 
