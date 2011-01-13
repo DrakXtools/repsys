@@ -11,9 +11,6 @@ Usage: mgarepo putsrpm [OPTIONS] SOURCERPMS
 
 Will import source RPMs into the SVN repository.
 
-If the package was already imported, it will add the new files and remove
-those not present in the source RPM.
-
 Options:
     -m LOG  Log message used when commiting changes
     -t      Create version-release tag on releases/
