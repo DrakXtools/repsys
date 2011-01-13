@@ -1,3 +1,7 @@
+* 1.9.6
+- don't allow importing packages already on svn
+- fix problems introduced in previous version with added '@' in path
+
 * 1.9.5
 - rename repsys files to mgarepo, RepSys directory to MgaRepo, and
   update docs and examples for Mageia
