@@ -15,7 +15,7 @@ class SRPM:
 
     def unpack(self, topdir):
         execcmd(("rpm -i --define '_sourcedir %s/SOURCES' " + 
-        "--define '_specdir %s/SPECS' --define '_patchdir %s/SPECS' %s")
+        "--define '_specdir %s/SPECS' --define '_patchdir %s/SOURCES' %s")
         % (topdir, topdir, topdir, self.filename))
 
 # vim:et:ts=4:sw=4
