@@ -597,9 +597,6 @@ def sync(dryrun=False, ci=False, download=False):
         commit(topdir)
 
 def commit(target=".", message=None, logfile=None):
-    topdir = getpkgtopdir(target)
-    sourcesdir = os.path.join(topdir, "SOURCES")
-    binrepo.commit(sourcesdir) #TODO make it optional
     svn = SVN()
     status = svn.status(target, quiet=True)
     if not status:
