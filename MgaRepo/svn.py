@@ -40,7 +40,7 @@ class SVN:
                 if "Permission denied" in e.args[0]:
                     msg = ("It seems ssh-agent or ForwardAgent are not setup "
                            "or your username is wrong. See "
-                           "http://wiki.mandriva.com/en/Development/Docs/Contributor_Tricks#SSH_configuration"
+                           "http://www.mageia.org/wiki/doku.php?id=svn-faq"
                            " for more information.")
                 elif "authorization failed" in e.args[0]:
                     msg = ("Note that mgarepo does not support any HTTP "
