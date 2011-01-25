@@ -287,7 +287,8 @@ def update_sources(topdir, added=[], removed=[]):
         entries = parse_sources(path)
     f = open(path, "w") # open before calculating hashes
     for name in removed:
-        entries.pop(removed)
+	if name in entries:
+           del entries[name]
     for added_path in added:
         name = os.path.basename(added_path)
         entries[name] = file_hash(added_path)
@@ -300,6 +301,29 @@ def update_sources_threaded(*args, **kwargs):
     t.start()
     t.join()
     return t
+
+def remove(path, message=None, commit=True):
+    from MgaRepo.rpmutil import getpkgtopdir
+    svn = SVN()
+    if not os.path.exists(path):
+        raise Error, "not found: %s" % path
+    bpath = os.path.basename(path)
+    topdir = getpkgtopdir()
+    bintopdir = translate_topdir(topdir)
+    update = update_sources_threaded(topdir, removed=[bpath])
+    sources = sources_path(topdir)
+    silent = config.get("log", "ignore-string", "SILENT")
+    if not message:
+        message = "%s: delete binary file %s" % (silent, bpath)
+    if commit:
+        svn.commit(topdir + " " + sources, log=message, nonrecursive=True)
+    binlink = os.path.join(topdir, "SOURCES", bpath)
+    if os.path.islink(binlink):
+        os.unlink(binlink)
+    binpath = os.path.join(topdir, BINARIES_CHECKOUT_NAME, bpath)
+    svn.remove(binpath)
+    if commit:
+       svn.commit(binpath, log=message)
 
 def upload(path, message=None):
     from MgaRepo.rpmutil import getpkgtopdir

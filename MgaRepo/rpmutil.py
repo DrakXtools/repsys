@@ -666,16 +666,10 @@ def upload(paths):
         binrepo.upload(path)
 
 def binrepo_delete(paths, commit=False):
-    #TODO handle files tracked by svn
     refurl = binrepo.svn_root(paths[0])
     if not binrepo.enabled(refurl):
         raise Error, "binary repository is not enabled for %s" % refurl
-    added, deleted = binrepo.remove(paths)
-    if commit:
-        svn = SVN()
-        spath = binrepo.sources_path(paths[0])
-        log = _sources_log(added, deleted)
-        svn.commit(spath, log=log)
+    binrepo.remove(paths[0])
 
 def switch(mirrorurl=None):
     svn  = SVN()
