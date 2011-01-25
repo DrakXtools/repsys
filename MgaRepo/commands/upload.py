@@ -7,11 +7,10 @@ Usage: mgarepo upload [OPTIONS] [PATH]
 
 Upload a given file to the binary sources repository.
 
-It will also update the contents of the 'binrepo.lst' file and leave it
-uncommited.
+It will also update the contents of the 'sha1.lst' file and commit.
 
 If the path is a directory, all the contents of the directory will be
-uploaded or removed.
+uploaded.
 
 Options:
     -h      help
