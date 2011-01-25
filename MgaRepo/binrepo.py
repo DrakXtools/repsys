@@ -18,7 +18,7 @@ DEFAULT_TARBALLS_REPO = "/tarballs"
 BINARIES_DIR_NAME = "SOURCES"
 BINARIES_CHECKOUT_NAME = "SOURCES-bin"
 
-PROP_BINREPO_REV = "mdv:binrepo-rev"
+PROP_BINREPO_REV = "binrepo-rev"
 
 BINREPOS_SECTION = "binrepos"
 
