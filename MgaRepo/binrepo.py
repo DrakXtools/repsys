@@ -18,7 +18,6 @@ DEFAULT_TARBALLS_REPO = "/tarballs"
 BINARIES_DIR_NAME = "SOURCES"
 BINARIES_CHECKOUT_NAME = "SOURCES-bin"
 
-PROP_USES_BINREPO = "mdv:uses-binrepo"
 PROP_BINREPO_REV = "mdv:binrepo-rev"
 
 BINREPOS_SECTION = "binrepos"
@@ -57,8 +56,6 @@ def svn_root(target):
     return info["Repository Root"]
 
 def enabled(url):
-    #TODO use information from url to find out whether we have a binrepo
-    # available for this url
     use = config.getbool("global", "use-binaries-repository", False)
     return use
 
@@ -223,7 +220,6 @@ def import_binaries(topdir, pkgname):
             rev = svn.commit(bindir, log=log)
         else:
             rev = svn.import_(bintopdir, topurl, log=log)
-        svn.propset(PROP_USES_BINREPO, "yes", topdir)
         svn.propset(PROP_BINREPO_REV, str(rev), topdir)
         update.join()
         svn.add(sources_path(topdir))
@@ -349,7 +345,6 @@ def upload(path, message=None):
             pass
         if not os.path.exists(bindir):
             create_package_dirs(bintopdir)
-            svn.propset(PROP_USES_BINREPO, "yes", topdir)
             svn.commit(topdir, log="%s: created binrepo structure" % silent)
             download(topdir, show=False)
     for path in paths:
