@@ -313,7 +313,7 @@ def remove(path, message=None, commit=True):
     if not message:
         message = "%s: delete binary file %s" % (silent, bpath)
     if commit:
-        svn.commit(topdir + " " + sources, log=message, nonrecursive=True)
+        svn.commit(sources, log=message, nonrecursive=True)
     binlink = os.path.join(topdir, "SOURCES", bpath)
     if os.path.islink(binlink):
         os.unlink(binlink)
@@ -375,7 +375,7 @@ def upload(path, message=None):
     else:
 	svn.add(sources)
     update.join()
-    svn.commit(topdir + " " + sources, log=message, nonrecursive=True)
+    svn.commit(sources, log=message, nonrecursive=True)
 
 def mapped_revision(target, revision, wc=False):
     """Maps a txtrepo revision to a binrepo datespec
