@@ -26,6 +26,8 @@ Useful commands:
     changed       shows changes not submitted
     authoremail   prints the e-mail of a given author
     switch        relocate to mirror or upstream repository
+    upload        add a file to binrepo
+    del           remove a file from binrepo
 
 Run "mgarepo COMMAND --help" and "man 8 mgarepo" for more information.
 
