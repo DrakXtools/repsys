@@ -352,6 +352,10 @@ def upload(path, message=None):
             sys.stderr.write("'%s' is already tracked by svn, ignoring\n" %
                     path)
             continue
+	if os.path.islink(path):
+            sys.stderr.write("'%s' is a symbolic link, ignoring\n" %
+                    path)
+            continue
         name = os.path.basename(path)
         binpath = os.path.join(bindir, name)
         os.rename(path, binpath)
