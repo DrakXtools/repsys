@@ -306,8 +306,9 @@ def remove(path, message=None, commit=True):
     bpath = os.path.basename(path)
     topdir = getpkgtopdir()
     bintopdir = translate_topdir(topdir)
-    update = update_sources_threaded(topdir, removed=[bpath])
     sources = sources_path(topdir)
+    svn.update(sources)
+    update = update_sources_threaded(topdir, removed=[bpath])
     silent = config.get("log", "ignore-string", "SILENT")
     if not message:
         message = "%s: delete binary file %s" % (silent, bpath)
@@ -363,11 +364,16 @@ def upload(path, message=None):
     if not message:
         message = "%s: new binary files %s" % (silent, " ".join(paths))
     make_symlinks(bindir, sourcesdir)
+    sources = sources_path(topdir)
+    if svn.info2(sources):
+	svn.update(sources)
     update = update_sources_threaded(topdir, added=paths)
     rev = svn.commit(binpath, log=message)
     svn.propset(PROP_BINREPO_REV, str(rev), topdir)
-    sources = sources_path(topdir)
-    svn.add(sources)
+    if svn.info2(sources):
+	svn.update(sources)
+    else:
+	svn.add(sources)
     update.join()
     svn.commit(topdir + " " + sources, log=message, nonrecursive=True)
 
