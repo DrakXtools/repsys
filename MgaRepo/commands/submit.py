@@ -27,7 +27,7 @@ the section submit-groups of the configuration file.
 
 The status of the submit can visualized at:
 
-http://kenobi.mandriva.com/bs/output.php
+    http://pkgsubmit.mageia.org/
 
 If no URL and revision are specified, the latest changed revision in the
 package working copy of the current directory will be used.
