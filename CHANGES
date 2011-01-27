@@ -1,5 +1,8 @@
+* 1.9.8
+- fix mgarepo sync
+
 * 1.9.7
-- fix mdarepo ci
+- fix mgarepo ci
 - properly set each rpm macros at import
 - update help
 - set property binrepo-rev instead of mdv:binrepo-rev
