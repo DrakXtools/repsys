@@ -499,9 +499,7 @@ def ispkgtopdir(path=None):
     names = os.listdir(path)
     return (".svn" in names and "SPECS" in names and "SOURCES" in names)
 
-def sync(dryrun=False, ci=False, download=False):
-    # TODO FIXME XXX fix it!
-    raise Error, "sync is not expected to work these days"
+def sync(dryrun=False, commit=False, download=False):
     svn = SVN()
     topdir = getpkgtopdir()
     # run svn info because svn st does not complain when topdir is not an
@@ -525,28 +523,22 @@ def sync(dryrun=False, ci=False, download=False):
             for name, no, flags in spec.sources())
     sourcesst = dict((os.path.basename(path), (path, st))
             for st, path in svn.status(sourcesdir, noignore=True))
-    toadd_br = []
-    toadd_svn = []
-    toremove_svn = []
-    toremove_br = []
+    toadd = []
+    toremove = []
     # add the spec file itself, in case of a new package
     specstl = svn.status(specpath, noignore=True)
     if specstl:
         specst, _ = specstl[0]
         if specst == "?":
-            toadd_svn.append(specpath)
+            toadd.append(specpath)
     # add source files:
     for source, url in sources.iteritems():
         sourcepath = os.path.join(sourcesdir, source)
         if sourcesst.get(source):
             if not os.path.islink(sourcepath):
-                if not binrepo.is_tracked(sourcepath):
-                    if binrepo.is_binary(sourcepath):
-                        toadd_br.append(sourcepath)
-                    else:
-                        toadd_svn.append(sourcepath)
-            else:
-                sys.stderr.write("warning: %s not found\n" % sourcepath)
+                toadd.append(sourcepath)
+        elif not download and not os.path.isfile(sourcepath):
+            sys.stderr.write("warning: %s not found\n" % sourcepath)
         elif download and not os.path.isfile(sourcepath):
             print "%s not found, downloading from %s" % (sourcepath, url)
             fmt = config.get("global", "download-command",
@@ -559,42 +551,26 @@ def sync(dryrun=False, ci=False, download=False):
                         "configuration option" % e
             execcmd(cmd, show=True)
             if os.path.isfile(sourcepath):
-                if binrepo.is_binary(sourcepath):
-                    toadd_br.append(sourcepath)
-                else:
-                    toadd_svn.append(sourcepath)
+                toadd.append(sourcepath)
             else:
                 raise Error, "file not found: %s" % sourcepath
     # rm entries not found in sources and still in svn
     found = os.listdir(sourcesdir)
     for entry in found:
-        if entry == ".svn" or entry == "sources":
+        if entry == ".svn" or entry == binrepo.SOURCES_FILE:
             continue
         status = sourcesst.get(entry)
         path = os.path.join(sourcesdir, entry)
         if entry not in sources:
-            if status is None: # file is tracked by svn
-                toremove_svn.append(path)
-            elif binrepo.is_tracked(path):
-                toremove_br.append(path)
-    for path in toremove_svn:
+            toremove.append(path)
+    for path in toremove:
         print "D\t%s" % path
         if not dryrun:
-            svn.remove(path, local=True)
-    for path in toremove_br:
-        print "DB\t%s" % path
-        if not dryrun:
-            binrepo.delete_pending(path)
-    for path in toadd_svn:
+            delete(path, commit=commit)
+    for path in toadd:
         print "A\t%s" % path
         if not dryrun:
-            svn.add(path, local=True)
-    for path in toadd_br:
-        print "AB\t%s" % path
-        if not dryrun:
-            binrepo.upload_pending(path)
-    if commit:
-        commit(topdir)
+            upload(path, commit=commit)
 
 def commit(target=".", message=None, logfile=None):
     svn = SVN()
