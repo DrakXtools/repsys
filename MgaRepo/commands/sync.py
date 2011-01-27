@@ -25,7 +25,7 @@ def parse_options():
     parser = OptionParser(help=HELP)
     parser.add_option("--dry-run", dest="dryrun", default=False,
             action="store_true")
-    parser.add_option("-c", dest="ci", default=False,
+    parser.add_option("-c", dest="commit", default=False,
             action="store_true")
     parser.add_option("-d", "--download", dest="download", default=False,
             action="store_true")
