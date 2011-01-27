@@ -319,7 +319,7 @@ def remove(path, message=None, commit=True):
     if commit:
        svn.commit(binpath, log=message)
 
-def upload(path, message=None):
+def upload(path, message=None, commit=True):
     from MgaRepo.rpmutil import getpkgtopdir
     svn = SVN()
     if not os.path.exists(path):
@@ -343,7 +343,8 @@ def upload(path, message=None):
             pass
         if not os.path.exists(bindir):
             create_package_dirs(bintopdir)
-            svn.commit(topdir, log="%s: created binrepo structure" % silent)
+	    if commit:
+		svn.commit(topdir, log="%s: created binrepo structure" % silent)
             download(topdir, show=False)
     for path in paths:
         if svn.info2(path):
@@ -365,13 +366,15 @@ def upload(path, message=None):
     if svn.info2(sources):
 	svn.update(sources)
     update = update_sources_threaded(topdir, added=paths)
-    rev = svn.commit(binpath, log=message)
+    if commit:
+	rev = svn.commit(binpath, log=message)
     if svn.info2(sources):
 	svn.update(sources)
     else:
 	svn.add(sources)
     update.join()
-    svn.commit(sources, log=message, nonrecursive=True)
+    if commit:
+	svn.commit(sources, log=message, nonrecursive=True)
 
 def mapped_revision(target, revision, wc=False):
     """Maps a txtrepo revision to a binrepo datespec
