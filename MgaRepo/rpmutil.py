@@ -566,11 +566,11 @@ def sync(dryrun=False, commit=False, download=False):
     for path in toremove:
         print "D\t%s" % path
         if not dryrun:
-            delete(path, commit=commit)
+            delete([path], commit=commit)
     for path in toadd:
         print "A\t%s" % path
         if not dryrun:
-            upload(path, commit=commit)
+            upload([path], commit=commit)
 
 def commit(target=".", message=None, logfile=None):
     svn = SVN()
