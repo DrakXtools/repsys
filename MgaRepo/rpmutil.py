@@ -661,16 +661,32 @@ def update(target=None):
         url = info["URL"]
         download_binaries(br_target, url)
 
-def upload(paths):
+def upload(paths, commit=True):
     for path in paths:
-        binrepo.upload(path)
+        if os.path.isdir(path) or binrepo.is_binary(path):
+            binrepo.upload(path, commit=commit)
+        else:
+            svn = SVN()
+            svn.add(path, local=True)
+            if commit:
+                silent = config.get("log", "ignore-string", "SILENT")
+                message = "%s: new file %s" % (silent, path)
+                svn.commit(path, log=message)
 
-def binrepo_delete(paths, commit=False):
+def binrepo_delete(paths, commit=True):
     refurl = binrepo.svn_root(paths[0])
     if not binrepo.enabled(refurl):
         raise Error, "binary repository is not enabled for %s" % refurl
     for path in paths:
-        binrepo.remove(path)
+        if binrepo.is_binary(path):
+            binrepo.remove(path, commit=commit)
+        else:
+            svn = SVN()
+            svn.remove(path, local=True)
+            if commit:
+                silent = config.get("log", "ignore-string", "SILENT")
+                message = "%s: delete file %s" % (silent, path)
+                svn.commit(path, log=message)
 
 def switch(mirrorurl=None):
     svn  = SVN()
