@@ -18,8 +18,6 @@ DEFAULT_TARBALLS_REPO = "/tarballs"
 BINARIES_DIR_NAME = "SOURCES"
 BINARIES_CHECKOUT_NAME = "SOURCES-bin"
 
-PROP_BINREPO_REV = "binrepo-rev"
-
 BINREPOS_SECTION = "binrepos"
 
 SOURCES_FILE = "sha1.lst"
@@ -220,7 +218,6 @@ def import_binaries(topdir, pkgname):
             rev = svn.commit(bindir, log=log)
         else:
             rev = svn.import_(bintopdir, topurl, log=log)
-        svn.propset(PROP_BINREPO_REV, str(rev), topdir)
         update.join()
         svn.add(sources_path(topdir))
     finally:
@@ -369,7 +366,6 @@ def upload(path, message=None):
 	svn.update(sources)
     update = update_sources_threaded(topdir, added=paths)
     rev = svn.commit(binpath, log=message)
-    svn.propset(PROP_BINREPO_REV, str(rev), topdir)
     if svn.info2(sources):
 	svn.update(sources)
     else:
