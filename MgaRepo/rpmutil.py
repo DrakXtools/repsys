@@ -673,7 +673,7 @@ def upload(paths, commit=True):
                 message = "%s: new file %s" % (silent, path)
                 svn.commit(path, log=message)
 
-def binrepo_delete(paths, commit=True):
+def delete(paths, commit=True):
     refurl = binrepo.svn_root(paths[0])
     if not binrepo.enabled(refurl):
         raise Error, "binary repository is not enabled for %s" % refurl

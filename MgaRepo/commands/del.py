@@ -1,6 +1,6 @@
 from MgaRepo import Error
 from MgaRepo.command import *
-from MgaRepo.rpmutil import binrepo_delete
+from MgaRepo.rpmutil import delete
 
 HELP = """\
 Usage: mgarepo del [OPTIONS] [PATH]
@@ -22,4 +22,4 @@ def parse_options():
     return opts
 
 def main():
-    do_command(parse_options, binrepo_delete)
+    do_command(parse_options, delete)
