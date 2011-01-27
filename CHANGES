@@ -1,3 +1,11 @@
+* 1.9.7
+- fix mdarepo ci
+- properly set each rpm macros at import
+- update help
+- set property binrepo-rev instead of mdv:binrepo-rev
+- mgarepo del is now working
+- create-srpm path changed to /usr/local/bin/submit_package in default config file
+
 * 1.9.6
 - don't allow importing packages already on svn
 - fix problems introduced in previous version with added '@' in path
