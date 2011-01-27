@@ -669,7 +669,8 @@ def binrepo_delete(paths, commit=False):
     refurl = binrepo.svn_root(paths[0])
     if not binrepo.enabled(refurl):
         raise Error, "binary repository is not enabled for %s" % refurl
-    binrepo.remove(paths[0])
+    for path in paths:
+        binrepo.remove(path)
 
 def switch(mirrorurl=None):
     svn  = SVN()
