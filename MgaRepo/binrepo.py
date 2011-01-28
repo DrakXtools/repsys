@@ -151,7 +151,7 @@ def make_symlinks(source, dest):
         os.symlink(linkpath, destpath)
 
 def download(targetdir, pkgdirurl=None, export=False, show=True,
-        revision=None, symlinks=True, check=False):
+        revision=None, binrev=None, symlinks=True, check=False):
     assert not export or (export and pkgdirurl)
     svn = SVN()
     sourcespath = os.path.join(targetdir, "SOURCES")
@@ -160,8 +160,7 @@ def download(targetdir, pkgdirurl=None, export=False, show=True,
         topurl = translate_url(pkgdirurl)
     else:
         topurl = translate_topdir(targetdir)
-    binrev = None
-    if revision:
+    if revision and not binrev:
         if pkgdirurl:
             binrev = mapped_revision(pkgdirurl, revision)
         else:
@@ -409,9 +408,10 @@ def mapped_revision(target, revision, wc=False):
     binrev = "{%s}" % date
     return binrev
 
-def markrelease(sourceurl, releasesurl, version, release, revision):
+def markrelease(sourceurl, releasesurl, version, release, revision, binrev):
     svn = SVN()
-    binrev = mapped_revision(sourceurl, revision)
+    if not binrev:
+	binrev = mapped_revision(sourceurl, revision)
     binsource = translate_url(sourceurl)
     binreleases = translate_url(releasesurl)
     versiondir = mirror._joinurl(binreleases, version)

@@ -24,6 +24,7 @@ Options:
     -p         Use files in pristine/ directory
     -v VER     Use files from the version specified by VER (e.g. 2.2.1-2cl)
     -r REV     Use files from current directory, in revision REV (e.g. 1001)
+    -R REV     Use binrepo files from current directory, in revision REV (e.g. 1001)
     -t DIR     Put SRPM file in directory DIR when done (default is ".")
     -P USER    Define the RPM packager inforamtion to USER
     -s FILE    Run script with "FILE TOPDIR SPECFILE" command
@@ -41,7 +42,7 @@ Examples:
     mgarepo getsrpm -l python
     mgarepo getsrpm http://foo.bar/svn/cnc/snapshot/python
     mgarepo getsrpm -p http://foo.bar/svn/cnc/releases/8cl/python
-    mgarepo getsrpm -r 1001 file:///svn/cnc/snapshot/python
+    mgarepo getsrpm -r 1001 -R 101 file:///svn/cnc/snapshot/python
 """
 
 def mode_callback(option, opt, val, parser, mode):
@@ -78,6 +79,7 @@ def parse_options():
     parser.add_option("-n", dest="revname", action="store_true")
     parser.add_option("-l", dest="svnlog", action="store_true")
     parser.add_option("-T", dest="template", type="string", default=None)
+    parser.add_option("-R", dest="binrev", type="string", default=None)
     parser.add_option("-S", dest="use_binrepo", default=True,
             action="store_false")
     parser.add_option("--check", dest="binrepo_check", default=False,

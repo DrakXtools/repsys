@@ -61,6 +61,7 @@ def get_srpm(pkgdirurl,
              version = None,
              release = None,
              revision = None,
+             binrev = None,
              packager = "",
              revname = 0,
              svnlog = 0,
@@ -105,7 +106,7 @@ def get_srpm(pkgdirurl,
             binrepo_check = (binrepo_check or 
                     config.getbool("binrepo", "getsrpm-check", False))
             download_binaries(tmpdir, geturl, revision=revision,
-                    export=True, check=binrepo_check)
+                    binrev=binrev, export=True, check=binrepo_check)
         srpmsdir = os.path.join(tmpdir, "SRPMS")
         os.mkdir(srpmsdir)
         specsdir = os.path.join(tmpdir, "SPECS")
@@ -462,7 +463,7 @@ def check_changed(pkgdirurl, all=0, show=0, verbose=0):
             "nocurrent": nocurrent,
             "nopristine": nopristine}
 
-def checkout(pkgdirurl, path=None, revision=None, branch=None, distro=None,
+def checkout(pkgdirurl, path=None, revision=None, binrev=None, branch=None, distro=None,
         spec=False, use_binrepo=False, binrepo_check=True, binrepo_link=True):
     o_pkgdirurl = pkgdirurl
     pkgdirurl = layout.package_url(o_pkgdirurl, distro=distro)
@@ -477,7 +478,7 @@ def checkout(pkgdirurl, path=None, revision=None, branch=None, distro=None,
     svn = SVN()
     svn.checkout(current, path, rev=revision, show=1)
     if use_binrepo:
-        download_binaries(path, revision=revision, symlinks=binrepo_link,
+        download_binaries(path, revision=revision, binrev=binrev, symlinks=binrepo_link,
                 check=binrepo_check)
     
 def getpkgtopdir(basedir=None):
@@ -609,13 +610,13 @@ def spec_sources(topdir):
     return sources
     
 def download_binaries(target, pkgdirurl=None, export=False, revision=None,
-        symlinks=True, check=False):
+        binrev=None, symlinks=True, check=False):
     refurl = pkgdirurl
     if refurl is None:
         refurl = binrepo.svn_root(target)
     if binrepo.enabled(refurl):
         binrepo.download(target, pkgdirurl, export=export,
-                revision=revision, symlinks=symlinks, check=check)
+                revision=revision, binrev=binrev symlinks=symlinks, check=check)
 
 def update(target=None):
     svn = SVN()
