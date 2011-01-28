@@ -57,7 +57,7 @@ class CmdIface:
                          revname=1,
                          scripts=target.scripts, 
                          use_binrepo = True,
-                         binrepo_check = False,
+                         binrepo_check = True,
                          macros=target.macros)
                 uploadsrpms.extend(targetsrpms)
             uploadcmd = get_helper("upload-srpm")
