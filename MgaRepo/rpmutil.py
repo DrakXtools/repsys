@@ -562,7 +562,8 @@ def sync(dryrun=False, commit=False, download=False):
         status = sourcesst.get(entry)
         path = os.path.join(sourcesdir, entry)
         if entry not in sources:
-            toremove.append(path)
+            if os.path.islink(path) or status is None:
+                toremove.append(path)
     for path in toremove:
         print "D\t%s" % path
         if not dryrun:
