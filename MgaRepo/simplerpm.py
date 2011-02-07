@@ -14,7 +14,7 @@ class SRPM:
             self.epoch = None
 
     def unpack(self, topdir):
-        execcmd(("rpm -i --define '_sourcedir %s/SOURCES' " + 
+        execcmd(("rpm -i --nodeps --define '_sourcedir %s/SOURCES' " + 
         "--define '_specdir %s/SPECS' --define '_patchdir %s/SOURCES' %s")
         % (topdir, topdir, topdir, self.filename))
 
