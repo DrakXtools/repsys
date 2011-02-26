@@ -1,3 +1,10 @@
+* 1.9.9
+- in sync, only try to remove files that are on svn or symlinks
+- check hash for binary files
+- add binrepo revision option in getsrpm
+- use --nodeps when unpacking source rpm (for rpm5)
+- add support for rpm 4.8 (spec.sources is now a list instead of a method)
+
 * 1.9.8
 - fix mgarepo sync
 
