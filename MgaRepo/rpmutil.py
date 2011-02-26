@@ -520,8 +520,10 @@ def sync(dryrun=False, commit=False, download=False):
         spec = rpm.TransactionSet().parseSpec(specpath)
     except rpm.error, e:
         raise Error, "could not load spec file: %s" % e
+    srclist = spec.sources if isinstance(spec.sources, (list, tuple)) \
+            else spec.sources()
     sources = dict((os.path.basename(name), name)
-            for name, no, flags in spec.sources())
+            for name, no, flags in srclist)
     sourcesst = dict((os.path.basename(path), (path, st))
             for st, path in svn.status(sourcesdir, noignore=True))
     toadd = []
