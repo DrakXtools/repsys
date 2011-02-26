@@ -618,7 +618,7 @@ def download_binaries(target, pkgdirurl=None, export=False, revision=None,
         refurl = binrepo.svn_root(target)
     if binrepo.enabled(refurl):
         binrepo.download(target, pkgdirurl, export=export,
-                revision=revision, binrev=binrev symlinks=symlinks, check=check)
+                revision=revision, binrev=binrev, symlinks=symlinks, check=check)
 
 def update(target=None):
     svn = SVN()
