@@ -54,7 +54,7 @@ Examples:
     mgarepo submit https://repos/svn/mga/cauldron/foo
     mgarepo submit -l https://repos
     mgarepo submit 1/my-packages@11011
-    mgarepo submit --define section=core/testing -t 1
+    mgarepo submit --define section=core/updates_testing -t 1
 """
 
 DEFAULT_TARGET = "Cooker"
