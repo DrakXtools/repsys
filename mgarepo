@@ -28,6 +28,7 @@ Useful commands:
     switch        relocate to mirror or upstream repository
     upload        add a file to binrepo
     del           remove a file from binrepo
+    up            update the working copy and synchronize all binaries
 
 Run "mgarepo COMMAND --help" and "man 8 mgarepo" for more information.
 
