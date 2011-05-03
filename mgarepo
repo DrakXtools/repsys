@@ -11,8 +11,6 @@ Usage: mgarepo COMMAND [COMMAND ARGUMENTS]
 
 Tool to access and manage a package repository structure.
 
-http://wiki.mandriva.com/en/Development/Packaging/RepositorySystem/Quickstart
-
 Useful commands:
     co            checkout a package
     ci            commit changes
