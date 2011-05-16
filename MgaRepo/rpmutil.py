@@ -552,7 +552,12 @@ def sync(dryrun=False, commit=False, download=False):
             except KeyError, e:
                 raise Error, "invalid variable %r in download-command "\
                         "configuration option" % e
-            execcmd(cmd, show=True)
+            try:
+                status, output = execcmd(cmd, show=True)
+            except Error, e:
+                os.unlink(sourcepath)
+                raise Error, "Could not download file %s\n" % url
+
             if os.path.isfile(sourcepath):
                 toadd.append(sourcepath)
             else:
