@@ -7,11 +7,8 @@ import getpass
 import sys
 import os
 import re
-import logging
 from cStringIO import StringIO
 #import commands
-
-log = logging.getLogger("mgarepo")
 
 # Our own version of commands' getstatusoutput(). We have a commands
 # module directory, so we can't import Python's standard module
@@ -93,12 +90,12 @@ def mapurl(url):
         try:
             expr_, replace = urlmap.split()[:2]
         except ValueError:
-            log.error("invalid url-map: %s", urlmap)
+            sys.stderr.write("invalid url-map: %s" % urlmap)
         else:
             try:
                 newurl = re.sub(expr_, replace, url)
             except re.error, errmsg:
-                log.error("error in URL mapping regexp: %s", errmsg)
+                sys.stderr.write("error in URL mapping regexp: %s" % errmsg)
     return newurl
 
 
@@ -112,8 +109,6 @@ def get_helper(name):
     helperdir = config.get("helper", "prefix", "/usr/share/mgarepo")
     hpath = config.get("helper", name, None) or \
             os.path.join(helperdir, name)
-    if not os.path.isfile(hpath):
-        log.warn("providing unexistent helper: %s", hpath)
     return hpath
 
 def rellink(src, dst):
