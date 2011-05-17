@@ -538,7 +538,7 @@ def sync(dryrun=False, commit=False, download=False):
     for source, url in sources.iteritems():
         sourcepath = os.path.join(sourcesdir, source)
         if sourcesst.get(source):
-            if not os.path.islink(sourcepath):
+            if not os.path.islink(sourcepath) and sourcesst.get(source)[1] == '?':
                 toadd.append(sourcepath)
         elif not download and not os.path.isfile(sourcepath):
             sys.stderr.write("warning: %s not found\n" % sourcepath)
