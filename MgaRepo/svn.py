@@ -221,7 +221,7 @@ class SVN:
             cmd.append("--quiet")
         status, output = self._execsvn(*cmd, **kwargs)
         if status == 0:
-            return [x.split() for x in output.splitlines()]
+            return [(x[0], x[8:]) for x in output.splitlines()]
         return None
 
     def cleanup(self, path, **kwargs):
