@@ -1,3 +1,13 @@
+* 1.9.10
+- ignore incorrect symlinks in SOURCES directory (#463)
+- fix svn status function and only add files with status "?"
+  in mgarepo sync (#349)
+- do not leave empty file when download failed (#374)
+- remove logging error
+- remove link to mandriva build system from help
+- add 'up' to the --help message
+- fix example in usage message
+
 * 1.9.9
 - in sync, only try to remove files that are on svn or symlinks
 - check hash for binary files
