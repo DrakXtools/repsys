@@ -1,3 +1,6 @@
+
+- Fix examples in the usage message of co.py
+
 * 1.9.10
 - ignore incorrect symlinks in SOURCES directory (#463)
 - fix svn status function and only add files with status "?"

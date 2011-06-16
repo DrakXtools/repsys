@@ -29,8 +29,8 @@ Options:
 
 Examples:
     mgarepo co pkgname
-    mgarepo co -d 2009.0 pkgname
-    mgarepo co 2009.0/pkgame
+    mgarepo co -d 1 pkgname
+    mgarepo co 1/pkgame
     mgarepo co http://repos/svn/cnc/snapshot/foo
     mgarepo co http://repos/svn/cnc/snapshot/foo foo-pkg
 """
