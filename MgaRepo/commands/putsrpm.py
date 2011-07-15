@@ -25,7 +25,7 @@ Options:
 
 Examples:
     mgarepo putsrpm pkg/SRPMS/pkg-2.0-1.src.rpm
-    mgarepo putsrpm -b 2009.1 foo-1.1-1.src.rpm
+    mgarepo putsrpm -b 1 foo-1.1-1.src.rpm
 """
 
 def parse_options():

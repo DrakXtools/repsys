@@ -1,3 +1,5 @@
+- Fix the example in the usage message of putsrpm.py
+
 * 1.9.11
 - add maintdb command
 - Fix examples in the usage message of co.py
