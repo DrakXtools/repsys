@@ -20,6 +20,7 @@ Useful commands:
     getspec       prints the spec
     rpmlog        prints the RPM changelog
     getsrpm       creates the source RPM
+    maintdb       interact with the maintainer db
     create        create the structure of a new package
     changed       shows changes not submitted
     authoremail   prints the e-mail of a given author
