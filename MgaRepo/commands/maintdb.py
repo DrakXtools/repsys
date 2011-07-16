@@ -27,7 +27,7 @@ def parse_options():
     if len(args):
         opts.maintdb_args = args
     else:
-        raise Error, "you need to provide arguments"
+        raise Error, "you need to provide arguments, see them with --help"
     return opts
 
 def maintdb(maintdb_args):
