@@ -651,18 +651,19 @@ def upload(paths, commit=False):
                 svn.commit(path, log=message)
 
 def delete(paths, commit=True):
-    refurl = binrepo.svn_root(paths[0])
-    if not binrepo.enabled(refurl):
-        raise Error, "binary repository is not enabled for %s" % refurl
+    silent = config.get("log", "ignore-string", "SILENT")
     for path in paths:
+        message = "%s: delete file %s" % (silent, path)
         if binrepo.is_binary(path):
-            binrepo.remove(path, commit=commit)
+            topdir = getpkgtopdir()
+            binrepo.update_sources(topdir, removed=[path])
+            if commit:
+                svn = SVN()
+                svn.commit(binrepo.sources_path(topdir), log=message)
         else:
             svn = SVN()
             svn.remove(path, local=True)
             if commit:
-                silent = config.get("log", "ignore-string", "SILENT")
-                message = "%s: delete file %s" % (silent, path)
                 svn.commit(path, log=message)
 
 def switch(mirrorurl=None):
