@@ -631,7 +631,7 @@ def update(target=None):
         url = info["URL"]
         binrepo.download_binaries(br_target)
 
-def upload(paths, commit=True):
+def upload(paths, commit=False):
     for path in paths:
         if os.path.isdir(path) or binrepo.is_binary(path):
             topdir = getpkgtopdir()
