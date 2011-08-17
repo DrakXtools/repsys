@@ -162,7 +162,7 @@ def binary_exists(sha1sum):
     dlurl = mirror.normalize_path(dlurl + "/" + sha1sum)
     h = httplib2.Http()
     resp, content = h.request(dlurl, 'HEAD')
-    return resp.status == 200:
+    return resp.status == 200
 
 def upload_binary(topdir, filename):
     filepath = os.path.join(topdir, 'SOURCES', filename)
