@@ -61,7 +61,6 @@ def get_srpm(pkgdirurl,
              version = None,
              release = None,
              revision = None,
-             binrev = None,
              packager = "",
              revname = 0,
              svnlog = 0,
@@ -70,9 +69,7 @@ def get_srpm(pkgdirurl,
              template = None,
              macros = [],
              verbose = 0,
-             strict = False,
-             use_binrepo = False,
-             binrepo_check = True):
+             strict = False):
     svn = SVN()
     tmpdir = tempfile.mktemp()
     topdir = "--define '_topdir %s'" % tmpdir
@@ -460,8 +457,8 @@ def check_changed(pkgdirurl, all=0, show=0, verbose=0):
             "nocurrent": nocurrent,
             "nopristine": nopristine}
 
-def checkout(pkgdirurl, path=None, revision=None, binrev=None, branch=None, distro=None,
-        spec=False, use_binrepo=False, binrepo_check=True, binrepo_link=True):
+def checkout(pkgdirurl, path=None, revision=None, branch=None, distro=None,
+        spec=False):
     o_pkgdirurl = pkgdirurl
     pkgdirurl = layout.package_url(o_pkgdirurl, distro=distro)
     append = None

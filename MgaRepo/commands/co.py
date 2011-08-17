@@ -19,12 +19,8 @@ Options:
     -d      The distribution branch to checkout from
     -b      The package branch
     -r REV  Revision to checkout
-    -R REV  binrepo revision to checkout
-    -S      Do not download sources from the binaries repository
-    -L      Do not make symlinks of the binaries downloaded in SOURCES/
     -s      Only checkout the SPECS/ directory
     -M      Do not use the mirror (use the main repository)
-    --check Check integrity of files fetched from the binary repository
     -h      Show this message
 
 Examples:
@@ -38,13 +34,6 @@ Examples:
 def parse_options():
     parser = OptionParser(help=HELP)
     parser.add_option("-r", dest="revision")
-    parser.add_option("-R", dest="binrev")
-    parser.add_option("-S", dest="use_binrepo", default=True,
-            action="store_false")
-    parser.add_option("--check", dest="binrepo_check", default=False,
-            action="store_true")
-    parser.add_option("-L", dest="binrepo_link", default=True,
-            action="store_false")
     parser.add_option("--distribution", "-d", dest="distro", default=None)
     parser.add_option("--branch", "-b", dest="branch", default=None)
     parser.add_option("-s", "--spec", dest="spec", default=False,
