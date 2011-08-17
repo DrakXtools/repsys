@@ -497,6 +497,8 @@ def ispkgtopdir(path=None):
 def sync(dryrun=False, commit=False, download=False):
     svn = SVN()
     topdir = getpkgtopdir()
+    spath = binrepo.sources_path(topdir)
+    binrepoentries = binrepo.parse_sources(spath)
     # run svn info because svn st does not complain when topdir is not an
     # working copy
     svn.info(topdir)
@@ -532,7 +534,7 @@ def sync(dryrun=False, commit=False, download=False):
     for source, url in sources.iteritems():
         sourcepath = os.path.join(sourcesdir, source)
         if sourcesst.get(source):
-            if not os.path.islink(sourcepath) and sourcesst.get(source)[1] == '?':
+            if not (source in binrepoentries) and sourcesst.get(source)[1] == '?':
                 toadd.append(sourcepath)
         elif not download and not os.path.isfile(sourcepath):
             sys.stderr.write("warning: %s not found\n" % sourcepath)
@@ -564,7 +566,7 @@ def sync(dryrun=False, commit=False, download=False):
         status = sourcesst.get(entry)
         path = os.path.join(sourcesdir, entry)
         if entry not in sources:
-            if os.path.isfile(path) and (os.path.islink(path) or status is None):
+            if status is None or entry in binrepoentries:
                 toremove.append(path)
     for path in toremove:
         print "D\t%s" % path
@@ -656,7 +658,7 @@ def delete(paths, commit=False):
         message = "%s: delete file %s" % (silent, path)
         if binrepo.is_binary(path):
             topdir = getpkgtopdir()
-            binrepo.update_sources(topdir, removed=[path])
+            binrepo.update_sources(topdir, removed=[os.path.basename(path)])
             if commit:
                 svn = SVN()
                 svn.commit(binrepo.sources_path(topdir), log=message)
