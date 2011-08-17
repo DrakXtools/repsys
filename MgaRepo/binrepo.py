@@ -156,17 +156,20 @@ def download_binaries(topdir):
     for name, sha1 in entries.iteritems():
 	download_binary(topdir, sha1, name)
 
-def upload_binary(topdir, filename):
-    filepath = os.path.join(topdir, 'SOURCES', filename)
-    if not os.path.exists(filepath):
-        raise Error, "'%s' was not found" % spath
-    sha1sum = file_hash(filepath)
+def binary_exists(sha1sum):
     dlurl = config.get("binrepo", "download_url",
 	    "http://binrepo.mageia.org/")
     dlurl = mirror.normalize_path(dlurl + "/" + sha1sum)
     h = httplib2.Http()
     resp, content = h.request(dlurl, 'HEAD')
-    if resp.status == 200:
+    return resp.status == 200:
+
+def upload_binary(topdir, filename):
+    filepath = os.path.join(topdir, 'SOURCES', filename)
+    if not os.path.exists(filepath):
+        raise Error, "'%s' was not found" % spath
+    sha1sum = file_hash(filepath)
+    if binary_exists(sha1sum):
 	return
     host = config.get("binrepo", "upload_host")
     upload_bin_helper = get_helper("upload-bin")
