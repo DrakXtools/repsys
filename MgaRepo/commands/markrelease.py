@@ -30,7 +30,6 @@ structure.
 Options:
     -f FILE Try to extract information from given file
     -r REV  Revision which will be used to make the release copy tag
-    -R REV  binrepo revision which will be used to make the release copy tag
     -v VER  Version which will be used to make the release copy tag
     -n      Append package name to provided URL
     -h      Show this message
@@ -52,11 +51,9 @@ def parse_options():
     parser = OptionParser(help=HELP)
     parser.defaults["version"] = None
     parser.defaults["release"] = None
-    parser.defaults["binrev"] = None
     parser.add_option("-v", action="callback", callback=version_callback,
             nargs=1, type="string", dest="__ignore")
     parser.add_option("-r", dest="revision")
-    parser.add_option("-R", dest="binrev")
     parser.add_option("-f", dest="filename")
     parser.add_option("-n", dest="appendname", action="store_true")
     opts, args = parser.parse_args()
