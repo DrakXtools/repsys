@@ -1,5 +1,5 @@
 from MgaRepo import Error, config, mirror, layout
-from MgaRepo.util import execcmd, rellink
+from MgaRepo.util import execcmd, rellink, get_helper
 from MgaRepo.svn import SVN
 
 import sys
@@ -12,6 +12,7 @@ import tempfile
 import hashlib
 import urlparse
 import threading
+import httplib2
 from cStringIO import StringIO
 
 DEFAULT_TARBALLS_REPO = "/tarballs"
@@ -130,7 +131,7 @@ def find_binaries(paths):
 def download_binary(topdir, sha1, filename):
     fmt = config.get("global", "download-command",
 	    "wget -c -O '$dest' $url")
-    url = config.get("global", "binrepo",
+    url = config.get("binrepo", "download_url",
 	    "http://binrepo.mageia.org/")
     url = mirror.normalize_path(url + "/" + sha1)
     dest = os.path.join(topdir, 'SOURCES', filename)
@@ -154,6 +155,27 @@ def download_binaries(topdir):
     entries = parse_sources(spath)
     for name, sha1 in entries.iteritems():
 	download_binary(topdir, sha1, name)
+
+def upload_binary(topdir, filename):
+    filepath = os.path.join(topdir, 'SOURCES', filename)
+    if not os.path.exists(filepath):
+        raise Error, "'%s' was not found" % spath
+    sha1sum = file_hash(filepath)
+    dlurl = config.get("binrepo", "download_url",
+	    "http://binrepo.mageia.org/")
+    dlurl = mirror.normalize_path(dlurl + "/" + sha1sum)
+    h = httplib2.Http()
+    resp, content = h.request(dlurl, 'HEAD')
+    if resp.status == 200:
+	return
+    host = config.get("binrepo", "upload_host")
+    upload_bin_helper = get_helper("upload-bin")
+    command = "ssh %s %s %s" % (host, upload_bin_helper, filename)
+    try:
+	filein = open(filepath, 'r')
+    except Error, e:
+	raise Error, "Could not open file %s\n" % filepath
+    status, output = execcmd(command, show=True, geterr=True, stdin=filein)
 
 def make_symlinks(source, dest):
     todo = []
