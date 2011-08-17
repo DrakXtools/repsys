@@ -170,49 +170,15 @@ def upload_binary(topdir, filename):
 def import_binaries(topdir, pkgname):
     """Import all binaries from a given package checkout
 
-    (with pending svn adds)
-
     @topdir: the path to the svn checkout
     """
-    svn = SVN()
-    topurl = translate_topdir(topdir)
     sourcesdir = os.path.join(topdir, "SOURCES")
-    bintopdir = tempfile.mktemp("repsys")
-    try:
-        svn.checkout(topurl, bintopdir)
-        checkout = True
-    except Error:
-        bintopdir = tempfile.mkdtemp("repsys")
-        checkout = False
-    try:
-        bindir = os.path.join(bintopdir, BINARIES_DIR_NAME)
-        if not os.path.exists(bindir):
-            if checkout:
-                svn.mkdir(bindir)
-            else:
-                os.mkdir(bindir)
-        binaries = find_binaries([sourcesdir])
-        update = update_sources_threaded(topdir, added=binaries)
-        for path in binaries:
-            name = os.path.basename(path)
-            binpath = os.path.join(bindir, name)
-            os.rename(path, binpath)
-            try:
-                svn.remove(path)
-            except Error:
-                # file not tracked
-                svn.revert(path)
-            if checkout:
-                svn.add(binpath)
-        log = "imported binaries for %s" % pkgname
-        if checkout:
-            rev = svn.commit(bindir, log=log)
-        else:
-            rev = svn.import_(bintopdir, topurl, log=log)
-        update.join()
-        svn.add(sources_path(topdir))
-    finally:
-        shutil.rmtree(bintopdir)
+    binaries = find_binaries([sourcesdir])
+    for path in binaries:
+	upload_binary(topdir, os.path.basename(path))
+    update_sources(topdir, added=binaries)
+    svn = SVN()
+    svn.add(sources_path(topdir))
 
 def parse_sources(path):
     entries = {}

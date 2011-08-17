@@ -258,6 +258,8 @@ def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
             for entry in [x for x in usourcesentries
                              if x not in sourcesentries]:
                 entrypath = os.path.join(sourcesdir, entry)
+                if binrepo.is_binary(entrypath):
+                    continue
                 svn.add(entrypath)
         finally:
             if os.path.isdir(unpackdir):
