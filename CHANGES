@@ -1,3 +1,6 @@
+- change binrepo :
+  http://mageia.org/pipermail/mageia-sysadm/2011-July/003717.html
+- add command maintdb in the help
 - Fix the example in the usage message of putsrpm.py
 
 * 1.9.11
