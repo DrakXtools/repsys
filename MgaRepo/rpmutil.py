@@ -650,7 +650,7 @@ def upload(paths, commit=False):
                 message = "%s: new file %s" % (silent, path)
                 svn.commit(path, log=message)
 
-def delete(paths, commit=True):
+def delete(paths, commit=False):
     silent = config.get("log", "ignore-string", "SILENT")
     for path in paths:
         message = "%s: delete file %s" % (silent, path)
