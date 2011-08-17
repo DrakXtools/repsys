@@ -312,16 +312,3 @@ def mapped_revision(target, revision, wc=False):
     binrev = "{%s}" % date
     return binrev
 
-def markrelease(sourceurl, releasesurl, version, release, revision, binrev):
-    svn = SVN()
-    if not binrev:
-	binrev = mapped_revision(sourceurl, revision)
-    binsource = translate_url(sourceurl)
-    binreleases = translate_url(releasesurl)
-    versiondir = mirror._joinurl(binreleases, version)
-    dest = mirror._joinurl(versiondir, release)
-    svn.mkdir(binreleases, noerror=1, log="created directory for releases")
-    svn.mkdir(versiondir, noerror=1, log="created directory for version %s" % version)
-    svn.copy(binsource, dest, rev=binrev,
-            log="%%markrelease ver=%s rel=%s rev=%s binrev=%s" % (version, release,
-                revision, binrev))
