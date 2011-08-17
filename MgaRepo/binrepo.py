@@ -15,76 +15,10 @@ import threading
 import httplib2
 from cStringIO import StringIO
 
-DEFAULT_TARBALLS_REPO = "/tarballs"
-BINARIES_DIR_NAME = "SOURCES"
-BINARIES_CHECKOUT_NAME = "SOURCES-bin"
-
-BINREPOS_SECTION = "binrepos"
-
 SOURCES_FILE = "sha1.lst"
 
 class ChecksumError(Error):
     pass
-
-def svn_baseurl(target):
-    svn = SVN()
-    info = svn.info2(target)
-    if info is None:
-        # unversioned resource
-        newtarget = os.path.dirname(target)
-        info = svn.info2(newtarget)
-        assert info is not None, "svn_basedir should not be used with a "\
-                "non-versioned directory"
-    root = info["Repository Root"]
-    url = info["URL"]
-    kind = info["Node Kind"]
-    path = url[len(root):]
-    if kind == "directory":
-        return url
-    basepath = os.path.dirname(path)
-    baseurl = mirror.normalize_path(url + "/" + basepath)
-    return baseurl
-
-def default_repo():
-    base = config.get("global", "binaries-repository", None)
-    if base is None:
-        default_parent = config.get("global", "default_parent", None)
-        if default_parent is None:
-            raise Error, "no binaries-repository nor default_parent "\
-                    "configured"
-        comps = urlparse.urlparse(default_parent)
-        base = comps[1] + ":" + DEFAULT_TARBALLS_REPO
-    return base
-
-def translate_url(url):
-    url = mirror.normalize_path(url)
-    main = mirror.normalize_path(layout.repository_url())
-    subpath = url[len(main)+1:]
-    # [binrepos]
-    # updates/2009.0 = svn+ssh://svn.mandriva.com/svn/binrepo/20090/
-    ## svn+ssh://svn.mandriva.com/svn/packages/2009.0/trafshow/current
-    ## would translate to 
-    ## svn+ssh://svn.mandriva.com/svn/binrepo/20090/updates/trafshow/current/
-    binbase = None
-    if BINREPOS_SECTION in config.sections():
-        for option, value in config.walk(BINREPOS_SECTION):
-            if subpath.startswith(option):
-                binbase = value
-                break
-    binurl = mirror._joinurl(binbase or default_repo(), subpath)
-    return binurl
-
-def translate_topdir(path):
-    """Returns the URL in the binrepo from a given path inside a SVN
-       checkout directory.
-
-    @path: if specified, returns a URL in the binrepo whose path is the
-           same as the path inside the main repository.
-    """
-    baseurl = svn_baseurl(path)
-    binurl = translate_url(baseurl)
-    target = mirror.normalize_path(binurl)
-    return target
 
 def is_binary(path):
     raw = config.get("binrepo", "upload-match",
@@ -193,21 +127,6 @@ def parse_sources(path):
         entries[name] = sum
     return entries
 
-def check_hash(path, sum):
-    newsum = file_hash(path)
-    if newsum != sum:
-        raise ChecksumError, "different checksums for %s: expected %s, "\
-                "but %s was found" % (path, sum, newsum)
-
-def check_sources(topdir):
-    spath = sources_path(topdir)
-    if not os.path.exists(spath):
-        raise Error, "'%s' was not found" % spath
-    entries = parse_sources(spath)
-    for name, sum in entries.iteritems():
-        fpath = os.path.join(topdir, "SOURCES", name)
-        check_hash(fpath, sum)
-
 def file_hash(path):
     sum = hashlib.sha1()
     f = open(path)
@@ -238,43 +157,4 @@ def update_sources(topdir, added=[], removed=[]):
     for name in sorted(entries):
         f.write("%s  %s\n" % (entries[name], name))
     f.close()
-
-def update_sources_threaded(*args, **kwargs):
-    t = threading.Thread(target=update_sources, args=args, kwargs=kwargs)
-    t.start()
-    t.join()
-    return t
-
-def mapped_revision(target, revision, wc=False):
-    """Maps a txtrepo revision to a binrepo datespec
-
-    This datespec can is intended to be used by svn .. -r DATE.
-
-    @target: a working copy path or a URL
-    @revision: if target is a URL, the revision number used when fetching
-         svn info
-    @wc: if True indicates that 'target' must be interpreted as a
-         the path of a svn working copy, otherwise it is handled as a URL
-    """
-    svn = SVN()
-    binrev = None
-    if wc:
-        spath = sources_path(target)
-        if os.path.exists(spath):
-            infolines = svn.info(spath, xml=True)
-            if infolines:
-                rawinfo = "".join(infolines) # arg!
-                found = re.search("<date>(.*?)</date>", rawinfo).groups()
-                date = found[0]
-            else:
-                raise Error, "bogus 'svn info' for '%s'" % spath
-        else:
-            raise Error, "'%s' was not found" % spath
-    else:
-        url = mirror._joinurl(target, sources_path(""))
-        date = svn.propget("svn:date", url, rev=revision, revprop=True)
-        if not date:
-            raise Error, "no valid date available for '%s'" % url
-    binrev = "{%s}" % date
-    return binrev
 
