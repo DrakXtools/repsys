@@ -634,7 +634,14 @@ def update(target=None):
 def upload(paths, commit=True):
     for path in paths:
         if os.path.isdir(path) or binrepo.is_binary(path):
-            binrepo.upload(path, commit=commit)
+            topdir = getpkgtopdir()
+            binrepo.upload_binary(topdir, os.path.basename(path))
+            binrepo.update_sources(topdir, added=[path])
+            if commit:
+                svn = SVN()
+                silent = config.get("log", "ignore-string", "SILENT")
+                message = "%s: new file %s" % (silent, path)
+                svn.commit(binrepo.sources_path(topdir), log=message)
         else:
             svn = SVN()
             svn.add(path, local=True)
