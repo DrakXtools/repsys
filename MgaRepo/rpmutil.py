@@ -102,11 +102,7 @@ def get_srpm(pkgdirurl,
                     "inside %s" % (revision or "HEAD", geturl)
         mirror.info(geturl)
         svn.export(geturl, tmpdir, rev=revision)
-        if use_binrepo:
-            binrepo_check = (binrepo_check or 
-                    config.getbool("binrepo", "getsrpm-check", False))
-            download_binaries(tmpdir, geturl, revision=revision,
-                    binrev=binrev, export=True, check=binrepo_check)
+        binrepo.download_binaries(tmpdir)
         srpmsdir = os.path.join(tmpdir, "SRPMS")
         os.mkdir(srpmsdir)
         specsdir = os.path.join(tmpdir, "SPECS")
@@ -477,9 +473,7 @@ def checkout(pkgdirurl, path=None, revision=None, binrev=None, branch=None, dist
     mirror.info(current, write=True)
     svn = SVN()
     svn.checkout(current, path, rev=revision, show=1)
-    if use_binrepo:
-        download_binaries(path, revision=revision, binrev=binrev, symlinks=binrepo_link,
-                check=binrepo_check)
+    binrepo.download_binaries(path)
     
 def getpkgtopdir(basedir=None):
     #FIXME this implementation doesn't work well with relative path names,
@@ -644,7 +638,7 @@ def update(target=None):
             raise Error, "target not in SVN nor in binaries "\
                     "repository: %s" % target
         url = info["URL"]
-        download_binaries(br_target, url)
+        binrepo.download_binaries(br_target)
 
 def upload(paths, commit=True):
     for path in paths:
