@@ -127,6 +127,34 @@ def find_binaries(paths):
                 new.append(path)
     return new
 
+def download_binary(topdir, sha1, filename):
+    fmt = config.get("global", "download-command",
+	    "wget -c -O '$dest' $url")
+    url = config.get("global", "binrepo",
+	    "http://binrepo.mageia.org/")
+    url = mirror.normalize_path(url + "/" + sha1)
+    dest = os.path.join(topdir, 'SOURCES', filename)
+    if os.path.exists(dest):
+	return 1
+    context = {"dest": dest, "url": url}
+    try:
+	cmd = string.Template(fmt).substitute(context)
+    except KeyError, e:
+	raise Error, "invalid variable %r in download-command "\
+		"configuration option" % e
+    try:
+	status, output = execcmd(cmd, show=True)
+    except Error, e:
+	raise Error, "Could not download file %s\n" % url
+
+def download_binaries(topdir):
+    spath = sources_path(topdir)
+    if not os.path.exists(spath):
+        raise Error, "'%s' was not found" % spath
+    entries = parse_sources(spath)
+    for name, sha1 in entries.iteritems():
+	download_binary(topdir, sha1, name)
+
 def make_symlinks(source, dest):
     todo = []
     tomove = []
