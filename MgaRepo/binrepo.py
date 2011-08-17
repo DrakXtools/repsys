@@ -45,19 +45,6 @@ def svn_baseurl(target):
     baseurl = mirror.normalize_path(url + "/" + basepath)
     return baseurl
 
-def svn_root(target):
-    svn = SVN()
-    info = svn.info2(target)
-    if info is None:
-        newtarget = os.path.dirname(target)
-        info = svn.info2(newtarget)
-        assert info is not None
-    return info["Repository Root"]
-
-def enabled(url):
-    use = config.getbool("global", "use-binaries-repository", False)
-    return use
-
 def default_repo():
     base = config.get("global", "binaries-repository", None)
     if base is None:
@@ -180,54 +167,6 @@ def upload_binary(topdir, filename):
 	raise Error, "Could not open file %s\n" % filepath
     status, output = execcmd(command, show=True, geterr=True, stdin=filein)
 
-def make_symlinks(source, dest):
-    todo = []
-    tomove = []
-    for name in os.listdir(source):
-        path = os.path.join(source, name)
-        if not os.path.isdir(path) and not name.startswith("."):
-            destpath = os.path.join(dest, name)
-            linkpath = rellink(path, destpath)
-            if os.path.exists(destpath):
-                if (os.path.islink(destpath) and
-                        os.readlink(destpath) == linkpath):
-                    continue
-                movepath = destpath + ".repsys-moved"
-                if os.path.exists(movepath):
-                    raise Error, "cannot create symlink, %s already "\
-                            "exists (%s too)" % (destpath, movepath)
-                tomove.append((destpath, movepath))
-            todo.append((destpath, linkpath))
-    for destpath, movepath in tomove:
-        os.rename(destpath, movepath)
-    for destpath, linkpath in todo:
-        os.symlink(linkpath, destpath)
-
-def download(targetdir, pkgdirurl=None, export=False, show=True,
-        revision=None, binrev=None, symlinks=True, check=False):
-    assert not export or (export and pkgdirurl)
-    svn = SVN()
-    sourcespath = os.path.join(targetdir, "SOURCES")
-    binpath = os.path.join(targetdir, BINARIES_CHECKOUT_NAME)
-    if pkgdirurl:
-        topurl = translate_url(pkgdirurl)
-    else:
-        topurl = translate_topdir(targetdir)
-    if revision and not binrev:
-        if pkgdirurl:
-            binrev = mapped_revision(pkgdirurl, revision)
-        else:
-            binrev = mapped_revision(targetdir, revision, wc=True)
-    binurl = mirror._joinurl(topurl, BINARIES_DIR_NAME)
-    if export:
-        svn.export(binurl, binpath, rev=binrev, show=show)
-    else:
-        svn.checkout(binurl, binpath, rev=binrev, show=show)
-    if symlinks:
-        make_symlinks(binpath, sourcespath)
-    if check:
-        check_sources(targetdir)
-
 def import_binaries(topdir, pkgname):
     """Import all binaries from a given package checkout
 
@@ -274,13 +213,6 @@ def import_binaries(topdir, pkgname):
         svn.add(sources_path(topdir))
     finally:
         shutil.rmtree(bintopdir)
-
-def create_package_dirs(bintopdir):
-    svn = SVN()
-    binurl = mirror._joinurl(bintopdir, BINARIES_DIR_NAME)
-    silent = config.get("log", "ignore-string", "SILENT")
-    message = "%s: created binrepo package structure" % silent
-    svn.mkdir(binurl, log=message, parents=True)
 
 def parse_sources(path):
     entries = {}
@@ -346,87 +278,6 @@ def update_sources_threaded(*args, **kwargs):
     t.start()
     t.join()
     return t
-
-def remove(path, message=None, commit=True):
-    from MgaRepo.rpmutil import getpkgtopdir
-    svn = SVN()
-    if not os.path.exists(path):
-        raise Error, "not found: %s" % path
-    bpath = os.path.basename(path)
-    topdir = getpkgtopdir()
-    bintopdir = translate_topdir(topdir)
-    sources = sources_path(topdir)
-    svn.update(sources)
-    update = update_sources_threaded(topdir, removed=[bpath])
-    silent = config.get("log", "ignore-string", "SILENT")
-    if not message:
-        message = "%s: delete binary file %s" % (silent, bpath)
-    if commit:
-        svn.commit(sources, log=message, nonrecursive=True)
-    binlink = os.path.join(topdir, "SOURCES", bpath)
-    if os.path.islink(binlink):
-        os.unlink(binlink)
-    binpath = os.path.join(topdir, BINARIES_CHECKOUT_NAME, bpath)
-    svn.remove(binpath)
-    if commit:
-       svn.commit(binpath, log=message)
-
-def upload(path, message=None, commit=True):
-    from MgaRepo.rpmutil import getpkgtopdir
-    svn = SVN()
-    if not os.path.exists(path):
-        raise Error, "not found: %s" % path
-    # XXX check if the path is under SOURCES/
-    paths = find_binaries([path])
-    if not paths:
-        raise Error, "'%s' does not seem to have any tarballs" % path
-    topdir = getpkgtopdir()
-    bintopdir = translate_topdir(topdir)
-    binurl = mirror._joinurl(bintopdir, BINARIES_DIR_NAME)
-    sourcesdir = os.path.join(topdir, "SOURCES")
-    bindir = os.path.join(topdir, BINARIES_CHECKOUT_NAME)
-    silent = config.get("log", "ignore-string", "SILENT")
-    if not os.path.exists(bindir):
-        try:
-            download(topdir, show=False)
-        except Error:
-            # possibly the package does not exist
-            # (TODO check whether it is really a 'path not found' error)
-            pass
-        if not os.path.exists(bindir):
-            create_package_dirs(bintopdir)
-	    if commit:
-		svn.commit(topdir, log="%s: created binrepo structure" % silent)
-            download(topdir, show=False)
-    for path in paths:
-        if svn.info2(path):
-            sys.stderr.write("'%s' is already tracked by svn, ignoring\n" %
-                    path)
-            continue
-	if os.path.islink(path):
-            sys.stderr.write("'%s' is a symbolic link, ignoring\n" %
-                    path)
-            continue
-        name = os.path.basename(path)
-        binpath = os.path.join(bindir, name)
-        os.rename(path, binpath)
-        svn.add(binpath)
-    if not message:
-        message = "%s: new binary files %s" % (silent, " ".join(paths))
-    make_symlinks(bindir, sourcesdir)
-    sources = sources_path(topdir)
-    if svn.info2(sources):
-	svn.update(sources)
-    update = update_sources_threaded(topdir, added=paths)
-    if commit:
-	rev = svn.commit(binpath, log=message)
-    if svn.info2(sources):
-	svn.update(sources)
-    else:
-	svn.add(sources)
-    update.join()
-    if commit:
-	svn.commit(sources, log=message, nonrecursive=True)
 
 def mapped_revision(target, revision, wc=False):
     """Maps a txtrepo revision to a binrepo datespec
