@@ -610,15 +610,6 @@ def spec_sources(topdir):
     sources = [name for name, x, y in spec.sources()]
     return sources
     
-def download_binaries(target, pkgdirurl=None, export=False, revision=None,
-        binrev=None, symlinks=True, check=False):
-    refurl = pkgdirurl
-    if refurl is None:
-        refurl = binrepo.svn_root(target)
-    if binrepo.enabled(refurl):
-        binrepo.download(target, pkgdirurl, export=export,
-                revision=revision, binrev=binrev, symlinks=symlinks, check=check)
-
 def update(target=None):
     svn = SVN()
     info = None
