@@ -27,8 +27,10 @@ def execcmd(*cmd, **kwargs):
     if kwargs.get("show"):
         if kwargs.get("geterr"):
             err = StringIO()
+            pstdin = kwargs.get("stdin") if kwargs.get("stdin") else None
             pipe = subprocess.Popen(cmdstr, shell=True,
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    stdin=pstdin)
             of = pipe.stdout.fileno()
             ef = pipe.stderr.fileno()
             while True:
