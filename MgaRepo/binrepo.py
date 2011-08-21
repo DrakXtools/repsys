@@ -70,6 +70,7 @@ def download_binary(topdir, sha1, filename):
     try:
 	status, output = execcmd(cmd, show=True)
     except Error, e:
+	os.unlink(dest)
 	raise Error, "Could not download file %s\n" % url
 
 def download_binaries(topdir):
