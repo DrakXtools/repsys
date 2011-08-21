@@ -1,3 +1,7 @@
+* 1.10.1
+- check sha1sum of existing binary files when updating
+- remove file when there was an error during download from binrepo
+
 * 1.10.0
 - change binrepo :
   http://mageia.org/pipermail/mageia-sysadm/2011-July/003717.html
