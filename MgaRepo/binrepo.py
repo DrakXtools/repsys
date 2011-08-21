@@ -57,7 +57,10 @@ def download_binary(topdir, sha1, filename):
     url = mirror.normalize_path(url + "/" + sha1)
     dest = os.path.join(topdir, 'SOURCES', filename)
     if os.path.exists(dest):
-	return 1
+	if file_hash(dest) == sha1:
+	    return 1
+	else:
+	    raise Error, "File with incorrect sha1sum: %s" % dest
     context = {"dest": dest, "url": url}
     try:
 	cmd = string.Template(fmt).substitute(context)
