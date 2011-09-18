@@ -7,7 +7,7 @@ class SRPM:
         self._getinfo()
 
     def _getinfo(self):
-        cmdstr = "rpm -qp --qf '%%{name} %%{epoch} %%{release} %%{version}' %s"
+        cmdstr = "rpm -qp --nosignature --qf '%%{name} %%{epoch} %%{release} %%{version}' %s"
         status, output = execcmd(cmdstr % self.filename)
         self.name, self.epoch, self.release, self.version = output.split()
         if self.epoch == "(none)":
