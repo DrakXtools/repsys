@@ -120,7 +120,11 @@ def import_binaries(topdir, pkgname):
 
 def parse_sources(path):
     entries = {}
-    f = open(path)
+    try:
+        f = open(path)
+    except IOError:
+        return []
+
     for rawline in f:
         line = rawline.strip()
         try:
