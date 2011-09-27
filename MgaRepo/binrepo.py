@@ -92,7 +92,7 @@ def binary_exists(sha1sum):
 def upload_binary(topdir, filename):
     filepath = os.path.join(topdir, 'SOURCES', filename)
     if not os.path.exists(filepath):
-        raise Error, "'%s' was not found" % spath
+        raise Error, "'%s' was not found" % filepath
     sha1sum = file_hash(filepath)
     if binary_exists(sha1sum):
 	return
