@@ -8,6 +8,7 @@ import sys
 import os
 import re
 from cStringIO import StringIO
+import httplib2
 #import commands
 
 # Our own version of commands' getstatusoutput(). We have a commands
@@ -134,5 +135,14 @@ def rellink(src, dst):
     steps.extend(csrc[i:])
     return os.path.sep.join(steps)
     
+def maintdb_get(package):
+    dlurl = config.get("maintdb", "url",
+            "http://maintdb.mageia.org/")
+    dlurl = dlurl + "/" + package
+    h = httplib2.Http()
+    resp, content = h.request(dlurl, 'GET')
+    if resp.status != 200:
+        raise Exception('Package cannot be found in maintdb')
+    return content.rstrip('\n')
 
 # vim:et:ts=4:sw=4
