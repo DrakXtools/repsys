@@ -5,6 +5,7 @@ from MgaRepo.mirror import strip_username
 from MgaRepo.rpmutil import get_srpm
 from MgaRepo.cgiutil import get_targets
 from MgaRepo.util import mapurl, execcmd, get_helper
+from MgaRepo.binrepo import file_hash
 import sys
 import os
 import pwd
@@ -12,6 +13,39 @@ import optparse
 import subprocess
 import urlparse
 import urllib
+import psycopg2
+import rpm
+
+def get_rpm_hdr(filename):
+    ts = rpm.TransactionSet()
+    f = os.open(filename, os.O_RDONLY)
+    hdr = ts.hdrFromFdno(f)
+    os.close(f)
+    return hdr
+
+class youridb:
+    def __init__(self):
+        dbname = config.get("youridb", "dbname")
+        dbuser = config.get("youridb", "dbuser")
+        dbpasswd = config.get("youridb", "dbpasswd")
+        dbhost = config.get("youridb", "dbhost")
+        sslmode = 1
+        self.db = psycopg2.connect(dbname=dbname, user=dbuser,
+                                    password=dbpasswd, host=dbhost)
+
+    def add(self, srpm, url, revision, packager):
+        rpmhdr = get_rpm_hdr(srpm)
+        rpmname = rpmhdr[rpm.RPMTAG_NAME]
+        rpmEVR = rpmhdr[rpm.RPMTAG_EVR]
+        rpmsha1 = file_hash(srpm)
+        cur = self.db.cursor()
+        cur.execute("INSERT INTO submits (sha1, rpmname, EVR, packager, url, revision, status) VALUES (%s, %s, %s, %s, %s, %s, %s);",
+                (rpmsha1, rpmname, rpmEVR, packager, url, revision, 'create-srpm'))
+        cur.close()
+        self.db.commit()
+
+    def close(self):
+        self.db.close()
 
 class CmdError(Error): pass
 
@@ -21,6 +55,11 @@ class CmdIface:
 
     def submit_package(self, urls, revision, targetname, dontmapurl_=0,
             define=[]):
+        try:
+            db = youridb()
+        except Exception, e:
+            print e.pgerror
+            return 0
         pw = pwd.getpwuid(os.getuid())
         username = pw[0]
         packager = config.get("users", username) or pw[4]
@@ -58,6 +97,12 @@ class CmdIface:
                          scripts=target.scripts, 
                          macros=target.macros)
                 uploadsrpms.extend(targetsrpms)
+                for srpm in targetsrpms:
+                    try:
+                        db.add(srpm, url=url, revision=urlrev, packager=packager)
+                    except Exception, e:
+                        print e.pgerror
+                        return 0
             uploadcmd = get_helper("upload-srpm")
             if uploadcmd:
                 upload_command = [uploadcmd]
@@ -78,6 +123,7 @@ class CmdIface:
                 if status != 0:
                     raise CmdError, "Failed to upload "\
                         "%s:\n%s" % (" ".join(urls), output)
+        db.close()
         return 1
 
     def submit_targets(self):
