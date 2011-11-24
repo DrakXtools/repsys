@@ -192,7 +192,7 @@ class SVN:
     def info(self, path, **kwargs):
         cmd = ["info", path + '@' if '@' in path else path]
         status, output = self._execsvn(local=True, noerror=True, *cmd, **kwargs)
-        if "Not a versioned resource" not in output:
+        if (("Not a versioned resource" not in output) and ("svn: warning: W155010" not in output)):
             return output.splitlines()
         return None
 
