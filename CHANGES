@@ -1,3 +1,6 @@
+
+- update URLs for new wiki
+
 * 1.10.2
 - fix svn info with subversion 1.7.1 (#3346)
 - create-srpm: add new package in youri database
