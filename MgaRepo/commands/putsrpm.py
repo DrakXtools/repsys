@@ -12,7 +12,7 @@ Usage: mgarepo putsrpm [OPTIONS] SOURCERPMS
 Will import source RPMs into the SVN repository.
 
 Options:
-    -m LOG  Log message used when commiting changes
+    -l LOG  Log message used when commiting changes
     -t      Create version-release tag on releases/
     -b NAME The distribution branch to place it
     -d URL  The URL of base directory where packages will be placed
