@@ -1,4 +1,6 @@
 
+- add putsrpm command in man page (#4055)
+- fix putsrpm --help message (#4053)
 - update URLs for new wiki
 
 * 1.10.2
