@@ -30,7 +30,7 @@ class youridb:
         dbpasswd = config.get("youridb", "dbpasswd")
         dbhost = config.get("youridb", "dbhost")
         sslmode = 1
-        self.db = psycopg2.connect(dbname=dbname, user=dbuser,
+        self.db = psycopg2.connect(database=dbname, user=dbuser,
                                     password=dbpasswd, host=dbhost)
 
     def add(self, srpm, url, revision, packager):
@@ -39,8 +39,8 @@ class youridb:
         rpmEVR = rpmhdr[rpm.RPMTAG_EVR]
         rpmsha1 = file_hash(srpm)
         cur = self.db.cursor()
-        cur.execute("INSERT INTO submits (sha1, rpmname, EVR, packager, url, revision, status) VALUES (%s, %s, %s, %s, %s, %s, %s);",
-                (rpmsha1, rpmname, rpmEVR, packager, url, revision, 'create-srpm'))
+        cur.execute("INSERT INTO submits (sha1, rpmname, EVR, packager, url, revision, status, submit_ts) VALUES (%s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP);",
+                (rpmsha1, rpmname, rpmEVR, packager, url, revision, '1'))
         cur.close()
         self.db.commit()
 
@@ -58,7 +58,7 @@ class CmdIface:
         try:
             db = youridb()
         except Exception, e:
-            print e.pgerror
+            print 'youridb error:', e
             return 0
         pw = pwd.getpwuid(os.getuid())
         username = pw[0]
