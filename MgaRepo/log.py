@@ -148,7 +148,7 @@ class _Release(_Revision):
                     (self.version, self.release, self.revisions)
         return line
 
-unescaped_macro_pat = re.compile(r"([^%])%([^%])")
+unescaped_macro_pat = re.compile(r"(^|[^%])%([^%])")
 
 def escape_macros(text):
     escaped = unescaped_macro_pat.sub("\\1%%\\2", text)
