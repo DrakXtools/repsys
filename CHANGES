@@ -1,4 +1,5 @@
 
+- in create-srpm, don't try to use youri db if not defined in config
 - allow keeping the old rpm log in the package directory if the oldurl
   config value is set to '.' or starts with './'
 - add putsrpm command in man page (#4055)

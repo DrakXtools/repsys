@@ -13,7 +13,6 @@ import optparse
 import subprocess
 import urlparse
 import urllib
-import psycopg2
 import rpm
 
 def get_rpm_hdr(filename):
@@ -26,6 +25,11 @@ def get_rpm_hdr(filename):
 class youridb:
     def __init__(self):
         dbname = config.get("youridb", "dbname")
+        if not dbname:
+            self.usedb = False
+            return
+        import psycopg2
+        self.usedb = True
         dbuser = config.get("youridb", "dbuser")
         dbpasswd = config.get("youridb", "dbpasswd")
         dbhost = config.get("youridb", "dbhost")
@@ -34,6 +38,8 @@ class youridb:
                                     password=dbpasswd, host=dbhost)
 
     def add(self, srpm, url, revision, packager):
+        if not self.usedb:
+            return
         rpmhdr = get_rpm_hdr(srpm)
         rpmname = rpmhdr[rpm.RPMTAG_NAME]
         rpmEVR = rpmhdr[rpm.RPMTAG_EVR]
@@ -45,6 +51,8 @@ class youridb:
         self.db.commit()
 
     def close(self):
+        if not self.usedb:
+            return
         self.db.close()
 
 class CmdError(Error): pass
