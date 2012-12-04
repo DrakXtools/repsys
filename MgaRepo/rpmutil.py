@@ -298,7 +298,10 @@ def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
                 chlog.seek(0)
                 #FIXME move it to layout.py
                 oldurl = baseold or config.get("log", "oldurl")
-                pkgoldurl = mirror._joinurl(oldurl, srpm.name)
+                if oldurl == '.' or oldurl.startswith('./'):
+                    pkgoldurl = os.path.join(pkgurl, oldurl)
+                else:
+                    pkgoldurl = mirror._joinurl(oldurl, srpm.name)
                 svn.mkdir(pkgoldurl, noerror=1,
                         log="created old log directory for %s" % srpm.name)
                 logtmp = tempfile.mktemp()
