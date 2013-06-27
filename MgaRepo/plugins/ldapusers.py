@@ -43,12 +43,12 @@ options in the [global] section of mgarepo.conf:
           >>> format = Template("$cn <$mail>")
           >>> d = search(basedn, filter)
           >>> d
-          {"cn": "John Doe", "mail": "john@mandriva.org", 
+          {"cn": "John Doe", "mail": "john@example.org", 
            "uidNumber": "1290", "loginShell": "/bin/bash", 
             ... many other attributes ... }
           >>> value = format.substitute(d)
           >>> print value
-          John Doe <john@mandriva.org>
+          John Doe <john@example.org>
 
         Note that only the first value of the attributes will be 
         used.

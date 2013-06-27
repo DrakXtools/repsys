@@ -29,7 +29,7 @@ Options:
 
 Examples:
     mgarepo rpmlog python
-    mgarepo rpmlog http://svn.mandriva.com/svn/packages/cooker/python
+    mgarepo rpmlog svn://svn.mageia.org/svn/packages/cauldron/python/current
 """
 
 def parse_options():
