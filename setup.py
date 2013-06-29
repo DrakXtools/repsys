@@ -26,6 +26,8 @@ setup(name="mgarepo",
               ["default.chlog",
               "revno.chlog",
               "create-srpm"]),
+              ("share/bash-completion/completions",
+               ["bash-completion/mgarepo"]),
 	      ("/etc/", ["mgarepo.conf"]),
           ("share/man/man8/", ["mgarepo.8"])]
       )
