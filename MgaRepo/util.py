@@ -7,6 +7,7 @@ import getpass
 import sys
 import os
 import re
+import select
 from cStringIO import StringIO
 import httplib2
 #import commands
@@ -35,13 +36,20 @@ def execcmd(*cmd, **kwargs):
             of = pipe.stdout.fileno()
             ef = pipe.stderr.fileno()
             while True:
-                odata = os.read(of, 8192)
-                sys.stdout.write(odata)
-                edata = os.read(ef, 8192)
-                err.write(edata)
-                sys.stderr.write(edata)
+                r,w,x = select.select((of,ef), (), ())
+                odata = None
+                if of in r:
+                    odata = os.read(of, 8192)
+                    sys.stdout.write(odata)
+
+                edata = None
+                if ef in r:
+                    edata = os.read(ef, 8192)
+                    err.write(edata)
+                    sys.stderr.write(edata)
+
                 status = pipe.poll()
-                if status is not None and not (odata and edata):
+                if status is not None and odata == "" and edata == "":
                     break
             output = err.getvalue()
         else:
