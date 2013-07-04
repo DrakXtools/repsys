@@ -1,3 +1,7 @@
+* 1.10.5
+- Added README.BINREPO and youridb.sql to Python manifest
+- Don't block waiting for stderr when displaying subprocess output (#952)
+
 * 1.10.4
 - Add completion/mgarepo with bash-completion
 
