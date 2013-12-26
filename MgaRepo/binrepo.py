@@ -34,6 +34,8 @@ def is_binary(path):
     st = os.stat(path)
     if st[stat.ST_SIZE] >= maxsize:
         return True
+    if open(path).read(0x10000).find('\0') >= 0:
+	return True
     return False
 
 def find_binaries(paths):
