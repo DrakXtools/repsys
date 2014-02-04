@@ -34,7 +34,7 @@ Run "mgarepo COMMAND --help" and "man 8 mgarepo" for more information.
 Written by Gustavo Niemeyer <gustavo@niemeyer.net>
 """
 
-command_aliases = {"import": "putsrpm"}
+command_aliases = {"import": "putsrpm", "commit": "ci", "checkout": "co"}
 
 def plugin_help(opt, val, parser, mode):
     if parser is None:
