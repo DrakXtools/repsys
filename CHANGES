@@ -1,3 +1,5 @@
+- Added aliases for commit (ci) and checkout (co)
+
 * 1.10.6
 - Improved detection of binary files
 
