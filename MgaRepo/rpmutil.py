@@ -244,8 +244,8 @@ def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
                 svn.remove(entrypath)
 
             # Copy all files
-            execcmd("cp -rf", uspecsdir, currentdir)
-            execcmd("cp -rf", usourcesdir, currentdir)
+            execcmd("cp -rlf", uspecsdir, currentdir)
+            execcmd("cp -rlf", usourcesdir, currentdir)
             
             # Add new entries
             for entry in [x for x in uspecsentries

@@ -1,3 +1,4 @@
+- Use hardlinks when importing (can help speed up process for large SOURCES)
 - Added aliases for commit (ci) and checkout (co)
 
 * 1.10.6
