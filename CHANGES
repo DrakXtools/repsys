@@ -1,3 +1,4 @@
+* 1.10.6
 - s/cooker/cauldron/
   thus fixing some stupid upload errors related to backports
 - Use hardlinks when importing (can help speed up process for large SOURCES)
