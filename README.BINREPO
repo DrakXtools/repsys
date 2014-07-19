@@ -111,7 +111,7 @@ dumps backup for it takes about a bit more than half that size (FIXME:
 estimative, can't check in the backup server right now).  Current txtrepo
 with the same number of revisions is ~180Gb big, takes about 2-3 days to be
 imported, while the gzipped full dump backup for it currently takes ~1.2Gb. 
-Initial binrepo for Cooker (only `current/` packages' branches) took ~28Gb
+Initial binrepo for cauldron (only `current/` packages' branches) took ~28Gb
 in disk, gzipped full dump for it takes ~25Gb, took about 5h30m to be
 populated from the current in use repository ("oldrepo").
 
@@ -286,7 +286,7 @@ binary files history keeping.  Structure could be something simple like::
 
   packages/${pkg:0:1}/$pkg/$tarball
 
-This alternative does not suffice for Cooker, nor for supported distros, for
+This alternative does not suffice for cauldron, nor for supported distros, for
 which we want history.  It could, however, at some point be used for "very
 old" distros, for which we may have lost interest in keeping *binaries*
 history (package history will kept "forever" in the main SVN repository). 

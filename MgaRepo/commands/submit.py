@@ -57,7 +57,7 @@ Examples:
     mgarepo submit --define section=core/updates_testing -t 1
 """
 
-DEFAULT_TARGET = "Cooker"
+DEFAULT_TARGET = "cauldron"
 
 def parse_options():
     parser = OptionParser(help=HELP)
