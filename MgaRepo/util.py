@@ -56,8 +56,11 @@ def execcmd(*cmd, **kwargs):
             status = os.system(cmdstr)
             output = ""
     else:
-        status, output = commands_getstatusoutput(
-                "LANG=C LANGUAGE=C LC_ALL=C "+cmdstr)
+        if kwargs.get('info'):
+            prefix='LANGUAGE=C '
+        else:
+            prefix='LANG=C LANGUAGE=C LC_ALL=C '
+        status, output = commands_getstatusoutput(prefix + cmdstr)
     verbose = config.getbool("global", "verbose", 0)
     if status != 0 and not kwargs.get("noerror"):
         if kwargs.get("cleanerr") and not verbose:

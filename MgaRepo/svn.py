@@ -33,6 +33,10 @@ class SVN:
         svn_command = config.get("global", "svn-command", "svn")
         cmdstr = svn_command + " " + " ".join(args)
         try:
+            if args[0] == 'info':
+                kwargs['info'] = True
+            else:
+                kwargs['info'] = False
             return execcmd(cmdstr, **kwargs)
         except Error, e:
             msg = None
