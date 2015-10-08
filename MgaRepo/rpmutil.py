@@ -474,7 +474,8 @@ def checkout(pkgdirurl, path=None, revision=None, branch=None, distro=None,
     mirror.info(current, write=True)
     svn = SVN()
     svn.checkout(current, path, rev=revision, show=1)
-    binrepo.download_binaries(path)
+    if not spec:
+        binrepo.download_binaries(path)
     
 def getpkgtopdir(basedir=None):
     #FIXME this implementation doesn't work well with relative path names,
