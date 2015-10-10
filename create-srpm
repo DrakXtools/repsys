@@ -11,8 +11,8 @@ import os
 import pwd
 import optparse
 import subprocess
-import urlparse
-import urllib
+import urllib.parse
+import urllib.request, urllib.parse, urllib.error
 import rpm
 
 def get_rpm_hdr(filename):
@@ -65,31 +65,31 @@ class CmdIface:
             define=[]):
         try:
             db = youridb()
-        except Exception, e:
-            print 'youridb error:', e
+        except Exception as e:
+            print('youridb error:', e)
             return 0
         pw = pwd.getpwuid(os.getuid())
         username = pw[0]
         packager = config.get("users", username) or pw[4]
         if not packager:
-            raise CmdError, "your email was not found"
+            raise CmdError("your email was not found")
         elif not targetname:
-            raise CmdError, "no target provided"
+            raise CmdError("no target provided")
         else:
             targetname = targetname.lower()
             for target in get_targets():
                 if target.name.lower() == targetname:
                     break
             else:
-                raise CmdError, "target not found"
+                raise CmdError("target not found")
             for url in urls:
                 url = strip_username(url)
                 for allowed in target.allowed:
                     if url.startswith(allowed):
                         break
                 else:
-                    raise CmdError, "%s is not allowed for this target" \
-                                    % url
+                    raise CmdError("%s is not allowed for this target" \
+                                    % url)
             if not dontmapurl_: #FIXME don't use it!
                 urls = [mapurl(url) for url in urls]
             uploadsrpms = []
@@ -108,8 +108,8 @@ class CmdIface:
                 for srpm in targetsrpms:
                     try:
                         db.add(srpm, url=url, revision=urlrev, packager=packager)
-                    except Exception, e:
-                        print e.pgerror
+                    except Exception as e:
+                        print(e.pgerror)
                         return 0
             uploadcmd = get_helper("upload-srpm")
             if uploadcmd:
@@ -129,8 +129,8 @@ class CmdIface:
                         sys.stderr.write("warning: temporary file "\
                                 "'%s' removed unexpectedly\n" % srpm)
                 if status != 0:
-                    raise CmdError, "Failed to upload "\
-                        "%s:\n%s" % (" ".join(urls), output)
+                    raise CmdError("Failed to upload "\
+                        "%s:\n%s" % (" ".join(urls), output))
         db.close()
         return 1
 
@@ -165,11 +165,11 @@ def main():
     try:
         if opts.list_targets:
             for target in iface.submit_targets():
-                print target
+                print(target)
         else:
             iface.submit_package(args, opts.revision, opts.target, opts.urlmap,
                     opts.define)
-    except Error, e:
+    except Error as e:
         sys.stderr.write("error: %s\n" % str(e))
         sys.exit(1)
     

@@ -8,7 +8,7 @@ import sys
 import os
 import re
 import select
-from cStringIO import StringIO
+from io import StringIO
 import httplib2
 #import commands
 
@@ -64,11 +64,11 @@ def execcmd(*cmd, **kwargs):
     verbose = config.getbool("global", "verbose", 0)
     if status != 0 and not kwargs.get("noerror"):
         if kwargs.get("cleanerr") and not verbose:
-            raise Error, output
+            raise Error(output)
         else:
-            raise Error, "command failed: %s\n%s\n" % (cmdstr, output)
+            raise Error("command failed: %s\n%s\n" % (cmdstr, output))
     if verbose:
-        print cmdstr
+        print(cmdstr)
         sys.stdout.write(output)
     return status, output
 
@@ -78,7 +78,7 @@ def get_auth(username=None, password=None):
     if not username:
         username = config.get("auth", "username")
         if not username:
-            username = raw_input("username: ")
+            username = input("username: ")
         else:
             set_username = 0
     if not password:
@@ -108,7 +108,7 @@ def mapurl(url):
         else:
             try:
                 newurl = re.sub(expr_, replace, url)
-            except re.error, errmsg:
+            except re.error as errmsg:
                 sys.stderr.write("error in URL mapping regexp: %s" % errmsg)
     return newurl
 

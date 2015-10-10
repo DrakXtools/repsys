@@ -17,11 +17,11 @@ def load():
                         [entry])
 
 def list():
-    return loaded.keys()
+    return list(loaded.keys())
 
 def help(name):
     from MgaRepo import Error
     try:
         return loaded[name].__doc__
     except KeyError:
-        raise Error, "plugin %s not found" % name
+        raise Error("plugin %s not found" % name)

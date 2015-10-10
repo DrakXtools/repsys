@@ -55,7 +55,7 @@ def get_targetoptions():
 def show(msg="", error=0):
     if error:
         msg = '<font color="red">%s</font>' % msg
-    print TEMPLATE % {"message":msg, "targetoptions":get_targetoptions()}
+    print(TEMPLATE % {"message":msg, "targetoptions":get_targetoptions()})
 
 def submit_packages(packager):
     form = cgi.FieldStorage()
@@ -64,25 +64,25 @@ def submit_packages(packager):
     if not packageurl:
         show()
     elif not packagerev:
-        raise CgiError, "No revision provided!"
+        raise CgiError("No revision provided!")
     else:
         targetname = form.getfirst("target")
         if not targetname:
-            raise CgiError, "No target selected!"
+            raise CgiError("No target selected!")
         for target in get_targets():
             if target.name == targetname:
                 break
         else:
-            raise CgiError, "Target not found!"
+            raise CgiError("Target not found!")
         try:
             tmp = int(packagerev)
         except ValueError:
-            raise CgiError, "Invalid revision provided!"
+            raise CgiError("Invalid revision provided!")
         for allowed in target.allowed:
             if packageurl.startswith(allowed):
                 break
         else:
-            raise CgiError, "%s is not allowed for this target!" % packageurl
+            raise CgiError("%s is not allowed for this target!" % packageurl)
         get_srpm(packageurl,
                  revision=packagerev,
                  targetdirs=target.target,
@@ -93,10 +93,10 @@ def submit_packages(packager):
         show("Package submitted!")
 
 def main():
-    if not os.environ.has_key('REQUEST_METHOD'):
+    if 'REQUEST_METHOD' not in os.environ:
         sys.stderr.write("error: this program is meant to be used as a cgi\n")
         sys.exit(1)
-    print "Content-type: text/html\n\n"
+    print("Content-type: text/html\n\n")
     try:
         username = os.environ.get("REMOTE_USER")
         method = os.environ.get("REQUEST_METHOD")
@@ -105,12 +105,11 @@ def main():
         else:
             useremail = config.get("users", username)
             if not useremail:
-                raise CgiError, \
-                      "Your email was not found. Contact the administrator!"
+                raise CgiError("Your email was not found. Contact the administrator!")
             submit_packages(useremail)
-    except CgiError, e:
+    except CgiError as e:
         show(str(e), error=1)
-    except Error, e:
+    except Error as e:
         error = str(e)
         show(error[0].upper()+error[1:], error=1)
     except:

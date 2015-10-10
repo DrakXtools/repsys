@@ -23,7 +23,7 @@ def parse_options():
     parser = OptionParser(help=HELP)
     opts, args = parser.parse_args()
     if len(args) != 1:
-        raise Error, "invalid arguments"
+        raise Error("invalid arguments")
     opts.pkgdirurl = package_url(args[0], mirrored=False)
     opts.verbose = 1 # Unconfigurable
     return opts

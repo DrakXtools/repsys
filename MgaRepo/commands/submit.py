@@ -4,14 +4,14 @@ from MgaRepo.svn import SVN
 from MgaRepo.command import *
 from MgaRepo.rpmutil import get_spec, get_submit_info
 from MgaRepo.util import get_auth, execcmd, get_helper
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import getopt
 import sys
 import re
 import subprocess
 import uuid
 
-import xmlrpclib
+import xmlrpc.client
 
 HELP = """\
 Usage: mgarepo submit [OPTIONS] [URL[@REVISION] ...]
@@ -77,14 +77,14 @@ def parse_options():
     if not args:
         name, url, rev = get_submit_info(".")
         args = ["%s@%s" % (url, str(rev))]
-        print "Submitting %s at revision %s" % (name, rev)
-        print "URL: %s" % url
+        print("Submitting %s at revision %s" % (name, rev))
+        print("URL: %s" % url)
     if opts.revision is not None:
         # backwards compatibility with the old -r usage
         if len(args) == 1:
             args[0] = args[0] + "@" + opts.revision
         else:
-            raise Error, "can't use -r REV with more than one package name"
+            raise Error("can't use -r REV with more than one package name")
     del opts.revision
     if len(args) == 2:
         # prevent from using the old <name> <rev> syntax
@@ -94,14 +94,14 @@ def parse_options():
             # ok, it is a package name, let it pass
             pass
         else:
-            raise Error, "the format <name> <revision> is deprecated, "\
-                    "use <name>@<revision> instead"
+            raise Error("the format <name> <revision> is deprecated, "\
+                    "use <name>@<revision> instead")
     # expand group aliases
     expanded = []
     for nameurl in args:
         expanded.extend(expand_group(nameurl))
     if expanded != args:
-        print "Submitting: %s" % " ".join(expanded)
+        print("Submitting: %s" % " ".join(expanded))
         args = expanded
     # generate URLs for package names:
     opts.urls = [mirror.strip_username(
@@ -111,28 +111,28 @@ def parse_options():
     newurls = []
     for url in opts.urls:
         if not "@" in url:
-            print "Fetching revision..."
+            print("Fetching revision...")
             courl = layout.checkout_url(url)
             log = SVN().log(courl, limit=1)
             if not log:
-                raise Error, "can't find a revision for %s" % courl
+                raise Error("can't find a revision for %s" % courl)
             ci = log[0]
-            print "URL:", url
-            print "Commit:",
-            print "%d | %s" % (ci.revision, ci.author),
+            print("URL:", url)
+            print("Commit:", end=' ')
+            print("%d | %s" % (ci.revision, ci.author), end=' ')
             if ci.lines:
                 line = " ".join(ci.lines).strip()
                 if len(line) > 57:
                     line = line[:57] + "..."
-                print "| %s" % line,
-            print
+                print("| %s" % line, end=' ')
+            print()
             url = url + "@" + str(ci.revision)
         newurls.append(url)
     opts.urls[:] = newurls
     # choose a target if not specified:
     if opts.target is None and opts.distro is None:
         target = layout.distro_branch(opts.urls[0]) or DEFAULT_TARGET
-        print "Implicit target: %s" % target
+        print("Implicit target: %s" % target)
         opts.target = target
     del opts.distro
     return opts
@@ -157,7 +157,7 @@ def expand_group(group):
 def list_targets(option, opt, val, parser):
     host = config.get("submit", "host")
     if host is None:
-        raise Error, "no submit host defined in mgarepo.conf"
+        raise Error("no submit host defined in mgarepo.conf")
     createsrpm = get_helper("create-srpm")
     #TODO make it configurable
     command = "ssh %s %s --list" % (host, createsrpm)
@@ -169,10 +169,10 @@ def submit(urls, target, define=[], submithost=None, atonce=False, sid=None):
         submithost = config.get("submit", "host")
         if submithost is None:
             # extract the submit host from the svn host
-            type, rest = urllib.splittype(pkgdirurl)
-            host, path = urllib.splithost(rest)
-            user, host = urllib.splituser(host)
-            submithost, port = urllib.splitport(host)
+            type, rest = urllib.parse.splittype(pkgdirurl)
+            host, path = urllib.parse.splithost(rest)
+            user, host = urllib.parse.splituser(host)
+            submithost, port = urllib.parse.splitport(host)
             del type, user, port, path, rest
     # runs a create-srpm in the server through ssh, which will make a
     # copy of the rpm in the export directory
@@ -200,7 +200,7 @@ def submit(urls, target, define=[], submithost=None, atonce=False, sid=None):
         command = subprocess.list2cmdline(cmdargs)
         status, output = execcmd(command)
         if status == 0:
-            print "Package submitted!"
+            print("Package submitted!")
         else:
             sys.stderr.write(output)
             sys.exit(status)

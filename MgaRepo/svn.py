@@ -38,7 +38,7 @@ class SVN:
             else:
                 kwargs['info'] = False
             return execcmd(cmdstr, **kwargs)
-        except Error, e:
+        except Error as e:
             msg = None
             if e.args:
                 if "Permission denied" in e.args[0]:
@@ -59,7 +59,7 @@ class SVN:
                     sys.stderr.write("\n")
                 raise SilentError
             elif msg:
-                raise Error, "%s\n%s" % (e, msg)
+                raise Error("%s\n%s" % (e, msg))
             raise
 
     def _set_env(self):
@@ -91,8 +91,8 @@ class SVN:
 
     def _add_log(self, cmd_args, received_kwargs, optional=0):
         if (not optional or
-            received_kwargs.has_key("log") or
-            received_kwargs.has_key("logfile")):
+            "log" in received_kwargs or
+            "logfile" in received_kwargs):
             ret = received_kwargs.get("log")
             if ret is not None:
                 cmd_args.append("-m '%s'" % ret)
@@ -101,14 +101,14 @@ class SVN:
                 cmd_args.append("-F '%s'" % ret)
 
     def _add_revision(self, cmd_args, received_kwargs, optional=0):
-        if not optional or received_kwargs.has_key("rev"):
+        if not optional or "rev" in received_kwargs:
             ret = received_kwargs.get("rev")
-            if isinstance(ret, basestring):
+            if isinstance(ret, str):
                 if not ret.startswith("{"): # if not a datespec
                     try:
                         ret = int(ret)
                     except ValueError:
-                        raise Error, "invalid revision provided"
+                        raise Error("invalid revision provided")
             if ret:
                 cmd_args.append("-r '%s'" % ret)
         
@@ -243,8 +243,8 @@ class SVN:
         cmd = ["switch"]
         if relocate:
             if oldurl is None:
-                raise Error, "You must supply the old URL when "\
-                        "relocating working copies"
+                raise Error("You must supply the old URL when "\
+                        "relocating working copies")
             cmd.append("--relocate")
             cmd.append(oldurl)
         cmd.append(url)
@@ -269,8 +269,7 @@ class SVN:
             cmd.append(url1)
         else:
             if not url2:
-                raise ValueError, \
-                      "url2 needed if two revisions are not provided"
+                raise ValueError("url2 needed if two revisions are not provided")
             if rev1:
                 cmd.append("%s@%s" % (url1, rev1))
             else:
@@ -311,19 +310,19 @@ class SVN:
                 try:
                     start = int(start)
                 except (ValueError, TypeError):
-                    raise Error, "invalid log start revision provided"
+                    raise Error("invalid log start revision provided")
             if type(end) is not type(0):
                 try:
                     end = int(end)
                 except (ValueError, TypeError):
-                    raise Error, "invalid log end revision provided"
+                    raise Error("invalid log end revision provided")
             start = start or "HEAD"
             cmd.append("-r %s:%s" % (start, end))
         if limit is not None:
             try:
                 limit = int(limit)
             except (ValueError, TypeError):
-                raise Error, "invalid limit number provided"
+                raise Error("invalid limit number provided")
             cmd.append("--limit %d" % limit)
         status, output = self._execsvn(*cmd, **kwargs)
         if status != 0:
@@ -354,7 +353,7 @@ class SVN:
                         try:
                             changed["from_rev"] = int(from_rev)
                         except (ValueError, TypeError):
-                            raise Error, "invalid revision number in svn log"
+                            raise Error("invalid revision number in svn log")
                     entry.changed.append(changed)
             elif linesleft == 0:
                 if line != logseparator:
@@ -388,18 +387,18 @@ class SVNLook:
         execcmd_kwargs = {}
         keywords = ["show", "noerror"]
         for key in keywords:
-            if kwargs.has_key(key):
+            if key in kwargs:
                 execcmd_kwargs[key] = kwargs[key]
         return execcmd(*execcmd_args, **execcmd_kwargs)
 
     def _add_txnrev(self, cmd_args, received_kwargs):
-        if received_kwargs.has_key("txn"):
+        if "txn" in received_kwargs:
             txn = received_kwargs.get("txn")
             if txn is not None:
                 cmd_args += ["-t", txn]
         elif self.txn is not None:
             cmd_args += ["-t", self.txn]
-        if received_kwargs.has_key("rev"):
+        if "rev" in received_kwargs:
             rev = received_kwargs.get("rev")
             if rev is not None:
                 cmd_args += ["-r", rev]

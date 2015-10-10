@@ -45,7 +45,7 @@ def version_callback(option, opt, val, parser):
     try:
         opts.version, opts.release = val.split("-", 1)
     except ValueError:
-        raise Error, "wrong version, use something like 1:2.2-1mdk"
+        raise Error("wrong version, use something like 1:2.2-1mdk")
 
 def parse_options():
     parser = OptionParser(help=HELP)
@@ -59,7 +59,7 @@ def parse_options():
     opts, args = parser.parse_args()
 
     if len(args) != 1:
-        raise Error, "invalid arguments"
+        raise Error("invalid arguments")
 
     opts.pkgdirurl = package_url(args[0], mirrored=False)
 
@@ -69,12 +69,12 @@ def parse_options():
 
     if filename:
         if not os.path.isfile(filename):
-            raise Error, "file not found: "+filename
+            raise Error("file not found: "+filename)
         if not opts.revision:
             basename = os.path.basename(filename)
             end = basename.find(":")
             if basename[0] != "@" or end == -1:
-                raise Error, "couldn't guess revision from filename"
+                raise Error("couldn't guess revision from filename")
             opts.revision = basename[1:end]
         srpm = None
         if not opts.version:
@@ -89,11 +89,11 @@ def parse_options():
                 srpm = SRPM(filename)
             opts.pkgdirurl = "/".join([opts.pkgdirurl, srpm.name])
     elif appendname:
-        raise Error, "option -n requires option -f"
+        raise Error("option -n requires option -f")
     elif not opts.revision:
-        raise Error, "no revision provided"
+        raise Error("no revision provided")
     elif not opts.version:
-        raise Error, "no version provided"
+        raise Error("no version provided")
     #get_auth()
     return opts
 

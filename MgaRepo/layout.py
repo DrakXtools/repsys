@@ -1,7 +1,7 @@
 """ Handles repository layout scheme and package URLs."""
 
 import os
-import urlparse
+import urllib.parse
 
 from MgaRepo import Error, config
 from MgaRepo.svn import SVN
@@ -35,10 +35,10 @@ def unsplit_url_revision(url, rev):
     if rev is None:
         newurl = url
     else:
-        parsed = list(urlparse.urlparse(url))
+        parsed = list(urllib.parse.urlparse(url))
         path = os.path.normpath(parsed[2])
         parsed[2] = path + "@" + str(rev)
-        newurl = urlparse.urlunparse(parsed)
+        newurl = urllib.parse.urlunparse(parsed)
     return newurl
 
 def split_url_revision(url):
@@ -46,7 +46,7 @@ def split_url_revision(url):
     
     If the revision is not present in the URL, rev is None.
     """
-    parsed = list(urlparse.urlparse(url))
+    parsed = list(urllib.parse.urlparse(url))
     path = os.path.normpath(parsed[2])
     dirs = path.rsplit("/", 1)
     lastname = dirs[-1]
@@ -62,11 +62,11 @@ def split_url_revision(url):
                 if rev < 0:
                     raise ValueError
             except ValueError:
-                raise Error, "invalid revision specification on URL: %s" % url
+                raise Error("invalid revision specification on URL: %s" % url)
     dirs[-1] = newname
     newpath = "/".join(dirs)
     parsed[2] = newpath
-    newurl = urlparse.urlunparse(parsed)
+    newurl = urllib.parse.urlunparse(parsed)
     return newurl, rev
 
 def checkout_url(pkgdirurl, branch=None, version=None, release=None,
@@ -75,7 +75,7 @@ def checkout_url(pkgdirurl, branch=None, version=None, release=None,
     
     It tries to preserve revisions in the format @REV.
     """
-    parsed = list(urlparse.urlparse(pkgdirurl))
+    parsed = list(urllib.parse.urlparse(pkgdirurl))
     path, rev = split_url_revision(parsed[2])
     if releases:
         path = os.path.normpath(path + "/releases")
@@ -92,27 +92,27 @@ def checkout_url(pkgdirurl, branch=None, version=None, release=None,
         path = os.path.join(path, append_path)
     path = unsplit_url_revision(path, rev)
     parsed[2] = path
-    newurl = urlparse.urlunparse(parsed)
+    newurl = urllib.parse.urlunparse(parsed)
     return newurl
 
 def convert_default_parent(url):
     """Removes the cauldron/ component from the URL"""
-    parsed = list(urlparse.urlparse(url))
+    parsed = list(urllib.parse.urlparse(url))
     path = os.path.normpath(parsed[2])
     rest, last = os.path.split(path)
     parsed[2] = rest
-    newurl = urlparse.urlunparse(parsed)
+    newurl = urllib.parse.urlunparse(parsed)
     return newurl
 
 def remove_current(pkgdirurl):
-    parsed = list(urlparse.urlparse(pkgdirurl))
+    parsed = list(urllib.parse.urlparse(pkgdirurl))
     path = os.path.normpath(parsed[2])
     rest, last = os.path.split(path)
     if last == "current":
         # FIXME this way we will not allow packages to be named "current"
         path = rest
     parsed[2] = path
-    newurl = urlparse.urlunparse(parsed)
+    newurl = urllib.parse.urlunparse(parsed)
     return newurl
 
 def repository_url(mirrored=False):
@@ -125,8 +125,8 @@ def repository_url(mirrored=False):
             # compatibility with the default_parent configuration option
             default_parent = config.get("global", "default_parent")
             if default_parent is None:
-                raise Error, "you need to set the 'repository' " \
-                        "configuration option on mgarepo.conf"
+                raise Error("you need to set the 'repository' " \
+                        "configuration option on mgarepo.conf")
             url = convert_default_parent(default_parent)
     return url
 
@@ -158,16 +158,16 @@ def package_url(name_or_url, version=None, release=None, distro=None,
         else:
             default_branch = devel_branch # cauldron
         path = os.path.join(default_branch, name)
-        parsed = list(urlparse.urlparse(repository_url(mirrored=mirrored)))
+        parsed = list(urllib.parse.urlparse(repository_url(mirrored=mirrored)))
         parsed[2] = os.path.join(parsed[2], path)
-        pkgdirurl = urlparse.urlunparse(parsed)
+        pkgdirurl = urllib.parse.urlunparse(parsed)
     return pkgdirurl
 
 def package_name(pkgdirurl):
     """Returns the package name from a package URL
     
     It takes care of revision numbers"""
-    parsed = urlparse.urlparse(pkgdirurl)
+    parsed = urllib.parse.urlparse(pkgdirurl)
     path, rev = split_url_revision(parsed[2])
     rest, name = os.path.split(path)
     return name
@@ -188,10 +188,10 @@ def distro_branch(pkgdirurl):
     repo = repository_url()
     if same_base(repo, pkgdirurl):
         devel_branch, branches_dir = layout_dirs()
-        repo_path = urlparse.urlparse(repo)[2]
+        repo_path = urllib.parse.urlparse(repo)[2]
         devel_path = os.path.join(repo_path, devel_branch)
         branches_path = os.path.join(repo_path, branches_dir)
-        parsed = urlparse.urlparse(pkgdirurl)
+        parsed = urllib.parse.urlparse(pkgdirurl)
         path = os.path.normpath(parsed[2])
         if path.startswith(devel_path):
             # devel_branch must be before branches_dir in order to allow

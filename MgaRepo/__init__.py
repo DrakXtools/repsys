@@ -3,7 +3,7 @@ import re
 import os
 import tempfile
 
-import ConfigParser
+from . import ConfigParser
 
 config = ConfigParser.Config()
 tempfile.tempdir = config.get("global", "tempdir", None) or None # when ""

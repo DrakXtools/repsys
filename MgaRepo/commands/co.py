@@ -42,7 +42,7 @@ def parse_options():
             callback=disable_mirror)
     opts, args = parser.parse_args()
     if len(args) not in (1, 2):
-        raise Error, "invalid arguments"
+        raise Error("invalid arguments")
     # here we don't use package_url in order to notify the user we are
     # using the mirror
     opts.pkgdirurl = args[0]

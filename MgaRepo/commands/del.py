@@ -18,7 +18,7 @@ def parse_options():
     if len(args):
         opts.paths = args
     else:
-        raise Error, "you need to provide a path"
+        raise Error("you need to provide a path")
     return opts
 
 def main():

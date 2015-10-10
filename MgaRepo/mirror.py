@@ -1,7 +1,7 @@
 import sys
 import os
-import urlparse
-import urllib
+import urllib.parse
+import urllib.request, urllib.parse, urllib.error
 
 from MgaRepo import Error, config, layout
 from MgaRepo.svn import SVN
@@ -12,24 +12,24 @@ def mirror_url():
 
 def normalize_path(url):
     """normalize url for relocate_path needs"""
-    parsed = urlparse.urlparse(url)
+    parsed = urllib.parse.urlparse(url)
     path = os.path.normpath(parsed[2])
-    newurl = urlparse.urlunparse((parsed[0], parsed[1], path,
+    newurl = urllib.parse.urlunparse((parsed[0], parsed[1], path,
         parsed[3], parsed[4], parsed[5]))
     return newurl
 
 def _joinurl(url, relpath):
-    parsed = urlparse.urlparse(url)
+    parsed = urllib.parse.urlparse(url)
     newpath = os.path.join(parsed[2], relpath)
-    newurl = urlparse.urlunparse((parsed[0], parsed[1], newpath,
+    newurl = urllib.parse.urlunparse((parsed[0], parsed[1], newpath,
         parsed[3], parsed[4], parsed[5]))
     return newurl
 
 
 def strip_username(url):
-    parsed = list(urlparse.urlparse(url))
-    _, parsed[1] = urllib.splituser(parsed[1])
-    newurl = urlparse.urlunparse(parsed)
+    parsed = list(urllib.parse.urlparse(url))
+    _, parsed[1] = urllib.parse.splituser(parsed[1])
+    newurl = urllib.parse.urlunparse(parsed)
     return newurl
 
 def same_base(parent, url):
@@ -99,13 +99,13 @@ def autoswitch(svn, wcpath, wcurl, newbaseurl=None):
     repository = layout.repository_url()
     current = repository
     if repository is None:
-        raise Error, "the option repository from mgarepo.conf is "\
-                "required"
+        raise Error("the option repository from mgarepo.conf is "\
+                "required")
     indefault = same_base(repository, wcurl)
     if not newbaseurl:
         if not mirror:
-            raise Error, "an URL is needed when the option mirror "\
-                    "from mgarepo.conf is not set"
+            raise Error("an URL is needed when the option mirror "\
+                    "from mgarepo.conf is not set")
         if indefault:
             chosen = mirror
         elif same_base(mirror, wcurl):
@@ -122,8 +122,8 @@ def autoswitch(svn, wcpath, wcurl, newbaseurl=None):
             nobase = True
         chosen = newbaseurl
     if nobase:
-        raise Error, "the URL of this working copy is not based in "\
-                "repository nor mirror URLs"
+        raise Error("the URL of this working copy is not based in "\
+                "repository nor mirror URLs")
     assert current != chosen
     newurl = mirror_relocate(current, chosen, wcurl, wcpath)
     return newurl

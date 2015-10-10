@@ -39,13 +39,13 @@ command_aliases = {"import": "putsrpm", "commit": "ci", "checkout": "co"}
 def plugin_help(opt, val, parser, mode):
     if parser is None:
         prog = sys.argv[0]
-        print "Use %s --help-plugin <plugin name>" % prog
-        print "Available plugins:"
-        print
+        print("Use %s --help-plugin <plugin name>" % prog)
+        print("Available plugins:")
+        print()
         for name in plugins.list():
-            print name
+            print(name)
     else:
-        print plugins.help(parser)
+        print(plugins.help(parser))
     raise SystemExit
 
 def parse_options():
@@ -79,14 +79,14 @@ def dispatch_command(command, argv, debug=0):
     except (ImportError, AttributeError):
         etype, exc, tb = sys.exc_info()
         if tb.tb_next is None and not debug:
-            raise Error, "invalid command '%s'" % command
+            raise Error("invalid command '%s'" % command)
         raise
     command_module.main()
     
 if __name__ == "__main__":
     try:
         plugins.load()
-    except Error, e:
+    except Error as e:
         sys.stderr.write("plugin initialization error: %s\n" % e)
         sys.exit(1)
     config.set("global", "mgarepo-cmd", sys.argv[0])

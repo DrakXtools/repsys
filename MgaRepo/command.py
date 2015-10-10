@@ -1,7 +1,7 @@
 #!/usr/bin/python
 from MgaRepo import SilentError, Error, config
 import sys, os
-import urlparse
+import urllib.parse
 import optparse
 
 __all__ = ["OptionParser", "do_command", "default_parent"]
@@ -31,7 +31,7 @@ class OptionParser(optparse.OptionParser):
             return optparse.OptionParser.format_help(self, formatter)
 
     def error(self, msg):
-        raise Error, msg
+        raise Error(msg)
 
 def do_command(parse_options_func, main_func):
     try:
@@ -39,7 +39,7 @@ def do_command(parse_options_func, main_func):
         main_func(**opt.__dict__)
     except SilentError:
         sys.exit(1)
-    except Error, e:
+    except Error as e:
         sys.stderr.write("error: %s\n" % str(e))
         sys.exit(1)
     except KeyboardInterrupt:
@@ -51,11 +51,11 @@ def default_parent(url):
     if url.find("://") == -1:
         default_parent = config.get("global", "default_parent")
         if not default_parent:
-            raise Error, "received a relative url, " \
-                         "but default_parent was not setup"
-        parsed = list(urlparse.urlparse(default_parent))
+            raise Error("received a relative url, " \
+                         "but default_parent was not setup")
+        parsed = list(urllib.parse.urlparse(default_parent))
         parsed[2] = os.path.normpath(parsed[2] + "/" + url)
-        url = urlparse.urlunparse(parsed)
+        url = urllib.parse.urlunparse(parsed)
     return url
 
 # vim:et:ts=4:sw=4

@@ -21,15 +21,15 @@ def parse_options():
     parser = OptionParser(help=HELP)
     opts, args = parser.parse_args()
     if len(args) != 1:
-        raise Error, "invalid arguments"
+        raise Error("invalid arguments")
     opts.author = args[0]
     return opts
 
 def print_author_email(author):
     email = config.get("users", author)
     if not email:
-        raise Error, "author not found"
-    print email
+        raise Error("author not found")
+    print(email)
     
 def main():
     do_command(parse_options, print_author_email)

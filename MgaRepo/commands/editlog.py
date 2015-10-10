@@ -24,7 +24,7 @@ def parse_options():
     elif len(args) == 1:
         pkgdirurl, revision = "", args[0]
     else:
-        raise Error, "invalid arguments"
+        raise Error("invalid arguments")
     opts.pkgdirurl = package_url(pkgdirurl, mirrored=False)
     opts.revision = re.compile(r".*?(\d+).*").sub(r"\1", revision)
     return opts

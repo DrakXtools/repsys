@@ -10,10 +10,10 @@ import shutil
 import re
 import tempfile
 import hashlib
-import urlparse
+import urllib.parse
 import threading
 import httplib2
-from cStringIO import StringIO
+from io import StringIO
 
 SOURCES_FILE = "sha1.lst"
 
@@ -62,25 +62,25 @@ def download_binary(topdir, sha1, filename):
 	if file_hash(dest) == sha1:
 	    return 1
 	else:
-	    raise Error, "File with incorrect sha1sum: %s" % dest
+	    raise Error("File with incorrect sha1sum: %s" % dest)
     context = {"dest": dest, "url": url}
     try:
 	cmd = string.Template(fmt).substitute(context)
-    except KeyError, e:
-	raise Error, "invalid variable %r in download-command "\
-		"configuration option" % e
+    except KeyError as e:
+	raise Error("invalid variable %r in download-command "\
+		"configuration option" % e)
     try:
 	status, output = execcmd(cmd, show=True)
-    except Error, e:
+    except Error as e:
 	os.unlink(dest)
-	raise Error, "Could not download file %s\n" % url
+	raise Error("Could not download file %s\n" % url)
 
 def download_binaries(topdir):
     spath = sources_path(topdir)
     if not os.path.exists(spath):
-        raise Error, "'%s' was not found" % spath
+        raise Error("'%s' was not found" % spath)
     entries = parse_sources(spath)
-    for name, sha1 in entries.iteritems():
+    for name, sha1 in entries.items():
 	download_binary(topdir, sha1, name)
 
 def binary_exists(sha1sum):
@@ -94,7 +94,7 @@ def binary_exists(sha1sum):
 def upload_binary(topdir, filename):
     filepath = os.path.join(topdir, 'SOURCES', filename)
     if not os.path.exists(filepath):
-        raise Error, "'%s' was not found" % filepath
+        raise Error("'%s' was not found" % filepath)
     sha1sum = file_hash(filepath)
     if binary_exists(sha1sum):
 	return
@@ -103,8 +103,8 @@ def upload_binary(topdir, filename):
     command = "ssh %s %s %s" % (host, upload_bin_helper, filename)
     try:
 	filein = open(filepath, 'r')
-    except Error, e:
-	raise Error, "Could not open file %s\n" % filepath
+    except Error as e:
+	raise Error("Could not open file %s\n" % filepath)
     status, output = execcmd(command, show=True, geterr=True, stdin=filein)
 
 def import_binaries(topdir, pkgname):
@@ -133,7 +133,7 @@ def parse_sources(path):
             sum, name = line.split(None, 1)
         except ValueError:
             # failed to unpack, line format error
-            raise Error, "invalid line in sources file: %s" % rawline
+            raise Error("invalid line in sources file: %s" % rawline)
         entries[name] = sum
     return entries
 

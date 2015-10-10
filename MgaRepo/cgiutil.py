@@ -24,8 +24,8 @@ def parse_macrosref(refs, config):
         try:
             macros.extend(config.walk(secname, raw=True))
         except NoSectionError:
-            raise Error, "missing macros section " \
-                    "%r in configuration" % secname
+            raise Error("missing macros section " \
+                    "%r in configuration" % secname)
     return macros
 
 def get_targets():
@@ -46,7 +46,7 @@ def get_targets():
                         refs = value.split()
                         target.macros = parse_macrosref(refs, config)
                     else:
-                        raise Error, "unknown [%s] option %s" % (section, option)
+                        raise Error("unknown [%s] option %s" % (section, option))
                 TARGETS.append(target)
     return TARGETS
 

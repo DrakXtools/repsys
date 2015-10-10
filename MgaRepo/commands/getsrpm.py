@@ -49,7 +49,7 @@ def mode_callback(option, opt, val, parser, mode):
         try:
             opts.version, opts.release = val.split("-", 1)
         except ValueError:
-            raise Error, "wrong version, use something like 2.2-1mdk"
+            raise Error("wrong version, use something like 2.2-1mdk")
     elif mode == "revision":
         opts.revision = val
 
@@ -83,7 +83,7 @@ def parse_options():
     opts, args = parser.parse_args()
     del opts.__ignore
     if len(args) != 1:
-        raise Error, "invalid arguments"
+        raise Error("invalid arguments")
     opts.pkgdirurl = package_url(args[0])
     opts.verbose = 1
     return opts

@@ -30,7 +30,7 @@ def parse_options():
             callback=disable_mirror)
     opts, args = parser.parse_args()
     if len(args) != 1:
-        raise Error, "invalid arguments"
+        raise Error("invalid arguments")
     opts.pkgdirurl = package_url(args[0])
     opts.verbose = 1 # Unconfigurable
     return opts

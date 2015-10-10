@@ -6,9 +6,9 @@ from MgaRepo.util import execcmd
 try:
     from Cheetah.Template import Template
 except ImportError:
-    raise Error, "mgarepo requires the package python-cheetah"
+    raise Error("mgarepo requires the package python-cheetah")
 
-from cStringIO import StringIO
+from io import StringIO
 
 import sys
 import os
@@ -83,7 +83,7 @@ def getrelease(pkgdirurl, rev=None, macros=[], exported=None):
     try:
         found = glob.glob(os.path.join(tmpdir, "*.spec"))
         if not found:
-            raise Error, "no .spec file found inside %s" % specurl
+            raise Error("no .spec file found inside %s" % specurl)
         specpath = found[0]
         options = rpm_macros_defs(macros)
         command = (("rpm -q --qf '%%{EPOCH}:%%{VERSION}-%%{RELEASE}\n' "
@@ -95,14 +95,14 @@ def getrelease(pkgdirurl, rev=None, macros=[], exported=None):
         output = pipe.stdout.read()
         error = pipe.stderr.read()
         if pipe.returncode != 0:
-            raise Error, "Error in command %s: %s" % (command, error)
+            raise Error("Error in command %s: %s" % (command, error))
         releases = output.split()
         try:
             epoch, vr = releases[0].split(":", 1)
             version, release = vr.split("-", 1)
         except ValueError:
-            raise Error, "Invalid command output: %s: %s" % \
-                    (command, output)
+            raise Error("Invalid command output: %s: %s" % \
+                    (command, output))
         #XXX check if this is the right way:
         if epoch == "(none)":
             ev = version
@@ -197,7 +197,7 @@ def group_releases_by_author(releases):
 
         # create _Authors and sort them by their latest revisions
         decorated = []
-        for authorname, revs in authors.iteritems():
+        for authorname, revs in authors.items():
             author = _Author()
             author.name = revs[0].author_name
             author.email = revs[0].author_email
@@ -374,7 +374,7 @@ def get_revision_offset():
     try:
         revoffset = config.getint("log", "revision-offset", 0)
     except (ValueError, TypeError):
-        raise Error, ("Invalid revision-offset number in configuration "
+        raise Error("Invalid revision-offset number in configuration "
                       "file(s).")
     return revoffset or 0
 
@@ -479,7 +479,7 @@ def _split_changelog(stream):
     def finish(entry):
         lines = entry[2]
         # strip newlines at the end
-        for i in xrange(len(lines)-1, -1, -1):
+        for i in range(len(lines)-1, -1, -1):
             if lines[i] != "\n":
                 break
             del lines[i]
@@ -492,8 +492,8 @@ def _split_changelog(stream):
             rawdate = " ".join(fields[:5])
             try:
                 date = time.strptime(rawdate, "* %a %b %d %Y")
-            except ValueError, e:
-                raise Error, "failed to parse spec changelog: %s" % e
+            except ValueError as e:
+                raise Error("failed to parse spec changelog: %s" % e)
             curlines = [line]
             current = (date, count, curlines)
             # count used to ensure stable sorting when changelog entries
@@ -631,6 +631,6 @@ def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
 
 if __name__ == "__main__":
     l = svn2rpm(sys.argv[1])
-    print l
+    print(l)
 
 # vim:et:ts=4:sw=4

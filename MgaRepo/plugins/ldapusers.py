@@ -77,19 +77,19 @@ class LDAPError(Error):
 
 def strip_entry(entry):
     "Leave only the first value in all keys in the entry"
-    new = dict((key, value[0]) for key, value in entry.iteritems())
+    new = dict((key, value[0]) for key, value in entry.items())
     return new
 
 def interpolate(optname, format, data):
     tmpl = string.Template(format)
     try:
         return tmpl.substitute(data)
-    except KeyError, e:
-        raise Error, "the key %s was not found in LDAP search, " \
-                "check your %s configuration" % (e, optname)
-    except (TypeError, ValueError), e:
-        raise Error, "LDAP response formatting error: %s. Check " \
-                "your %s configuration" % (e, optname)
+    except KeyError as e:
+        raise Error("the key %s was not found in LDAP search, " \
+                "check your %s configuration" % (e, optname))
+    except (TypeError, ValueError) as e:
+        raise Error("LDAP response formatting error: %s. Check " \
+                "your %s configuration" % (e, optname))
 
 def used_attributes(format):
     class DummyDict:
@@ -117,8 +117,8 @@ def make_handler():
         try:
             port = int(config.get("global", "ldap-port", 389))
         except ValueError:
-            raise Error, "the option ldap-port requires an integer, please "\
-                    "check your configuration files"
+            raise Error("the option ldap-port requires an integer, please "\
+                    "check your configuration files")
         uri = "ldap://%s:%d" % (server, port)
 
     basedn = config.get("global", "ldap-base")
@@ -133,21 +133,21 @@ def make_handler():
     try:
         starttls = valid[raw]
     except KeyError:
-        raise Error, "invalid value %r for ldap-starttls, use "\
-                "'yes' or 'no'" % raw
+        raise Error("invalid value %r for ldap-starttls, use "\
+                "'yes' or 'no'" % raw)
 
     try:
         import ldap
     except ImportError:
-        raise Error, "LDAP support needs the python-ldap package "\
-                "to be installed"
+        raise Error("LDAP support needs the python-ldap package "\
+                "to be installed")
     else:
         from ldap.filter import escape_filter_chars
 
     def users_wrapper(section, option=None, default=None, walk=False):
         global users_cache
         if walk:
-            raise Error, "ldapusers plugin does not support user listing"
+            raise Error("ldapusers plugin does not support user listing")
         assert option is not None, \
                 "When not section walking, option is required"
 
@@ -161,7 +161,7 @@ def make_handler():
                 l.start_tls_s()
             if binddn:
                 l.bind(binddn, bindpw)
-        except ldap.LDAPError, e:
+        except ldap.LDAPError as e:
             raise LDAPError(e)
         try:
             data = {"username": escape_filter_chars(option)}
@@ -170,7 +170,7 @@ def make_handler():
             try:
                 found = l.search_s(basedn, ldap.SCOPE_SUBTREE, filter,
                         attrlist=attrs)
-            except ldap.LDAPError, e:
+            except ldap.LDAPError as e:
                 raise LDAPError(e)
             if found:
                 dn, entry = found[0]
