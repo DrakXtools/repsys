@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 from MgaRepo import Error, config, layout
 from MgaRepo.svn import SVN
 from MgaRepo.util import execcmd

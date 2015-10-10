@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 from MgaRepo import SilentError, Error, config
 import sys, os
 import urllib.parse

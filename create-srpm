@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 from MgaRepo import Error, config, plugins, layout
 from MgaRepo.mirror import strip_username

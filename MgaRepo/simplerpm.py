@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 from MgaRepo.util import execcmd
 
 class SRPM:
