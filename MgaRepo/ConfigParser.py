@@ -3,7 +3,7 @@ This is a heavily hacked version of ConfigParser to keep the order in
 which options and sections are read, and allow multiple options with
 the same key.
 """
-from __future__ import generators
+
 import string, types
 import re
 
@@ -101,21 +101,21 @@ class ConfigParser:
         return self.__defaults
 
     def sections(self):
-        return self.__sections_dict.keys()
+        return list(self.__sections_dict.keys())
 
     def has_section(self, section):
-        return self.__sections_dict.has_key(section)
+        return section in self.__sections_dict
 
     def options(self, section):
         self.__sections_dict[section]
         try:
-            opts = self.__sections_dict[section].keys()
+            opts = list(self.__sections_dict[section].keys())
         except KeyError:
             raise NoSectionError(section)
-        return self.__defaults.keys()+opts
+        return list(self.__defaults.keys())+opts
 
     def read(self, filenames):
-        if type(filenames) in types.StringTypes:
+        if type(filenames) in str:
             filenames = [filenames]
         for filename in filenames:
             try:
@@ -134,7 +134,7 @@ class ConfigParser:
         self.__read(fp, filename)
 
     def set(self, section, option, value):
-        if self.__sections_dict.has_key(section):
+        if section in self.__sections_dict:
             sectdict = self.__sections_dict[section]
             sectlist = []
             self.__sections_list.append((section, sectlist))
@@ -221,7 +221,7 @@ class ConfigParser:
             if value.find("%(") >= 0:
                 try:
                     value = value % vars
-                except KeyError, key:
+                except KeyError as key:
                     raise InterpolationError(key, option, section, rawval)
             else:
                 break
@@ -242,8 +242,8 @@ class ConfigParser:
         states = {'1': 1, 'yes': 1, 'true': 1, 'on': 1,
                   '0': 0, 'no': 0, 'false': 0, 'off': 0}
         v = self.get(section, option)
-        if not states.has_key(v.lower()):
-            raise ValueError, 'Not a boolean: %s' % v
+        if v.lower() not in states:
+            raise ValueError('Not a boolean: %s' % v)
         return states[v.lower()]
 
     def optionxform(self, optionstr):
@@ -253,12 +253,12 @@ class ConfigParser:
     def has_option(self, section, option):
         """Check for the existence of a given option in a given section."""
         if not section or section == "DEFAULT":
-            return self.__defaults.has_key(option)
+            return option in self.__defaults
         elif not self.has_section(section):
             return 0
         else:
             option = self.optionxform(option)
-            return self.__sections_dict[section].has_key(option)
+            return option in self.__sections_dict[section]
 
     SECTCRE = re.compile(r'\[(?P<header>[^]]+)\]')
     OPTCRE = re.compile(r'(?P<option>\S+)\s*(?P<vi>[:=])\s*(?P<value>.*)$')
@@ -292,7 +292,7 @@ class ConfigParser:
                 mo = self.SECTCRE.match(line)
                 if mo:
                     sectname = mo.group('header')
-                    if self.__sections_dict.has_key(sectname):
+                    if sectname in self.__sections_dict:
                         cursectdict = self.__sections_dict[sectname]
                         cursectlist = []
                         self.__sections_list.append((sectname, cursectlist))
@@ -308,7 +308,7 @@ class ConfigParser:
                     optname = None
                 # no section header in the file?
                 elif cursectdict is None:
-                    raise MissingSectionHeaderError(fpname, lineno, `line`)
+                    raise MissingSectionHeaderError(fpname, lineno, repr(line))
                 # an option line?
                 else:
                     mo = self.OPTCRE.match(line)
@@ -335,7 +335,7 @@ class ConfigParser:
                         # list of all bogus lines
                         if not e:
                             e = ParsingError(fpname)
-                        e.append(lineno, `line`)
+                        e.append(lineno, repr(line))
         # if any parsing errors occurred, raise an exception
         if e:
             raise e
@@ -409,7 +409,7 @@ class Config:
         ret = self.get(section, option, default)
         states = {'1': 1, 'yes': 1, 'true': 1, 'on': 1,
                   '0': 0, 'no': 0, 'false': 0, 'off': 0}
-        if type(ret) == type("") and states.has_key(ret.lower()):
+        if type(ret) == type("") and ret.lower() in states:
             return states[ret.lower()]
         return default
 
@@ -419,15 +419,15 @@ def test():
         d = {"fulano": "ciclano",
              "foolano": "ceeclano"}
         if walk:
-            return d.items()
+            return list(d.items())
         elif option in d:
             return d[option]
         else:
             return config.get(section, option, default, wrap=False)
     config.wrap("users", handler=handler)
-    print config.get("users", "fulano") # found in wrapper
-    print config.get("users", "andreas") # found in repsys.conf
-    print config.walk("users")
+    print(config.get("users", "fulano")) # found in wrapper
+    print(config.get("users", "andreas")) # found in repsys.conf
+    print(config.walk("users"))
 
 if __name__ == "__main__":
     test()
