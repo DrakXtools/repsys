@@ -8,7 +8,7 @@ import sys
 import os
 import re
 import select
-from io import StringIO
+from io import BytesIO
 import httplib2
 #import commands
 
@@ -28,7 +28,7 @@ def execcmd(*cmd, **kwargs):
     cmdstr = " ".join(cmd)
     if kwargs.get("show"):
         if kwargs.get("geterr"):
-            err = StringIO()
+            err = BytesIO()
             pstdin = kwargs.get("stdin") if kwargs.get("stdin") else None
             pipe = subprocess.Popen(cmdstr, shell=True,
                     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -40,13 +40,13 @@ def execcmd(*cmd, **kwargs):
                 odata = None
                 if of in r:
                     odata = os.read(of, 8192)
-                    sys.stdout.write(odata)
+                    sys.stdout.buffer.write(odata)
 
                 edata = None
                 if ef in r:
                     edata = os.read(ef, 8192)
                     err.write(edata)
-                    sys.stderr.write(edata)
+                    sys.stderr.buffer.write(edata)
 
                 status = pipe.poll()
                 if status is not None and odata == "" and edata == "":
@@ -69,7 +69,7 @@ def execcmd(*cmd, **kwargs):
             raise Error("command failed: %s\n%s\n" % (cmdstr, output))
     if verbose:
         print(cmdstr)
-        sys.stdout.write(output)
+        sys.stdout.buffer.write(output)
     return status, output
 
 def get_auth(username=None, password=None):
@@ -104,12 +104,12 @@ def mapurl(url):
         try:
             expr_, replace = urlmap.split()[:2]
         except ValueError:
-            sys.stderr.write("invalid url-map: %s" % urlmap)
+            sys.stderr.buffer.write("invalid url-map: %s" % urlmap)
         else:
             try:
                 newurl = re.sub(expr_, replace, url)
             except re.error as errmsg:
-                sys.stderr.write("error in URL mapping regexp: %s" % errmsg)
+                sys.stderr.buffer.write("error in URL mapping regexp: %s" % errmsg)
     return newurl
 
 
