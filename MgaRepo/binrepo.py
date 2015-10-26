@@ -35,7 +35,7 @@ def is_binary(path):
     if st[stat.ST_SIZE] >= maxsize:
         return True
     if open(path).read(0x10000).find('\0') >= 0:
-	return True
+        return True
     return False
 
 def find_binaries(paths):
@@ -59,21 +59,21 @@ def download_binary(topdir, sha1, filename):
     url = mirror.normalize_path(url + "/" + sha1)
     dest = os.path.join(topdir, 'SOURCES', filename)
     if os.path.exists(dest):
-	if file_hash(dest) == sha1:
-	    return 1
-	else:
-	    raise Error("File with incorrect sha1sum: %s" % dest)
+        if file_hash(dest) == sha1:
+            return 1
+        else:
+            raise Error("File with incorrect sha1sum: %s" % dest)
     context = {"dest": dest, "url": url}
     try:
-	cmd = string.Template(fmt).substitute(context)
+        cmd = string.Template(fmt).substitute(context)
     except KeyError as e:
-	raise Error("invalid variable %r in download-command "\
+        raise Error("invalid variable %r in download-command "\
 		"configuration option" % e)
     try:
-	status, output = execcmd(cmd, show=True)
+        status, output = execcmd(cmd, show=True)
     except Error as e:
-	os.unlink(dest)
-	raise Error("Could not download file %s\n" % url)
+        os.unlink(dest)
+        raise Error("Could not download file %s\n" % url)
 
 def download_binaries(topdir):
     spath = sources_path(topdir)
@@ -81,7 +81,7 @@ def download_binaries(topdir):
         raise Error("'%s' was not found" % spath)
     entries = parse_sources(spath)
     for name, sha1 in entries.items():
-	download_binary(topdir, sha1, name)
+        download_binary(topdir, sha1, name)
 
 def binary_exists(sha1sum):
     dlurl = config.get("binrepo", "download_url",
@@ -97,14 +97,14 @@ def upload_binary(topdir, filename):
         raise Error("'%s' was not found" % filepath)
     sha1sum = file_hash(filepath)
     if binary_exists(sha1sum):
-	return
+        return
     host = config.get("binrepo", "upload_host")
     upload_bin_helper = get_helper("upload-bin")
     command = "ssh %s %s %s" % (host, upload_bin_helper, filename)
     try:
-	filein = open(filepath, 'r')
+        filein = open(filepath, 'r')
     except Error as e:
-	raise Error("Could not open file %s\n" % filepath)
+        raise Error("Could not open file %s\n" % filepath)
     status, output = execcmd(command, show=True, geterr=True, stdin=filein)
 
 def import_binaries(topdir, pkgname):
@@ -115,7 +115,7 @@ def import_binaries(topdir, pkgname):
     sourcesdir = os.path.join(topdir, "SOURCES")
     binaries = find_binaries([sourcesdir])
     for path in binaries:
-	upload_binary(topdir, os.path.basename(path))
+        upload_binary(topdir, os.path.basename(path))
     update_sources(topdir, added=binaries)
     svn = SVN()
     svn.add(sources_path(topdir))
@@ -159,8 +159,8 @@ def update_sources(topdir, added=[], removed=[]):
         entries = parse_sources(path)
     f = open(path, "w") # open before calculating hashes
     for name in removed:
-	if name in entries:
-           del entries[name]
+        if name in entries:
+            del entries[name]
     for added_path in added:
         name = os.path.basename(added_path)
         entries[name] = file_hash(added_path)
