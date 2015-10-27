@@ -41,12 +41,12 @@ class SVN:
         except Error as e:
             msg = None
             if e.args:
-                if "Permission denied" in e.args[0]:
+                if b"Permission denied" in e.args[0]:
                     msg = ("It seems ssh-agent or ForwardAgent are not setup "
                            "or your username is wrong. See "
                            "https://wiki.mageia.org/en/Packagers_ssh"
                            " for more information.")
-                elif "authorization failed" in e.args[0]:
+                elif b"authorization failed" in e.args[0]:
                     msg = ("Note that mgarepo does not support any HTTP "
                            "authenticated access.")
             if kwargs.get("show") and \

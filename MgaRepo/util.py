@@ -30,11 +30,11 @@ def execcmd(*cmd, **kwargs):
         if kwargs.get("geterr"):
             err = BytesIO()
             pstdin = kwargs.get("stdin") if kwargs.get("stdin") else None
-            pipe = subprocess.Popen(cmdstr, shell=True,
+            p = subprocess.Popen(cmdstr, shell=True,
                     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                     stdin=pstdin)
-            of = pipe.stdout.fileno()
-            ef = pipe.stderr.fileno()
+            of = p.stdout.fileno()
+            ef = p.stderr.fileno()
             while True:
                 r,w,x = select.select((of,ef), (), ())
                 odata = None
@@ -48,8 +48,8 @@ def execcmd(*cmd, **kwargs):
                     err.write(edata)
                     sys.stderr.buffer.write(edata)
 
-                status = pipe.poll()
-                if status is not None and odata == "" and edata == "":
+                status = p.poll()
+                if status is not None and odata == b'' and edata == b'':
                     break
             output = err.getvalue()
         else:
