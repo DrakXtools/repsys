@@ -15,8 +15,11 @@ class SVNLogEntry:
         self.changed = []
         self.lines = []
 
-    def __cmp__(self, other):
-        return cmp(self.date, other.date)
+    def __lt__(self, other):
+        return (self.date > other.date)
+    
+    def __eq__(self,other):
+        return (self.date == other.date)
 
 class SVN:
     def _execsvn(self, *args, **kwargs):
