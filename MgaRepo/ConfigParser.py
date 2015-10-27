@@ -115,7 +115,7 @@ class ConfigParser:
         return list(self.__defaults.keys())+opts
 
     def read(self, filenames):
-        if isinstance(type(filenames) , str):
+        if isinstance(filenames , str):
             filenames = [filenames]
         for filename in filenames:
             try:
