@@ -3,11 +3,6 @@ from MgaRepo import Error, config, layout
 from MgaRepo.svn import SVN
 from MgaRepo.util import execcmd
 
-try:
-    from Cheetah.Template import Template
-except ImportError:
-    raise Error("mgarepo requires the package python-cheetah")
-
 from io import StringIO
 
 import sys
@@ -22,47 +17,6 @@ import subprocess
 
 
 locale.setlocale(locale.LC_ALL, "C")
-
-default_template = """
-#if not $releases_by_author[-1].visible
-  ## Hide the first release that contains no changes. It must be a
-  ## reimported package and the log gathered from misc/ already should
-  ## contain a correct entry for the version-release:
-  #set $releases_by_author = $releases_by_author[:-1]
-#end if
-#for $rel in $releases_by_author
-* $rel.date $rel.author_name <$rel.author_email> $rel.version-$rel.release
-+ Revision: $rel.revision
-## #if not $rel.released
-##+ Status: not released
-## #end if
- #if not $rel.visible
-+ rebuild (emptylog)
- #end if
- #for $rev in $rel.release_revisions
-  #for $line in $rev.lines
-$line
-  #end for
- #end for
-
- #for $author in $rel.authors
-  #if not $author.visible
-    #continue
-  #end if
-  ##alternatively, one could use:
-  ###if $author.email == "root"
-  ## #continue
-  ###end if
-  + $author.name <$author.email>
-  #for $rev in $author.revisions
-    #for $line in $rev.lines
-    $line
-    #end for
-  #end for
-
- #end for
-#end for
-"""
 
 def getrelease(pkgdirurl, rev=None, macros=[], exported=None):
     """Tries to obtain the version-release of the package for a 
@@ -324,23 +278,63 @@ def make_release(author=None, revision=None, date=None, lines=None,
 
 
 def dump_file(releases, currentlog=None, template=None):
-    templpath = template or config.get("template", "path",
-            "/usr/share/mgarepo/default.chlog")
-    params = {}
-    if templpath is None or not os.path.exists(templpath):
-        params["source"] = default_template
-        sys.stderr.write("warning: %s not found. using built-in template.\n"%
-                templpath)
-    else:
-        params["file"] = templpath
+    ''' Template cheetah suppressed and replaced by hard code. The template is selectable with the "name" in "template" section of config file.'''
+    templname = template or config.get("template", "name",
+            "default")
+    draft=""
     releases_author = group_releases_by_author(releases)
     revisions_author = group_revisions_by_author(currentlog)
-    params["searchList"] = [{"releases_by_author" : releases_author,
-                             "releases" : releases,
-                             "revisions_by_author": revisions_author}]
-    t = Template(**params)
-    return t.respond()
-
+    if templname == 'revno':
+        ''' a specific template'''
+        for rel in releases_author:
+            if not rel.released: 
+                draft = "  (not released yet)\n"
+            draft = draft + "* {0} {1} <{2}> {3}-{4}\n\n".format(rel.date, rel.author_name, rel.author_email, rel.version, rel.release)
+            for rev in rel.release_revisions:
+                    first=True
+                    spaces = " " * (len(str(rev.revision)) +3)
+                    for line in rev.lines:
+                        if first:
+                            draft = draft +"[{0}] {1}\n".format(rev.revision, line)
+                            first = False
+                        else:
+                            draft = draft + spaces + line + "\n"
+            for author in rel.authors:
+                if not author.visible:
+                    continue
+                draft += "+ {0} <{1}>\n".format(author.name, author.email)
+                for rev in author.revisions:
+                    first=True
+                    spaces = " " * (len(str(rev.revision)) + 3)
+                    for line in rev.lines:
+                        if first:
+                            draft = draft +"[{0}] {1}\n".format(rev.revision, line)
+                            first = False
+                        else:
+                            draft = draft + spaces + line + "\n"
+    else:
+        #  default template
+        if not releases_author[-1].visible:
+            releases_author = releases_author[:-1]
+        for rel in releases_author:
+            if not rel.released: 
+                draft = "  (not released yet)\n"
+            draft = draft + "* {0} {1} <{2}> {3}-{4}\n+ Revision: {5}\n".format(rel.date, rel.author_name, rel.author_email, rel.version, rel.release, rel.revision)
+            if not rel.visible:
+                draft = draft + "+ rebuild (emptylog)\n"
+            for rev in rel.release_revisions:
+                for line in rev.lines:
+                    draft = draft + line + "\n"
+            for author in rel.authors:
+                if not author.visible:
+                    continue
+                draft += "+ {0} <{1}>\n".format(author.name, author.email)
+                for rev in author.revisions:
+                    for line in rev.lines:
+                        draft = draft + line + "\n"
+            draft += "\n"
+            draft += "\n"
+    return draft
 
 class InvalidEntryError(Exception):
     pass
