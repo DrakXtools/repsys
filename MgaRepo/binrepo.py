@@ -13,6 +13,7 @@ import hashlib
 import urllib.parse
 import threading
 import httplib2
+
 from io import StringIO
 
 SOURCES_FILE = "sha1.lst"
@@ -34,7 +35,8 @@ def is_binary(path):
     st = os.stat(path)
     if st[stat.ST_SIZE] >= maxsize:
         return True
-    if open(path).read(0x10000).find('\0') >= 0:
+    fd = open(path, 'rb')
+    if b'\0' in bytes(fd.read(0x10000)):
         return True
     return False
 
@@ -139,8 +141,8 @@ def parse_sources(path):
 
 def file_hash(path):
     sum = hashlib.sha1()
-    f = open(path)
-    while True:
+    with open(path, 'rb') as f:
+      while True:
         block = f.read(4096)
         if not block:
             break
