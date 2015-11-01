@@ -57,7 +57,7 @@ def execcmd(*cmd, **kwargs):
             output = ""
     else:
         if kwargs.get('info'):
-            prefix='LANGUAGE=C '
+            prefix='LANGUAGE=C LC_TIME=C '
         else:
             prefix='LANG=C LANGUAGE=C LC_ALL=C '
         status, output = commands_getstatusoutput(prefix + cmdstr)
