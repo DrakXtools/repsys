@@ -553,12 +553,11 @@ def get_old_log(pkgdirurl):
             else:
                 logfile = os.path.join(tmpdir, "log")
                 if os.path.isfile(logfile):
-                    file = open(logfile)
-                    chlog.write("\n") # TODO needed?
-                    log = file.read()
-                    log = escape_macros(log)
-                    chlog.write(log)
-                    file.close()
+                    with open(logfile, 'r', encoding = 'utf-8') as lf:
+                        chlog.write("\n") # TODO needed?
+                        log = lf.read()
+                        log = escape_macros(log)
+                        chlog.write(log)
         finally:
             if os.path.isdir(tmpdir):
                 shutil.rmtree(tmpdir)

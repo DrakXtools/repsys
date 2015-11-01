@@ -125,7 +125,7 @@ def import_binaries(topdir, pkgname):
 def parse_sources(path):
     entries = {}
     try:
-        f = open(path)
+        f = open(path, encoding="utf-8")
     except IOError:
         return []
 
