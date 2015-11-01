@@ -334,7 +334,6 @@ def dump_file(releases, currentlog=None, template=None):
                     for line in rev.lines:
                         draft = draft + line + "\n"
             draft += "\n"
-            draft += "\n"
     return draft
 
 class InvalidEntryError(Exception):
@@ -617,7 +616,6 @@ def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
     chlog = get_changelog(pkgdirurl, another=another, rev=rev, size=size,
                 submit=submit, sort=sort, template=template, macros=macros,
                 exported=exported, oldlog=True)
-    print(spec)
     with open(specfile, "w", encoding='utf-8') as fo:
         fo.writelines(spec)
         fo.write("\n\n%changelog\n")
