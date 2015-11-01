@@ -287,12 +287,10 @@ def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
 
         if striplog:
             specpath = specpath
-            fspec = open(specpath)
-            spec, chlog = log.split_spec_changelog(fspec)
-            fspec.close()
-            fspec = open(specpath, "w")
-            fspec.writelines(spec)
-            fspec.close()
+            with open(specpath, "r", encoding='utf-8') as fspec:
+                spec, chlog = log.split_spec_changelog(fspec)
+            with open(specpath, "w", encoding='utf-8') as fspec:
+                fspec.writelines(spec)
             chlog.seek(0, os.SEEK_END)
             if chlog.tell() != 0:
                 chlog.seek(0)
@@ -308,9 +306,8 @@ def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
                 try:
                     svn.checkout(pkgoldurl, logtmp)
                     miscpath = os.path.join(logtmp, "log")
-                    fmisc = open(miscpath, "w+")
-                    fmisc.writelines(chlog)
-                    fmisc.close()
+                    with open(miscpath, "w+", encoding='utf-8') as fmisc:
+                        fmisc.writelines(chlog)
                     svn.add(miscpath)
                     svn.commit(logtmp,
                             log="imported old log for %s" % srpm.name)
