@@ -607,9 +607,8 @@ def get_changelog(pkgdirurl, another=None, svn=True, rev=None, size=None,
 
 def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
         submit=False, sort=False, template=None, macros=[], exported=None):
-    fi = open(specfile)
-    spec, oldchlog = split_spec_changelog(fi)
-    fi.close()
+    with open(specfile, encoding = 'utf-8') as fi:
+        spec, oldchlog = split_spec_changelog(fi)
     another = None
     if config.getbool("log", "merge-spec", False):
         another = oldchlog
@@ -617,12 +616,12 @@ def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
     chlog = get_changelog(pkgdirurl, another=another, rev=rev, size=size,
                 submit=submit, sort=sort, template=template, macros=macros,
                 exported=exported, oldlog=True)
-    fo = open(specfile, "w")
-    fo.writelines(spec)
-    fo.write("\n\n%changelog\n")
-    fo.writelines(chlog)
-    fo.close()
-
+    print(spec)
+    with open(specfile, "w", encoding='utf-8') as fo:
+        fo.writelines(spec)
+        fo.write("\n\n%changelog\n")
+        fo.writelines(chlog)
+ 
 if __name__ == "__main__":
     l = svn2rpm(sys.argv[1])
     print(l)
