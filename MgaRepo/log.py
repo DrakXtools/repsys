@@ -312,6 +312,7 @@ def dump_file(releases, currentlog=None, template=None):
                             first = False
                         else:
                             draft = draft + spaces + line + "\n"
+            draft += '\n'
     else:
         #  default template
         if not releases_author[-1].visible:
