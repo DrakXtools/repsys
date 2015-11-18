@@ -17,6 +17,7 @@ import httplib2
 def commands_getstatusoutput(cmd):
     """Return (status, output) of executing cmd in a shell."""
     import os
+    print('Commande : ',cmd)
     pipe = os.popen('{ ' + cmd + '; } 2>&1', 'r')
     text = pipe.read()
     sts = pipe.close()
@@ -26,11 +27,15 @@ def commands_getstatusoutput(cmd):
 
 def execcmd(*cmd, **kwargs):
     cmdstr = " ".join(cmd)
+    if kwargs.get('info'):
+        prefix='LANGUAGE=C LC_TIME=C '
+    else:
+        prefix='LANG=C LANGUAGE=C LC_ALL=C '
     if kwargs.get("show"):
         if kwargs.get("geterr"):
             err = BytesIO()
             pstdin = kwargs.get("stdin") if kwargs.get("stdin") else None
-            p = subprocess.Popen(cmdstr, shell=True,
+            p = subprocess.Popen(prefix + cmdstr, shell=True,
                     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                     stdin=pstdin)
             of = p.stdout.fileno()
@@ -53,13 +58,9 @@ def execcmd(*cmd, **kwargs):
                     break
             output = err.getvalue()
         else:
-            status = os.system(cmdstr)
+            status = os.system(prefix + cmdstr)
             output = ""
     else:
-        if kwargs.get('info'):
-            prefix='LANGUAGE=C LC_TIME=C '
-        else:
-            prefix='LANG=C LANGUAGE=C LC_ALL=C '
         status, output = commands_getstatusoutput(prefix + cmdstr)
     verbose = config.getbool("global", "verbose", 0)
     if status != 0 and not kwargs.get("noerror"):
@@ -68,7 +69,6 @@ def execcmd(*cmd, **kwargs):
         else:
             raise Error("command failed: %s\n%s\n" % (cmdstr, output))
     if verbose:
-        print(cmdstr)
         sys.stdout.buffer.write(output)
     return status, output
 
