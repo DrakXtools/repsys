@@ -17,7 +17,6 @@ import httplib2
 def commands_getstatusoutput(cmd):
     """Return (status, output) of executing cmd in a shell."""
     import os
-    print('Commande : ',cmd)
     pipe = os.popen('{ ' + cmd + '; } 2>&1', 'r')
     text = pipe.read()
     sts = pipe.close()
@@ -69,6 +68,7 @@ def execcmd(*cmd, **kwargs):
         else:
             raise Error("command failed: %s\n%s\n" % (cmdstr, output))
     if verbose:
+        print(output)
         sys.stdout.buffer.write(output)
     return status, output
 
