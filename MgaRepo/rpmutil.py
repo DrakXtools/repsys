@@ -457,14 +457,14 @@ def check_changed(pkgdirurl, all=0, show=0, verbose=0):
             "nocurrent": nocurrent,
             "nopristine": nopristine}
 
-def checkout(pkgdirurl, path=None, revision=None, branch=None, distro=None,
+def checkout(pkgdirurl, path=None, revision=None, branch=None, distro=None, backports=None,
         spec=False):
     o_pkgdirurl = pkgdirurl
-    pkgdirurl = layout.package_url(o_pkgdirurl, distro=distro)
+    pkgdirurl = layout.package_url(o_pkgdirurl, distro=distro, backports=backports)
     append = None
     if spec:
         append = "SPECS"
-    current = layout.checkout_url(pkgdirurl, branch=branch,
+    current = layout.checkout_url(pkgdirurl, branch=branch, backports=backports,
             append_path=append)
     if path is None:
         path = layout.package_name(pkgdirurl)

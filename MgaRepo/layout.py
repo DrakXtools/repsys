@@ -13,7 +13,9 @@ def layout_dirs():
     devel_branch = os.path.normpath(devel_branch)
     branches_dir = config.get("global", "branches-dir", "updates/")
     branches_dir = os.path.normpath(branches_dir)
-    return devel_branch, branches_dir
+    backports_dir = config.get("global", "backports-dir", "backports/")
+    backports_dir = os.path.normpath(backports_dir)
+    return devel_branch, branches_dir, backports_dir
 
 def get_url_revision(url, retrieve=True):
     """Get the revision from a given URL
@@ -69,7 +71,7 @@ def split_url_revision(url):
     newurl = urllib.parse.urlunparse(parsed)
     return newurl, rev
 
-def checkout_url(pkgdirurl, branch=None, version=None, release=None,
+def checkout_url(pkgdirurl, branch=None, version=None, release=None, backports=None,
         releases=False, pristine=False, append_path=None):
     """Get the URL of a branch of the package, defaults to current/
     
@@ -130,7 +132,7 @@ def repository_url(mirrored=False):
             url = convert_default_parent(default_parent)
     return url
 
-def package_url(name_or_url, version=None, release=None, distro=None,
+def package_url(name_or_url, version=None, release=None, distro=None, backports=None,
         mirrored=True):
     """Returns a tuple with the absolute package URL and its name
 
@@ -139,6 +141,7 @@ def package_url(name_or_url, version=None, release=None, distro=None,
     @version: the version to be fetched from releases/ (requires release)
     @release: the release number to be fetched from releases/$version/
     @distro: the name of the repository branch inside updates/
+    @backports:  the name of the repository branch inside backports/
     @mirrored: return an URL based on the mirror repository, if enabled
     """
     from MgaRepo import mirror
@@ -150,11 +153,13 @@ def package_url(name_or_url, version=None, release=None, distro=None,
                     repository_url(), pkgdirurl)
     else:
         name = name_or_url
-        devel_branch, branches_dir = layout_dirs()
+        devel_branch, branches_dir, backports_dir = layout_dirs()
         if distro or "/" in name:
             default_branch = branches_dir
             if distro:
                 default_branch = os.path.join(default_branch, distro)
+        elif backports:
+           default_branch = os.path.join(backports_dir, backports)
         else:
             default_branch = devel_branch # cauldron
         path = os.path.join(default_branch, name)
@@ -187,7 +192,7 @@ def distro_branch(pkgdirurl):
     found = None
     repo = repository_url()
     if same_base(repo, pkgdirurl):
-        devel_branch, branches_dir = layout_dirs()
+        devel_branch, branches_dir, backports_dir = layout_dirs()
         repo_path = urllib.parse.urlparse(repo)[2]
         devel_path = os.path.join(repo_path, devel_branch)
         branches_path = os.path.join(repo_path, branches_dir)
@@ -203,5 +208,6 @@ def distro_branch(pkgdirurl):
                 found = comps[1]
             elif len(comps) >= 2: # must be at least branch/pkgname
                 found = comps[branches_path.count("/")+1]
+
     return found
 
