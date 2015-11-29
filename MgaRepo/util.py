@@ -30,14 +30,11 @@ def commands_exec(cmdstr, **kwargs):
         if of in r:
             odata = os.read(of, 8192)
             out.write(odata)
-            #sys.stdout.buffer.write(odata)
-
         edata = None
         if ef in r:
             edata = os.read(ef, 8192)
             err.write(edata)
             sys.stderr.buffer.write(edata)
-
         status = p.poll()
         if status is not None and odata == b'' and edata == b'':
             break
