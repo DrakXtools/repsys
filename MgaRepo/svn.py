@@ -208,7 +208,10 @@ class SVN:
         if lines is None:
             return None
         pairs = [[w.strip() for w in line.split(":", 1)] for line in lines]
-        info = dict(pairs)
+        info = {}
+        for pair in pairs:
+            if pair != ['']:
+                info[pair[0]]=pair[1]
         return info
           
     def ls(self, path, **kwargs):
