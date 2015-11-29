@@ -30,7 +30,7 @@ def commands_exec(cmdstr, **kwargs):
         if of in r:
             odata = os.read(of, 8192)
             out.write(odata)
-            sys.stdout.buffer.write(odata)
+            #sys.stdout.buffer.write(odata)
 
         edata = None
         if ef in r:
