@@ -8,40 +8,24 @@ import sys
 import os
 import re
 import select
-from io import BytesIO
+from io import StringIO
 import httplib2
-#import commands
 
 # Our own version of commands' commands_exec(). We have a commands
 # module directory, so we can't import Python's standard module
 
-def commands_exec(cmdstr, **kwargs):
-    err = BytesIO()
-    out = BytesIO()
-    pstdin = kwargs.get("stdin") if kwargs.get("stdin") else None
-    p = subprocess.Popen(cmdstr, shell=True,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            stdin=pstdin)
-    of = p.stdout.fileno()
-    ef = p.stderr.fileno()
-    while True:
-        r,w,x = select.select((of,ef), (), ())
-        odata = None
-        if of in r:
-            odata = os.read(of, 8192)
-            out.write(odata)
-        edata = None
-        if ef in r:
-            edata = os.read(ef, 8192)
-            err.write(edata)
-            sys.stderr.buffer.write(edata)
-        status = p.poll()
-        if status is not None and odata == b'' and edata == b'':
-            break
-    e = err.getvalue().decode('utf8')
-    o = out.getvalue().decode('utf8')
-    return o, e, status
-    
+# Our own version of commands' getstatusoutput(). We have a commands
+# module directory, so we can't import Python's standard module
+def commands_getstatusoutput(cmd):
+    """Return (status, output) of executing cmd in a shell."""
+    import os
+    pipe = os.popen('{ ' + cmd + '; } 2>&1', 'r')
+    text = pipe.read()
+    sts = pipe.close()
+    if sts is None: sts = 0
+    if text[-1:] == '\n': text = text[:-1]
+    return sts, text
+
 def execcmd(*cmd, **kwargs):
     cmdstr = " ".join(cmd)
     if kwargs.get('info'):
@@ -50,12 +34,33 @@ def execcmd(*cmd, **kwargs):
         prefix='LANG=C LANGUAGE=C LC_ALL=C '
     if kwargs.get("show"):
         if kwargs.get("geterr"):
-            o, output, status = commands_exec(prefix + cmdstr)
+            err = StringIO()
+            pstdin = kwargs.get("stdin") if kwargs.get("stdin") else None
+            p = subprocess.Popen(prefix + cmdstr, shell=True,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    stdin=pstdin)
+            of = p.stdout.fileno()
+            ef = p.stderr.fileno()
+            while True:
+                r,w,x = select.select((of,ef), (), ())
+                odata = None
+                if of in r:
+                    odata = (os.read(of, 8192)).decode('utf8')
+                edata = None
+                if ef in r:
+                    edata = (os.read(ef, 8192)).decode('utf8')
+                    err.write(edata)
+                    sys.stderr.write(edata)
+
+                status = p.poll()
+                if status is not None and odata == '' and edata == '':
+                    break
+            output = err.getvalue()
         else:
             status = os.system(prefix + cmdstr)
             output = ""
     else:
-        output, e, status = commands_exec(prefix + cmdstr)
+        status, output = commands_getstatusoutput(prefix + cmdstr)
     verbose = config.getbool("global", "verbose", 0)
     if status != 0 and not kwargs.get("noerror"):
         if kwargs.get("cleanerr") and not verbose:
@@ -64,7 +69,7 @@ def execcmd(*cmd, **kwargs):
             raise Error("command failed: %s\n%s\n" % (cmdstr, output))
     if verbose:
         print(output)
-        sys.stdout.buffer.write(output)
+        sys.stdout.write(output)
     return status, output
 
 def get_auth(username=None, password=None):
