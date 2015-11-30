@@ -28,10 +28,13 @@ def commands_getstatusoutput(cmd):
 
 def execcmd(*cmd, **kwargs):
     cmdstr = " ".join(cmd)
+    verbose = config.getbool("global", "verbose", 0)
     if kwargs.get('info'):
         prefix='LANGUAGE=C LC_TIME=C '
     else:
         prefix='LANG=C LANGUAGE=C LC_ALL=C '
+    if verbose:
+        print(prefix + cmdstr)
     if kwargs.get("show"):
         if kwargs.get("geterr"):
             err = StringIO()
@@ -61,14 +64,12 @@ def execcmd(*cmd, **kwargs):
             output = ""
     else:
         status, output = commands_getstatusoutput(prefix + cmdstr)
-    verbose = config.getbool("global", "verbose", 0)
     if status != 0 and not kwargs.get("noerror"):
         if kwargs.get("cleanerr") and not verbose:
             raise Error(output)
         else:
             raise Error("command failed: %s\n%s\n" % (cmdstr, output))
     if verbose:
-        print(output)
         sys.stdout.write(output)
     return status, output
 
