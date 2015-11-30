@@ -1,3 +1,8 @@
+* 1.11.1
+- Correction for encoded messages
+- Clean code
+- Add an example in manpage for -k option (backports)
+
 * 1.11.0
 - port to python 3
 - Add support for backports checkout
