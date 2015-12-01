@@ -40,6 +40,10 @@ class SVN:
                 kwargs['info'] = True
             else:
                 kwargs['info'] = False
+            if args[0] == 'checkout':
+                kwargs['checkout'] = True
+            else:
+                kwargs['checkout'] = False
             return execcmd(cmdstr, **kwargs)
         except Error as e:
             msg = None
