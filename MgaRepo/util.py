@@ -18,13 +18,17 @@ import httplib2
 # module directory, so we can't import Python's standard module
 def commands_getstatusoutput(cmd):
     """Return (status, output) of executing cmd in a shell."""
-    import os
-    pipe = os.popen('{ ' + cmd + '; } 2>&1', 'r')
-    text = pipe.read()
-    sts = pipe.close()
-    if sts is None: sts = 0
+    pipe = subprocess.Popen('{ ' + cmd + '; } 2>&1', stdin = subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines = True, shell = True)
+    of = pipe.stdout.fileno()
+    text = ''
+    pipe.stdin.close()
+    while True:
+        text += os.read(of,8192).decode('utf8')
+        status = pipe.poll()
+        if status is not None or text == '':
+            break
     if text[-1:] == '\n': text = text[:-1]
-    return sts, text
+    return status, text
 
 def execcmd(*cmd, **kwargs):
     cmdstr = " ".join(cmd)
