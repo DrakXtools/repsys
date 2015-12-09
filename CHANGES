@@ -1,9 +1,9 @@
-* 1.12.3
+* 1.11.3
 - Change the getstatusoutput function to not get error when reading special
   characters
 - Allow unicode characters in pwd (mga#73)
 
-* 1.12.2
+* 1.11.2
 - Revert changes to command exec method in util.py,
   they broke file upload with binrepo.
 - Print the commands to stdout in verbose mode.
