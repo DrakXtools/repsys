@@ -1,3 +1,4 @@
+* 1.12.3
 - Change the getstatusoutput function to not get error when reading special
   characters
 - Allow unicode characters in pwd (mga#73)
