@@ -223,9 +223,15 @@ def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
             usourcesdir = os.path.join(unpackdir, "SOURCES")
             
             uspecsentries = os.listdir(uspecsdir)
-            usourcesentries = os.listdir(usourcesdir)
+            if os.path.isdir(usourcesdir):
+                usourcesentries = os.listdir(usourcesdir)
+            else:
+                usourcesentries=[]
             specsentries = os.listdir(specsdir)
-            sourcesentries = os.listdir(sourcesdir)
+            if os.path.isdir(sourcesdir):
+                sourcesentries = os.listdir(sourcesdir)
+            else:
+                sourcesentries=[]
 
             # Remove old entries
             for entry in [x for x in specsentries
