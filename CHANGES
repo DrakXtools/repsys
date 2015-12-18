@@ -1,3 +1,6 @@
+* 1.11.4
+- test if SOURCES exists or not to avoid exception while using putsrpm. Useful for "task" packages.
+
 * 1.11.3
 - Change the getstatusoutput function to not get error when reading special
   characters
