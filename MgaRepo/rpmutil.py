@@ -251,7 +251,8 @@ def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
 
             # Copy all files
             execcmd("cp -rlf", uspecsdir, currentdir)
-            execcmd("cp -rlf", usourcesdir, currentdir)
+            if os.path.isdir(usourcesdir):
+                execcmd("cp -rlf", usourcesdir, currentdir)
             
             # Add new entries
             for entry in [x for x in uspecsentries
