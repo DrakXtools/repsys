@@ -1,3 +1,6 @@
+* 1.11.5
+- add another test to avoid exception while copying files from tmp/SOURCES (fix mga#17365)
+
 * 1.11.4
 - test if SOURCES exists or not to avoid exception while using putsrpm. Useful for "task" packages.
 

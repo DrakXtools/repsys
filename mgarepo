@@ -4,7 +4,7 @@ from MgaRepo.command import *
 import getopt
 import sys
 
-VERSION="1.11.4"
+VERSION="1.11.5"
 
 HELP = """\
 Usage: mgarepo COMMAND [COMMAND ARGUMENTS]
@@ -56,6 +56,7 @@ def parse_options():
     parser.add_option("--help-plugin", type="string", dest="__ignore",
             action="callback", callback=plugin_help)
     opts, args = parser.parse_args()
+    args = ['ci']
     del opts.__ignore
     if len(args) < 1:
         parser.print_help(sys.stderr)

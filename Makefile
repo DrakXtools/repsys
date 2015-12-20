@@ -1,5 +1,5 @@
 PACKAGE = mgarepo
-VERSION = 1.11.4
+VERSION = 1.11.5
 .PHONY: all $(DIRS) clean
 
 clean:
