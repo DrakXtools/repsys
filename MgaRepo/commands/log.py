@@ -18,6 +18,7 @@ Options:
     -l LIMIT     Limit of log entries to show    
     -r REV       Show a specific revision
     -M           Do not use the mirror (use the main repository)
+    -s           Show release path       
 
 Examples:
     mgarepo log mutt
@@ -33,6 +34,8 @@ def parse_options():
     parser.add_option("-r", dest="revision", type="string", default=None)
     parser.add_option("-M", "--no-mirror", action="callback",
             callback=disable_mirror)
+    parser.add_option("-s", dest="releases", action="store_true",
+            default=False)
     opts, args = parser.parse_args()
     if len(args):
         opts.pkgdirurl = package_url(args[0])
@@ -40,9 +43,9 @@ def parse_options():
         parser.error("log requires a package name")
     return opts
 
-def svn_log(pkgdirurl, verbose=False, limit=None, revision=None):
+def svn_log(pkgdirurl, verbose=False, limit=None, revision=None, releases=None):
     mirror.info(pkgdirurl)
-    url = checkout_url(pkgdirurl)
+    url = checkout_url(pkgdirurl, releases=releases)
     svncmd = config.get("global", "svn-command", "svn")
     args = [svncmd, "log", url]
     if verbose:
