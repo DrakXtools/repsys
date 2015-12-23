@@ -1,3 +1,6 @@
+* 1.11.6
+- add -s option for log command to get releases log (enhancement mga#12948)
+
 * 1.11.5
 - add another test to avoid exception while copying files from tmp/SOURCES (fix mga#17365)
 
