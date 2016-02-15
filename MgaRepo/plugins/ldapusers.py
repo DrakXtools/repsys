@@ -137,12 +137,13 @@ def make_handler():
                 "'yes' or 'no'" % raw)
 
     try:
-        import ldap
+        from ldap3 import Server, Connection, ALL
+        #import ldap
     except ImportError:
-        raise Error("LDAP support needs the python-ldap package "\
+        raise Error("LDAP support needs the ldap3 package "\
                 "to be installed")
     else:
-        from ldap.filter import escape_filter_chars
+        from ldap.utils.conv import escape_filter_chars
 
     def users_wrapper(section, option=None, default=None, walk=False):
         global users_cache
@@ -156,21 +157,24 @@ def make_handler():
             return value
 
         try:
-            l = ldap.initialize(uri)
-            if starttls:
-                l.start_tls_s()
+            #l = ldap.initialize(uri)
+            l = Connection(uri, auto_bind=True, use_tls=starttls)
+#            if starttls:
+#                l.start_tls()  #l.start_tls_s() 
             if binddn:
                 l.bind(binddn, bindpw)
-        except ldap.LDAPError as e:
+        except ldap3.LDAPExceptionError as e:
             raise LDAPError(e)
         try:
             data = {"username": escape_filter_chars(option)}
             filter = interpolate("ldap-filterformat", filterformat, data)
             attrs = used_attributes(format)
             try:
-                found = l.search_s(basedn, ldap.SCOPE_SUBTREE, filter,
-                        attrlist=attrs)
-            except ldap.LDAPError as e:
+                found = l.search(search_base='o='.basedn, search_filter=filter, 
+                                 attributes=attrs, search_scope=SUBTREE)
+#                found = l.search_s(basedn, ldap.SCOPE_SUBTREE, filter,
+#                        attrlist=attrs)
+            except ldap3.LDAPError as e:
                 raise LDAPError(e)
             if found:
                 dn, entry = found[0]
@@ -182,7 +186,7 @@ def make_handler():
             users_cache[option] = value
             return value
         finally:
-            l.unbind_s()
+            l.unbind()
 
     return users_wrapper
 
