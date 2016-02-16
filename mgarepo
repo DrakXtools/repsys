@@ -17,17 +17,19 @@ Useful commands:
     sync          add-remove all file changes from the .spec
     submit        submit a package for build
     putsrpm       import a source package to the repository
-    getspec       prints the spec
-    rpmlog        prints the RPM changelog
-    getsrpm       creates the source RPM
+    getspec       print the spec
+    rpmlog        print the RPM changelog
+    getsrpm       create the source RPM
     maintdb       interact with the maintainer db
     create        create the structure of a new package
-    changed       shows changes not submitted
-    authoremail   prints the e-mail of a given author
+    changed       show changes not submitted
+    authoremail   print the e-mail of a given author
     switch        relocate to mirror or upstream repository
+    markrelease   create a tag for a given package revision and version
     upload        add a file to binrepo
     del           remove a file from binrepo
     up            update the working copy and synchronize all binaries
+    obsolete      move a package in obsolete directory
 
 Run "mgarepo COMMAND --help" and "man 8 mgarepo" for more information.
 

@@ -53,21 +53,29 @@ get/set package maintainers informations
 .IP "\fBputsrpm\fP"
 import a source package to the repository
 .IP "\fBgetspec\fP"
-prints the spec 
+print the spec 
 .IP "\fBrpmlog\fP"
-prints the RPM changelog generated from SVN
+print the RPM changelog generated from SVN
 .IP "\fBgetsrpm\fP"
-creates the source RPM
+create the source RPM
 .IP "\fBcreate\fP"
 create the structure of a new package
 .IP "\fBchanged\fP"
-shows changes not submitted
+show changes not submitted
 .IP "\fBauthoremail\fP"
-prints the e-mail of a given svn author
+print the e-mail of a given svn author
 .IP "\fBswitch\fP"
 relocate to mirror or upstream repository
 .IP "\fBmarkrelease\fP"
-creates a tag for a given package revision and version
+create a tag for a given package revision and version
+.IP "\fBupload\fP"
+add a file to binrepo
+.IP "\fBdel\fP"
+remove a file from binrepo
+.IP "\fBup\fP"
+update the working copy and synchronize all binaries
+.IP "\fBobsolete\fP"
+move a package in obsolete directory
 .SH "REPOSITORY LAYOUT"
 .nf
 A detailed description can be found at:
