@@ -1,3 +1,9 @@
+* 1.11.7
+- correct a crash in rpmlog command when smthg is not submitted
+- replace ldap import with ldap3 for python3
+- add obsolete command with -m option to move package from cauldron to obsolete
+- update man page and help
+
 * 1.11.6
 - add -s option for log command to get releases log (enhancement mga#12948)
 
