@@ -1,3 +1,6 @@
+* 1.11.8
+- delete debug command in svn.py
+
 * 1.11.7
 - correct a crash in rpmlog command when smthg is not submitted
 - replace ldap import with ldap3 for python3
