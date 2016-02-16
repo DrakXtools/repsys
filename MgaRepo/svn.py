@@ -384,6 +384,15 @@ class SVN:
         log.reverse()
         return log
 
+    def mv(self, path, dest, message=None, **kwargs):
+        cmd = ["mv", path, dest,  ]
+        if message:
+            cmd.append("-m '%s'"%message)
+        print(cmd)
+        sys.exit()
+        self._add_log(cmd, kwargs)
+        return self._execsvn_success(*cmd, **kwargs)
+
 class SVNLook:
     def __init__(self, repospath, txn=None, rev=None):
         self.repospath = repospath
