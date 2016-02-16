@@ -674,6 +674,15 @@ def delete(paths, commit=False):
             if commit:
                 svn.commit(path, log=message)
 
+def obsolete(pkgdirurl, branch=None, distro=None, backports=None, commit=False, log=None):
+    o_pkgdirurl = pkgdirurl
+    pkgdirurl = layout.package_url(o_pkgdirurl, distro=distro, backports=backports)
+    pkgdest = layout.package_url(o_pkgdirurl, obsolete=True, backports=backports)
+    svn = SVN()
+    svn.mv(pkgdirurl, pkgdest, message=log)
+    if commit:
+        svn.commit(path, log=log)
+
 def switch(mirrorurl=None):
     svn  = SVN()
     topdir = getpkgtopdir()
