@@ -388,8 +388,6 @@ class SVN:
         cmd = ["mv", path, dest,  ]
         if message:
             cmd.append("-m '%s'"%message)
-        print(cmd)
-        sys.exit()
         self._add_log(cmd, kwargs)
         return self._execsvn_success(*cmd, **kwargs)
 
