@@ -15,7 +15,9 @@ def layout_dirs():
     branches_dir = os.path.normpath(branches_dir)
     backports_dir = config.get("global", "backports-dir", "backports/")
     backports_dir = os.path.normpath(backports_dir)
-    return devel_branch, branches_dir, backports_dir
+    obsolete_dir = config.get("global", "obsolete-dir", "obsolete/")
+    obsolete_dir = os.path.normpath(obsolete_dir)
+    return devel_branch, branches_dir, backports_dir, obsolete_dir
 
 def get_url_revision(url, retrieve=True):
     """Get the revision from a given URL
@@ -133,7 +135,7 @@ def repository_url(mirrored=False):
     return url
 
 def package_url(name_or_url, version=None, release=None, distro=None, backports=None,
-        mirrored=True):
+        mirrored=True, obsolete=None):
     """Returns a tuple with the absolute package URL and its name
 
     @name_or_url: name, relative path, or URL of the package. In case it is
@@ -153,13 +155,15 @@ def package_url(name_or_url, version=None, release=None, distro=None, backports=
                     repository_url(), pkgdirurl)
     else:
         name = name_or_url
-        devel_branch, branches_dir, backports_dir = layout_dirs()
+        devel_branch, branches_dir, backports_dir, obsolete_dir= layout_dirs()
         if distro or "/" in name:
             default_branch = branches_dir
             if distro:
                 default_branch = os.path.join(default_branch, distro)
         elif backports:
            default_branch = os.path.join(backports_dir, backports)
+        elif obsolete:
+           default_branch = os.path.join(obsolete_dir)
         else:
             default_branch = devel_branch # cauldron
         path = os.path.join(default_branch, name)
@@ -192,7 +196,7 @@ def distro_branch(pkgdirurl):
     found = None
     repo = repository_url()
     if same_base(repo, pkgdirurl):
-        devel_branch, branches_dir, backports_dir = layout_dirs()
+        devel_branch, branches_dir, backports_dir, obsolete_dir = layout_dirs()
         repo_path = urllib.parse.urlparse(repo)[2]
         devel_path = os.path.join(repo_path, devel_branch)
         branches_path = os.path.join(repo_path, branches_dir)
