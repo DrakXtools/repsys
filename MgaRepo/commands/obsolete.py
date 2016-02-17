@@ -14,7 +14,6 @@ Usage: mgarepo obsolete [Options] PKG
 It will move the package to obsolete.
 
 Options:
-    -d      The distribution branch to checkout from
     -m LOG  Use LOG as log message
     -h      Show this message
 
@@ -25,7 +24,6 @@ Examples:
 def parse_options():
     parser = OptionParser(help=HELP)
     parser.add_option("-m", dest="log", default=None)
-    parser.add_option("--distribution", "-d", dest="distro", default=None)
     opts, args = parser.parse_args()
     if len(args) != 1:
         raise Error("invalid arguments")
