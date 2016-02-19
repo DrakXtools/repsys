@@ -1,3 +1,6 @@
+* 1.11.9
+- suppress distro option in obsolete command and adapt help according to.
+
 * 1.11.8
 - delete debug command in svn.py
 
