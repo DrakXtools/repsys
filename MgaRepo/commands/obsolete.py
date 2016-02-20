@@ -18,7 +18,7 @@ Options:
     -h      Show this message
 
 Examples:
-    mgarepo obsoletes foo
+    mgarepo obsolete foo
 """
 
 def parse_options():
