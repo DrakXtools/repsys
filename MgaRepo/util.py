@@ -74,6 +74,7 @@ def execcmd(*cmd, **kwargs):
         else:
             raise Error("command failed: %s\n%s\n" % (cmdstr, output))
     if verbose:
+        print(output)
         sys.stdout.write(output)
     return status, output
 
