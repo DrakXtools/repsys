@@ -2,7 +2,6 @@
 from MgaRepo import Error, config, layout
 from MgaRepo.svn import SVN
 from MgaRepo.util import execcmd
-from MgaRepo.util import get_output_exec
 
 from io import StringIO
 
@@ -15,6 +14,7 @@ import glob
 import tempfile
 import shutil
 import subprocess
+import select
 
 
 locale.setlocale(locale.LC_ALL, "C")
@@ -44,7 +44,26 @@ def getrelease(pkgdirurl, rev=None, macros=[], exported=None):
         command = (("rpm -q --qf '%%{EPOCH}:%%{VERSION}-%%{RELEASE}\n' "
                    "--specfile %s %s") %
                    (specpath, options))
-        output = get_output_exec(command)
+        output = StringIO()
+        err = StringIO()
+        p = subprocess.Popen(command, shell=True,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        of = p.stdout.fileno()
+        ef = p.stderr.fileno()
+        while True:
+            r,w,x = select.select((of,ef), (), ())
+            odata = None
+            if of in r:
+                odata = (os.read(of, 8192)).decode('utf8')
+                output.write(odata)
+            edata = None
+            if ef in r:
+                edata = (os.read(ef, 8192)).decode('utf8')
+                err.write(edata)
+            status = p.poll()
+            if status is not None and odata == '' and edata == '':
+                break
+        output = output.getvalue()
         releases = output.split()
         try:
             epoch, vr = releases[0].split(":", 1)

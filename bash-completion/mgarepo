@@ -11,7 +11,7 @@ _mgarepo_actions()
 {
  COMPREPLY=( $( compgen -W 'co ci sync \
  submit putsrpm getspec rpmlog getsrpm maintdb create changed \
- authoremail switch upload del up obsolete' -- $cur ) )
+ authoremail switch upload del up' -- $cur ) )
 }
  
 _mgarepo()
@@ -64,8 +64,6 @@ _mgarepo()
           ;;
 	  changed)
                   options="-a -s -M"
-          obsolete)
-                  options="-m"
           ;;
           esac
           options="$options --help"
@@ -80,7 +78,7 @@ _mgarepo()
          _filedir
          return 0
          ;;
-         @(co|getspec|rpmlog|getsrpm|changed|obsolete))
+         @(co|getspec|rpmlog|getsrpm|changed))
          _cauldron_packages
          return 0
          ;;
