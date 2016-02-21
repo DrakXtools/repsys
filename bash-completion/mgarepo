@@ -64,6 +64,7 @@ _mgarepo()
           ;;
 	  changed)
                   options="-a -s -M"
+          ;;
           obsolete)
                   options="-m"
           ;;
