@@ -53,6 +53,7 @@ def execcmd(*cmd, **kwargs):
                 odata = None
                 if of in r:
                     odata = (os.read(of, 8192)).decode('utf8')
+                    sys.stdout.write(odata)
                 edata = None
                 if ef in r:
                     edata = (os.read(ef, 8192)).decode('utf8')
