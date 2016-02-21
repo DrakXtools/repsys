@@ -5,6 +5,8 @@ from MgaRepo.svn import SVN
 from MgaRepo.simplerpm import SRPM
 from MgaRepo.util import execcmd
 from MgaRepo.command import default_parent
+from MgaRepo.util import get_output_exec
+
 import rpm
 import urllib.parse
 import tempfile
@@ -682,7 +684,13 @@ def obsolete(pkgdirurl, branch=None, distro=None, backports=None, commit=False, 
     svn.mv(pkgdirurl, pkgdest, message=log)
     if commit:
         svn.commit(path, log=log)
-
+    #command = "rpm -q --specfile %s --qf 'Obsoletes: %{name} <= %{evr}\n'" % specpath
+    #output = get_output_exec(command)
+    #print(output)
+    #command = "rpm -q --specfile %s --qf 'Provides: %{name}\n'" % specpath
+    #output = get_output_exec(command)
+    #print(output)
+    
 def switch(mirrorurl=None):
     svn  = SVN()
     topdir = getpkgtopdir()

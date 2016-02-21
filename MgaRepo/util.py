@@ -74,8 +74,31 @@ def execcmd(*cmd, **kwargs):
         else:
             raise Error("command failed: %s\n%s\n" % (cmdstr, output))
     if verbose:
+        print(output)
         sys.stdout.write(output)
     return status, output
+
+def get_output_exec(cmdstr):
+    output = StringIO()
+    err = StringIO()
+    p = subprocess.Popen(cmdstr, shell=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    of = p.stdout.fileno()
+    ef = p.stderr.fileno()
+    while True:
+        r,w,x = select.select((of,ef), (), ())
+        odata = None
+        if of in r:
+            odata = (os.read(of, 8192)).decode('utf8')
+            output.write(odata)
+        edata = None
+        if ef in r:
+            edata = (os.read(ef, 8192)).decode('utf8')
+            err.write(edata)
+        status = p.poll()
+        if status is not None and odata == '' and edata == '':
+            break
+    return output.getvalue()
 
 def get_auth(username=None, password=None):
     set_username = 1
