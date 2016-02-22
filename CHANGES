@@ -1,3 +1,10 @@
+* 1.11.10
+-   Restablish an output after some svn commands
+-   move a command svn from log.py to util.py
+-   complete bash-completion with obsolete command
+-   correct the help message in obsolete command
+-   add an example in man page for obsolete command
+
 * 1.11.9
 - suppress distro option in obsolete command and adapt help according to.
 
