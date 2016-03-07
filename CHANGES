@@ -1,3 +1,7 @@
+* 1.11.11
+-  leave the obsolete command in local language
+-  obsolete: start interactive mode if no message is given
+
 * 1.11.10
 -   Restablish an output after some svn commands
 -   move a command svn from log.py to util.py
