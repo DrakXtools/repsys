@@ -33,7 +33,7 @@ def commands_getstatusoutput(cmd):
 def execcmd(*cmd, **kwargs):
     cmdstr = " ".join(cmd)
     verbose = config.getbool("global", "verbose", 0)
-    if kwargs.get('info') or kwargs.get('checkout'):
+    if kwargs.get('info') :
         prefix='LANGUAGE=C LC_TIME=C '
     else:
         prefix='LANG=C LANGUAGE=C LC_ALL=C '

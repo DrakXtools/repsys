@@ -39,14 +39,10 @@ class SVN:
         svn_command = config.get("global", "svn-command", "svn")
         cmdstr = svn_command + " " + " ".join(args)
         try:
-            if args[0] == 'info':
+            if args[0] in ('info', 'checkout','log'):
                 kwargs['info'] = True
             else:
                 kwargs['info'] = False
-            if args[0] == 'checkout':
-                kwargs['checkout'] = True
-            else:
-                kwargs['checkout'] = False
             return execcmd(cmdstr, **kwargs)
         except Error as e:
             msg = None
