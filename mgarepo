@@ -4,7 +4,7 @@ from MgaRepo.command import *
 import getopt
 import sys
 
-VERSION="1.12.0"
+VERSION="1.12.1"
 
 HELP = """\
 Usage: mgarepo COMMAND [COMMAND ARGUMENTS]
