@@ -1,9 +1,10 @@
 #!/usr/bin/python3
 from MgaRepo import Error, config
 from MgaRepo import mirror, layout, log, binrepo
+from MgaRepo.git import GIT
 from MgaRepo.svn import SVN
 from MgaRepo.simplerpm import SRPM
-from MgaRepo.util import execcmd
+from MgaRepo.util import execcmd, CommandError
 from MgaRepo.command import default_parent
 import rpm
 import urllib.parse
@@ -20,7 +21,7 @@ def get_spec(pkgdirurl, targetdir=".", submit=False):
     try:
         geturl = layout.checkout_url(pkgdirurl, append_path="SPECS")
         mirror.info(geturl)
-        svn.export("'%s'" % geturl, tmpdir)
+        svn.export(geturl, tmpdir)
         speclist = glob.glob(os.path.join(tmpdir, "*.spec"))
         if not speclist:
             raise Error("no spec files found")
@@ -32,11 +33,6 @@ def get_spec(pkgdirurl, targetdir=".", submit=False):
     finally:
         if os.path.isdir(tmpdir):
             shutil.rmtree(tmpdir)
-
-def rpm_macros_defs(macros):
-    defs = ("--define \"%s %s\"" % macro for macro in macros)
-    args = " ".join(defs)
-    return args
 
 #FIXME move it to another module
 def rev_touched_url(url, rev):
@@ -72,13 +68,17 @@ def get_srpm(pkgdirurl,
              strict = False):
     svn = SVN()
     tmpdir = tempfile.mktemp()
-    topdir = "--define '_topdir %s'" % tmpdir
-    builddir = "--define '_builddir %s/%s'" % (tmpdir, "BUILD")
-    rpmdir = "--define '_rpmdir %s/%s'" % (tmpdir, "RPMS")
-    sourcedir = "--define '_sourcedir %s/%s'" % (tmpdir, "SOURCES")
-    specdir = "--define '_specdir %s/%s'" % (tmpdir, "SPECS")
-    srcrpmdir = "--define '_srcrpmdir %s/%s'" % (tmpdir, "SRPMS")
-    patchdir = "--define '_patchdir %s/%s'" % (tmpdir, "SOURCES")
+    topdir = "_topdir %s" % tmpdir
+    builddir = "_builddir %s/%s" % (tmpdir, "BUILD")
+    rpmdir = "_rpmdir %s/%s" % (tmpdir, "RPMS")
+    sourcedir = "_sourcedir %s/%s" % (tmpdir, "SOURCES")
+    specdir = "_specdir %s/%s" % (tmpdir, "SPECS")
+    srcrpmdir = "_srcrpmdir %s/%s" % (tmpdir, "SRPMS")
+    patchdir = "_patchdir %s/%s" % (tmpdir, "SOURCES")
+    temppath = "_tmppath %s" % (tmpdir)
+
+    rpmdefs = [("--define", expr) for expr in (topdir, builddir, rpmdir,
+        sourcedir, specdir, srcrpmdir, patchdir, temppath)]
 
     try:
         if mode == "version":
@@ -107,7 +107,7 @@ def get_srpm(pkgdirurl,
         if config.getbool("srpm", "run-prep", False):
             makefile = os.path.join(tmpdir, "Makefile")
             if os.path.exists(makefile):
-                execcmd("make", "-C", tmpdir, "srpm-prep")
+                execcmd(("make", "-C", tmpdir, "srpm-prep"))
         if not speclist:
             raise Error("no spec files found")
         spec = speclist[0]
@@ -124,11 +124,22 @@ def get_srpm(pkgdirurl,
         if packager:
             packager = " --define 'packager %s'" % packager
 
-        defs = rpm_macros_defs(macros)
         sourcecmd = config.get("helper", "rpmbuild", "rpmbuild")
-        execcmd("%s -bs --nodeps %s %s %s %s %s %s %s %s %s %s" %
-            (sourcecmd, topdir, builddir, rpmdir, sourcedir, specdir,
-                srcrpmdir, patchdir, packager, spec, defs))
+        args = [sourcecmd, "-bs", "--nodeps"]
+        for pair in rpmdefs:
+            args.extend(pair)
+        for pair in macros:
+            args.extend(("--define", "%s %s" % pair))
+        args.append(spec)
+        try:
+            execcmd(args)
+        except CommandError as e:
+            if config.getbool("global", "verbose"):
+                cmdline = e.cmdline + "\n"
+            else:
+                cmdline = ""
+            raise Error("error while creating the source RPM "
+                        "(with %s):\n%s%s" % (sourcecmd, cmdline, e.output))
 
         # copy the generated SRPMs to their target locations
         targetsrpms = []
@@ -170,7 +181,7 @@ def patch_spec(pkgdirurl, patchfile, log=""):
         if not speclist:
             raise Error("no spec files found")
         spec = speclist[0]
-        status, output = execcmd("patch", spec, patchfile)
+        status, output = execcmd(["patch", spec, patchfile])
         if status != 0:
             raise Error("can't apply patch:\n%s\n" % output)
         else:
@@ -250,9 +261,9 @@ def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
                 svn.remove(entrypath)
 
             # Copy all files
-            execcmd("cp -rlf", uspecsdir, currentdir)
+            execcmd(["cp", "-rf", uspecsdir, currentdir])
             if os.path.isdir(usourcesdir):
-                execcmd("cp -rlf", usourcesdir, currentdir)
+                execcmd(["cp", "-rlf", usourcesdir, currentdir])
             
             # Add new entries
             for entry in [x for x in uspecsentries
@@ -481,6 +492,17 @@ def checkout(pkgdirurl, path=None, revision=None, branch=None, distro=None, back
     if not spec:
         binrepo.download_binaries(path)
     
+def clone(pkgdirurl, path=None, branch=None,
+        distro=None):
+    o_pkgdirurl = pkgdirurl
+    pkgdirurl = layout.package_url(o_pkgdirurl, distro=distro)
+    current = layout.checkout_url(pkgdirurl, branch=branch)
+    if path is None:
+        path = layout.package_name(pkgdirurl)
+    mirror.info(current)
+    git = GIT()
+    git.clone(current, path, show=1)
+
 def getpkgtopdir(basedir=None):
     #FIXME this implementation doesn't work well with relative path names,
     # which is something we need in order to have a friendlier output

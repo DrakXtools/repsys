@@ -2,6 +2,7 @@
 
 from MgaRepo import Error, config
 
+import shlex
 import subprocess
 import getpass
 import sys
@@ -11,73 +12,75 @@ import select
 from io import StringIO
 import httplib2
 
-# Our own version of commands' commands_exec(). We have a commands
-# module directory, so we can't import Python's standard module
+class CommandError(Error):
+    def __init__(self, cmdline, status, output):
+        self.cmdline = cmdline
+        self.status = status
+        self.output = output
 
-# Our own version of commands' getstatusoutput(). We have a commands
-# module directory, so we can't import Python's standard module
-def commands_getstatusoutput(cmd):
-    """Return (status, output) of executing cmd in a shell."""
-    pipe = subprocess.Popen('{ ' + cmd + '; } 2>&1', stdin = subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines = True, shell = True)
-    of = pipe.stdout.fileno()
-    text = ''
-    pipe.stdin.close()
-    while True:
-        text += os.read(of,8192).decode('utf8')
-        status = pipe.poll()
-        if status is not None or text == '':
-            break
-    if text[-1:] == '\n': text = text[:-1]
-    return status, text
+    def __str__(self):
+        return "command failed: %s\n%s\n" % (self.cmdline, self.output)
 
 def execcmd(*cmd, **kwargs):
-    cmdstr = " ".join(cmd)
-    verbose = config.getbool("global", "verbose", 0)
-    if kwargs.get('info') :
-        prefix='LANGUAGE=C LC_TIME=C '
+    assert (kwargs.get("collecterr") and kwargs.get("show")) or not kwargs.get("collecterr"), \
+            ("execcmd is implemented to handle collecterr=True only if show=True")
+    # split command args
+    if isinstance(cmd[0], str):
+        cmdargs = shlex.split(cmd[0])
     else:
-        prefix='LANG=C LANGUAGE=C LC_ALL=C '
-    if verbose:
-        print(prefix + cmdstr)
-    if kwargs.get("show"):
-        if kwargs.get("geterr"):
-            err = StringIO()
-            pstdin = kwargs.get("stdin") if kwargs.get("stdin") else None
-            p = subprocess.Popen(prefix + cmdstr, shell=True,
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                    stdin=pstdin)
-            of = p.stdout.fileno()
-            ef = p.stderr.fileno()
-            while True:
-                r,w,x = select.select((of,ef), (), ())
-                odata = None
-                if of in r:
-                    odata = (os.read(of, 8192)).decode('utf8')
-                    sys.stdout.write(odata)
-                edata = None
-                if ef in r:
-                    edata = (os.read(ef, 8192)).decode('utf8')
-                    err.write(edata)
-                    sys.stderr.write(edata)
+        cmdargs = cmd[0][:]
 
-                status = p.poll()
-                if status is not None and odata == '' and edata == '':
-                    break
-            output = err.getvalue()
+    stdout = None
+    stderr = None
+    env = {}
+    env.update(os.environ)
+    if kwargs.get("info") or not kwargs.get("show") or (kwargs.get("show") and kwargs.get("collecterr")):
+        if kwargs.get("info"):
+            env.update({"LANGUAGE": "C", "LC_TIME": "C"})
         else:
-            status = os.system(prefix + cmdstr)
-            output = ""
+            env.update({"LANG": "C", "LANGUAGE": "C", "LC_ALL": "C"})
+        stdout = subprocess.PIPE
+        if kwargs.get("collecterr"):
+            stderr = subprocess.PIPE
+        else:
+            stderr = subprocess.STDOUT
+
+    proc = subprocess.Popen(cmdargs, shell=False, stdout=stdout,
+            stderr=stderr, env=env)
+
+    output = ""
+
+    if kwargs.get("show") and kwargs.get("collecterr"):
+        error = StringIO()
+        wl = []
+        outfd = proc.stdout.fileno()
+        errfd = proc.stderr.fileno()
+        rl = [outfd, errfd]
+        xl = wl
+        while proc.poll() is None:
+            mrl, _, _ = select.select(rl, wl, xl, 0.5)
+            for fd in mrl:
+                data = os.read(fd, 8192).decode('utf8')
+                if fd == errfd:
+                    error.write(data)
+                    sys.stderr.write(data)
+                else:
+                    sys.stdout.write(data)
+        output = error.getvalue()
     else:
-        status, output = commands_getstatusoutput(prefix + cmdstr)
-    if status != 0 and not kwargs.get("noerror"):
-        if kwargs.get("cleanerr") and not verbose:
-            raise Error(output)
-        else:
-            raise Error("command failed: %s\n%s\n" % (cmdstr, output))
-    if verbose:
-        print(output)
-        sys.stdout.write(output)
-    return status, output
+        proc.wait()
+        if proc.stdout is not None:
+            output = proc.stdout.read().decode('utf8')
+            if kwargs.get("strip", True):
+                output = output.rstrip()
+
+    if (not kwargs.get("noerror")) and proc.returncode != 0:
+        if kwargs.get("cleanerr"):
+            msg = output
+        cmdline = subprocess.list2cmdline(cmdargs)
+        raise CommandError(cmdline, proc.returncode, output)
+
+    return proc.returncode, output
 
 def get_output_exec(cmdstr):
     output = StringIO()

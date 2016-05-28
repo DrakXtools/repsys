@@ -160,9 +160,10 @@ def list_targets(option, opt, val, parser):
         raise Error("no submit host defined in mgarepo.conf")
     createsrpm = get_helper("create-srpm")
     #TODO make it configurable
-    command = "ssh %s %s --list" % (host, createsrpm)
-    execcmd(command, show=True)
-    sys.exit(0)
+    args = ["ssh", host, createsrpm, "--list"]
+    execcmd(args, show=true)
+    sys.exit(0) # it is invoked via optparse callback, thus we need to
+                # force ending the script
 
 def submit(urls, target, define=[], submithost=None, atonce=False, sid=None):
     if submithost is None:
@@ -197,8 +198,7 @@ def submit(urls, target, define=[], submithost=None, atonce=False, sid=None):
     else:
         cmdsargs.extend((baseargs + [url]) for url in urls)
     for cmdargs in cmdsargs:
-        command = subprocess.list2cmdline(cmdargs)
-        status, output = execcmd(command)
+        status, output = execcmd(cmdargs)
         if status == 0:
             print("Package submitted!")
         else:

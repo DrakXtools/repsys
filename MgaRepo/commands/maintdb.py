@@ -33,8 +33,7 @@ def parse_options():
 def maintdb(maintdb_args):
     host = config.get("maintdb", "host", "maintdb.mageia.org")
     maintdb_helper = get_helper("maintdb")
-    cmd_args = ' '.join(maintdb_args)
-    command = "ssh %s %s %s" % (host, maintdb_helper, cmd_args)
+    command = ["ssh", host, maintdb_helper] + maintdb_args
     execcmd(command, show=True)
     sys.exit(0)
 

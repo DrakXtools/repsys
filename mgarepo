@@ -13,6 +13,7 @@ Tool to access and manage a package repository structure.
 
 Useful commands:
     co            checkout a package
+    clone         clone a package repository
     ci            commit changes
     sync          add-remove all file changes from the .spec
     submit        submit a package for build
