@@ -45,7 +45,7 @@ class GIT(VCS):
             for entry in logentries:
                 revisions.append(entry.attrib["revision"])
             while revisions:
-                execcmd("git svn fetch -r%d" % int(revisions.pop()), show=True)
+                execcmd("git svn fetch --log-window-size=1000 -r%d" % int(revisions.pop()), show=True)
 
             cmd = ["svn", "rebase"]
             return self._execVcs_success(*cmd, **kwargs)
