@@ -65,7 +65,7 @@ def cp_srpms(revision, revname, geturl, targetdirs, srpmsdir, verbose):
     srpms = glob.glob(os.path.join(srpmsdir, "*.src.rpm"))
     if not srpms:
         # something fishy happened
-        raise Error, "no SRPMS were found at %s" % srpmsdir
+        raise Error("no SRPMS were found at %s" % srpmsdir)
     for srpm in srpms:
         name = os.path.basename(srpm)
         if revname:
