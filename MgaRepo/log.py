@@ -19,7 +19,8 @@ import subprocess
 
 locale.setlocale(locale.LC_ALL, "C")
 
-def getrelease(pkgdirurl, rev=None, macros=[], exported=None):
+
+def getrelease(pkgdirurl, rev=None, macros=[], exported=None, create=False):
     """Tries to obtain the version-release of the package for a 
     yet-not-markrelease revision of the package.
 
@@ -30,38 +31,84 @@ def getrelease(pkgdirurl, rev=None, macros=[], exported=None):
     svn = SVN()
     pkgcurrenturl = os.path.join(pkgdirurl, "current")
     specurl = os.path.join(pkgcurrenturl, "SPECS")
-    if exported is None:
-        tmpdir = tempfile.mktemp()
-        svn.export(specurl, tmpdir, rev=rev)
-    else:
-        tmpdir = os.path.join(exported, "SPECS")
-    try:
-        found = glob.glob(os.path.join(tmpdir, "*.spec"))
-        if not found:
-            raise Error("no .spec file found inside %s" % specurl)
-        specpath = found[0]
-        options = rpm_macros_defs(macros)
-        command = (("rpm -q --qf '%%{EPOCH}:%%{VERSION}-%%{RELEASE}\n' "
-                   "--specfile %s %s") %
-                   (specpath, options))
-        output = get_output_exec(command)
-        releases = output.split()
-        try:
-            epoch, vr = releases[0].split(":", 1)
-            version, release = vr.split("-", 1)
-        except ValueError:
-            raise Error("Invalid command output: %s: %s" % \
-                    (command, output))
-        #XXX check if this is the right way:
-        if epoch == "(none)":
-            ev = version
+    srpmurl = os.path.join(pkgcurrenturl, "SRPMS")
+    if not create:
+        if exported is None:
+            tmpdir = tempfile.mktemp()
+            svn.export(specurl, tmpdir, rev=rev)
         else:
-            ev = epoch + ":" + version
-        return ev, release
-    finally:
-        if exported is None and os.path.isdir(tmpdir):
-            shutil.rmtree(tmpdir)
-            
+            tmpdir = os.path.join(exported, "SPECS")
+        try:
+            found = glob.glob(os.path.join(tmpdir, "*.spec"))
+            if not found:
+                raise Error("no .spec file found inside %s" % specurl)
+            specpath = found[0]
+            options = rpm_macros_defs(macros)
+            command = (("rpm -q --qf '%%{EPOCH}:%%{VERSION}-%%{RELEASE}\n' "
+                    "--specfile %s %s") %
+                    (specpath, options))
+            pipe = subprocess.Popen(command, stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE, shell=True)
+            pipe.wait()
+            output = pipe.stdout.read().decode('utf8')
+            error = pipe.stderr.read().decode('utf8')
+            if pipe.returncode != 0:
+                raise Error("Error in command %s: %s" % (command, error))
+            releases = output.split()
+            try:
+                epoch, vr = releases[0].split(":", 1)
+                version, release = vr.split("-", 1)
+            except ValueError:
+                raise Error("Invalid command output: %s: %s" % \
+                        (command, output))
+            #XXX check if this is the right way:
+            if epoch == "(none)":
+                ev = version
+            else:
+                ev = epoch + ":" + version
+            return ev, release
+        finally:
+            if exported is None and os.path.isdir(tmpdir):
+                shutil.rmtree(tmpdir)
+    else:
+        if exported is None:
+            tmpdir = tempfile.mktemp()
+            svn.export(specurl, tmpdir, rev=rev)
+        else:
+            tmpdir = os.path.join(exported, "SRPMS")
+        try:
+            found = glob.glob(os.path.join(srpmurl, "*.src.rpm"))
+            if not found:
+                raise Error("no .src.rpm file found inside %s" % srpmurl)
+            srpmpath = found[0]
+            options = rpm_macros_defs(macros)
+            command = (("rpm -qp --qf '%%{EPOCH}:%%{VERSION}-%%{RELEASE}\n' "
+                    " %s %s") %
+                    (srpmpath, options))
+            pipe = subprocess.Popen(command, stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE, shell=True)
+            pipe.wait()
+            output = pipe.stdout.read().decode('utf8')
+            error = pipe.stderr.read().decode('utf8')
+            if pipe.returncode != 0:
+                raise Error("Error in command %s: %s" % (command, error))
+            releases = output.split()
+            try:
+                epoch, vr = releases[0].split(":", 1)
+                version, release = vr.split("-", 1)
+            except ValueError:
+                raise Error("Invalid command output: %s: %s" % \
+                        (command, output))
+            #XXX check if this is the right way:
+            if epoch == "(none)":
+                ev = version
+            else:
+                ev = epoch + ":" + version
+            return ev, release
+        finally:
+            if exported is None and os.path.isdir(tmpdir):
+                shutil.rmtree(tmpdir)
+        
 class _Revision:
     lines = []
     date = None
@@ -390,7 +437,7 @@ def parse_markrelease_log(relentry):
 
 
 def svn2rpm(pkgdirurl, rev=None, size=None, submit=False,
-        template=None, macros=[], exported=None):
+        template=None, macros=[], exported=None, create=False):
     concat = config.get("log", "concat", "").split()
     revoffset = get_revision_offset()
     svn = SVN()
@@ -454,7 +501,7 @@ def svn2rpm(pkgdirurl, rev=None, size=None, submit=False,
         # if they are not submitted yet, what we have to do is to add
         # a release/version number from getrelease()
         version, release = getrelease(pkgdirurl, macros=macros,
-                exported=exported)
+                exported=exported, create=create)
         toprelease = make_release(entries=notsubmitted, released=False,
                         version=version, release=release)
         releases.append(toprelease)
@@ -561,7 +608,7 @@ def get_old_log(pkgdirurl):
 
 def get_changelog(pkgdirurl, another=None, svn=True, rev=None, size=None,
         submit=False, sort=False, template=None, macros=[], exported=None,
-        oldlog=False):
+        oldlog=False, create=False):
     """Generates the changelog for a given package URL
 
     @another:   a stream with the contents of a changelog to be merged with
@@ -583,11 +630,12 @@ def get_changelog(pkgdirurl, another=None, svn=True, rev=None, size=None,
                 parsed from there
     @oldlog:    if set it will try to append the old changelog file defined
                 in oldurl in mgarepo.conf
+    @create:    if set, will use rpm -qp rpm instead of --specfile to get release number
     """
     newlog = StringIO()
     if svn:
         rawsvnlog = svn2rpm(pkgdirurl, rev=rev, size=size, submit=submit,
-                template=template, macros=macros, exported=exported)
+                template=template, macros=macros, exported=exported, create=create)
         newlog.write(rawsvnlog)
     if another:
         newlog.writelines(another)
@@ -600,7 +648,7 @@ def get_changelog(pkgdirurl, another=None, svn=True, rev=None, size=None,
     return newlog
 
 def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
-        submit=False, sort=False, template=None, macros=[], exported=None):
+        submit=False, sort=False, template=None, macros=[], exported=None, create=False):
     with open(specfile, encoding = 'utf-8') as fi:
         spec, oldchlog = split_spec_changelog(fi)
     another = None
@@ -609,14 +657,14 @@ def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
     sort = sort or config.getbool("log", "sort", False)
     chlog = get_changelog(pkgdirurl, another=another, rev=rev, size=size,
                 submit=submit, sort=sort, template=template, macros=macros,
-                exported=exported, oldlog=True)
+                exported=exported, oldlog=True, create=create)
     with open(specfile, "w", encoding='utf-8') as fo:
         fo.writelines(spec)
         fo.write("\n\n%changelog\n")
         fo.writelines(chlog)
  
 if __name__ == "__main__":
-    l = svn2rpm(sys.argv[1])
+    l = svn2rpm(sys.argv[1], create=True)
     print(l)
 
 # vim:et:ts=4:sw=4

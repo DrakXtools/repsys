@@ -55,6 +55,32 @@ def rev_touched_url(url, rev):
             touched = True
     return touched
 
+def cp_srpms(revision, revname, geturl, targetdirs, srpmsdir, verbose):
+    targetsrpms = []
+    urlrev = None
+    if revname:
+        urlrev = revision or layout.get_url_revision(geturl)
+    if not targetdirs:
+        targetdirs = (".",)
+    srpms = glob.glob(os.path.join(srpmsdir, "*.src.rpm"))
+    if not srpms:
+        # something fishy happened
+        raise Error, "no SRPMS were found at %s" % srpmsdir
+    for srpm in srpms:
+        name = os.path.basename(srpm)
+        if revname:
+            name = "@%s:%s" % (urlrev, name)
+        for targetdir in targetdirs:
+            newpath = os.path.join(targetdir, name)
+            targetsrpms.append(newpath)
+            if os.path.exists(newpath):
+                # should we warn?
+                os.unlink(newpath)
+            shutil.copy(srpm, newpath)
+            if verbose:
+                sys.stderr.write("Wrote: %s\n" %  newpath)
+    return targetsrpms
+
 def get_srpm(pkgdirurl,
              mode = "current",
              targetdirs = None,
@@ -111,49 +137,37 @@ def get_srpm(pkgdirurl,
         if not speclist:
             raise Error("no spec files found")
         spec = speclist[0]
+
+        defs = rpm_macros_defs(macros)
+        sourcecmd = config.get("helper", "rpmbuild", "rpmbuild")
+        if packager:
+            packager = " --define 'packager %s'" % packager
         if svnlog:
             submit = not not revision
-            log.specfile_svn2rpm(pkgdirurl, spec, revision, submit=submit,
+            try:
+                log.specfile_svn2rpm(pkgdirurl, spec, revision, submit=submit,
                     template=template, macros=macros, exported=tmpdir)
+            except:
+                execcmd("%s -bs --nodeps %s %s %s %s %s %s %s %s %s %s" %
+                    (sourcecmd, topdir, builddir, rpmdir, sourcedir, specdir,
+                        srcrpmdir, patchdir, packager, spec, defs))
+                cp_srpms(revision, revname, geturl, targetdirs, srpmsdir, verbose)
+                log.specfile_svn2rpm(pkgdirurl, spec, revision, submit=submit,
+                    template=template, macros=macros, exported=tmpdir, create=True)
+            
         for script in scripts:
             #FIXME revision can be "None"
             status, output = execcmd(script, tmpdir, spec, str(revision),
                                      noerror=1)
             if status != 0:
                 raise Error("script %s failed" % script)
-        if packager:
-            packager = " --define 'packager %s'" % packager
 
-        defs = rpm_macros_defs(macros)
-        sourcecmd = config.get("helper", "rpmbuild", "rpmbuild")
         execcmd("%s -bs --nodeps %s %s %s %s %s %s %s %s %s %s" %
             (sourcecmd, topdir, builddir, rpmdir, sourcedir, specdir,
                 srcrpmdir, patchdir, packager, spec, defs))
 
         # copy the generated SRPMs to their target locations
-        targetsrpms = []
-        urlrev = None
-        if revname:
-            urlrev = revision or layout.get_url_revision(geturl)
-        if not targetdirs:
-            targetdirs = (".",)
-        srpms = glob.glob(os.path.join(srpmsdir, "*.src.rpm"))
-        if not srpms:
-            # something fishy happened
-            raise Error("no SRPMS were found at %s" % srpmsdir)
-        for srpm in srpms:
-            name = os.path.basename(srpm)
-            if revname:
-                name = "@%s:%s" % (urlrev, name)
-            for targetdir in targetdirs:
-                newpath = os.path.join(targetdir, name)
-                targetsrpms.append(newpath)
-                if os.path.exists(newpath):
-                    # should we warn?
-                    os.unlink(newpath)
-                shutil.copy(srpm, newpath)
-                if verbose:
-                    sys.stderr.write("Wrote: %s\n" %  newpath)
+        targetsrpms = cp_srpms(revision, revname, geturl, targetdirs, srpmsdir, verbose)
         return targetsrpms
     finally:
         if os.path.isdir(tmpdir):
