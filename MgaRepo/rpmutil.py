@@ -15,8 +15,30 @@ import glob
 import sys
 import os
 
+def detectVCS(url):
+    if ':' in url:
+        protocol,uri = url.split(":")
+        if "svn" in protocol:
+            return SVN()
+        elif "git" in protocol:
+            return GIT()
+        elif "http" in protocol:
+            if uri.endswith(".git"):
+                return GIT()
+            elif "svn" in uri:
+                return SVN()
+            else:
+                raise Error("Unknown protocol %s for %s" % (protocol, url))
+    elif os.path.exists(url) and os.path.isdir(url):
+        if os.path.exists(os.path.join(url,".svn")) and os.path.isdir(os.path.join(url,".svn")):
+            return SVN()
+        if os.path.exists(os.path.join(url,".git")) and os.path.isdir(os.path.join(url,".git")):
+            return GIT()
+    else:
+        raise Error("No supported repository found at path: %s" % url)
+
 def get_spec(pkgdirurl, targetdir=".", submit=False):
-    svn = SVN()
+    svn = detectVCS(pkgdirurl)
     tmpdir = tempfile.mktemp()
     try:
         geturl = layout.checkout_url(pkgdirurl, append_path="SPECS")
@@ -36,7 +58,7 @@ def get_spec(pkgdirurl, targetdir=".", submit=False):
 
 #FIXME move it to another module
 def rev_touched_url(url, rev):
-    svn = SVN()
+    svn = detectVCS(pkgdirurl)
     info = svn.info2(url)
     if info is None:
         raise Error("can't fetch svn info about the URL: %s" % url)
@@ -66,7 +88,7 @@ def get_srpm(pkgdirurl,
              macros = [],
              verbose = 0,
              strict = False):
-    svn = SVN()
+    svn = detectVCS(pkgdirurl)
     tmpdir = tempfile.mktemp()
     topdir = "_topdir %s" % tmpdir
     builddir = "_builddir %s/%s" % (tmpdir, "BUILD")
@@ -172,7 +194,7 @@ def get_srpm(pkgdirurl,
 
 def patch_spec(pkgdirurl, patchfile, log=""):
     #FIXME use get_spec
-    svn = SVN()
+    svn = detectVCS(pkgdirurl)
     tmpdir = tempfile.mktemp()
     try:
         geturl = layout.checkout_url(pkgdirurl, append_path="SPECS")
@@ -192,7 +214,7 @@ def patch_spec(pkgdirurl, patchfile, log=""):
 
 def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
         baseurl=None, baseold=None, logmsg=None, rename=True):
-    svn = SVN()
+    svn = detectVCS(pkgdirurl)
     srpm = SRPM(srpmfile)
     tmpdir = tempfile.mktemp()
     if baseurl:
@@ -353,7 +375,7 @@ def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
                      (version, srpm.release))
 
 def create_package(pkgdirurl, log="", verbose=0):
-    svn = SVN()
+    svn = detectVCS(pkgdirurl)
     tmpdir = tempfile.mktemp()
     try:
         basename = layout.package_name(pkgdirurl)
@@ -394,7 +416,7 @@ revision: %s
     return log
 
 def mark_release(pkgdirurl, version, release, revision):
-    svn = SVN()
+    svn = detectVCS(pkgdirurl)
     releasesurl = layout.checkout_url(pkgdirurl, releases=True)
     versionurl = "/".join([releasesurl, version])
     releaseurl = "/".join([versionurl, release])
@@ -416,7 +438,7 @@ def mark_release(pkgdirurl, version, release, revision):
              log=markreleaselog)
 
 def check_changed(pkgdirurl, all=0, show=0, verbose=0):
-    svn = SVN()
+    svn = detectVCS(pkgdirurl)
     if all:
         baseurl = pkgdirurl
         packages = []
@@ -487,7 +509,7 @@ def checkout(pkgdirurl, path=None, revision=None, branch=None, distro=None, back
     if path is None:
         path = layout.package_name(pkgdirurl)
     mirror.info(current, write=True)
-    svn = SVN()
+    svn = detectVCS(pkgdirurl)
     svn.checkout(current, path, rev=revision, show=1)
     if not spec:
         binrepo.download_binaries(path)
@@ -504,6 +526,7 @@ def clone(pkgdirurl, path=None, branch=None,
     git.clone(current, path, show=1)
 
 def getpkgtopdir(basedir=None):
+
     #FIXME this implementation doesn't work well with relative path names,
     # which is something we need in order to have a friendlier output
     if basedir is None:
@@ -520,10 +543,11 @@ def ispkgtopdir(path=None):
     if path is None:
         path = os.getcwd()
     names = os.listdir(path)
-    return (".svn" in names and "SPECS" in names and "SOURCES" in names)
+    vcs = detectVCS(path)
+    return (vcs.vcs_dirname in names and "SPECS" in names and "SOURCES" in names)
 
 def sync(dryrun=False, commit=False, download=False):
-    svn = SVN()
+    svn = detectVCS(pkgdirurl)
     topdir = getpkgtopdir()
     spath = binrepo.sources_path(topdir)
     binrepoentries = binrepo.parse_sources(spath)
@@ -606,7 +630,7 @@ def sync(dryrun=False, commit=False, download=False):
             upload([path], commit=commit)
 
 def commit(target=".", message=None, logfile=None):
-    svn = SVN()
+    svn = detectVCS(pkgdirurl)
     status = svn.status(target, quiet=True)
     if not status:
         print("nothing to commit")
@@ -641,23 +665,26 @@ def spec_sources(topdir):
     return sources
     
 def update(target=None):
-    svn = SVN()
+    vcs = None
     info = None
-    svn_target = None
+    vcs_target = None
     br_target = None
     if target:
-        svn_target = target
+        vcs_target = target
     else:
         top = getpkgtopdir()
-        svn_target = top
+        vcs_target = top
         br_target = top
-    if svn_target:
-        svn.update(svn_target, show=True)
+    if vcs_target:
+        vcs = detectVCS(vcs_target)
+        vcs.update(vcs_target, show=True)
     if br_target:
-        info = svn.info2(svn_target) 
-        if not br_target and not svn_target:
-            raise Error("target not in SVN nor in binaries "\
-                    "repository: %s" % target)
+        if not vcs:
+            vcs = detectVCS(br_target)
+        info = vcs.info2(vcs_target) 
+        if not br_target and not vcs_target:
+            raise Error("target not in %s nor in binaries "\
+                    "repository: %s" % (type(vcs).__name__,target))
         url = info["URL"]
         binrepo.download_binaries(br_target)
 
@@ -668,12 +695,12 @@ def upload(paths, commit=False):
             binrepo.upload_binary(topdir, os.path.basename(path))
             binrepo.update_sources(topdir, added=[path])
             if commit:
-                svn = SVN()
+                svn = detectVCS(pkgdirurl)
                 silent = config.get("log", "ignore-string", "SILENT")
                 message = "%s: new file %s" % (silent, path)
                 svn.commit(binrepo.sources_path(topdir), log=message)
         else:
-            svn = SVN()
+            svn = detectVCS(pkgdirurl)
             svn.add(path, local=True)
             if commit:
                 silent = config.get("log", "ignore-string", "SILENT")
@@ -688,10 +715,10 @@ def delete(paths, commit=False):
             topdir = getpkgtopdir()
             binrepo.update_sources(topdir, removed=[os.path.basename(path)])
             if commit:
-                svn = SVN()
+                svn = detectVCS(pkgdirurl)
                 svn.commit(binrepo.sources_path(topdir), log=message)
         else:
-            svn = SVN()
+            svn = detectVCS(pkgdirurl)
             svn.remove(path, local=True)
             if commit:
                 svn.commit(path, log=message)
@@ -700,7 +727,7 @@ def obsolete(pkgdirurl, branch=None, distro=None, backports=None, commit=False, 
     o_pkgdirurl = pkgdirurl
     pkgdirurl = layout.package_url(o_pkgdirurl, distro=distro, backports=backports)
     pkgdest = layout.package_url(o_pkgdirurl, obsolete=True, backports=backports)
-    svn = SVN()
+    svn = detectVCS(pkgdirurl)
     svn.mv(pkgdirurl, pkgdest, message=log)
     if commit:
         svn.commit(path, log=log)
@@ -735,7 +762,7 @@ def get_submit_info(path):
     if not os.path.isdir(os.path.join(path, ".svn")):
         raise Error("subversion directory not found")
     
-    svn = SVN()
+    svn = detectVCS(pkgdirurl)
 
     # Now, extract the package name.
     info = svn.info2(path)

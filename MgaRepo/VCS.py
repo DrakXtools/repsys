@@ -20,39 +20,37 @@ class VCSLogEntry(object):
         return (self.date == other.date)
 
 class VCS(object):
+    vcs_dirname = None
     def __init__(self):
         self.vcs_name = None
         self.vcs_command = None
         self.vcs_wrapper = "mga-ssh"
         self.vcs_supports = {'clone' : False}
+        self.vcs_type = None
         self.env_defaults = None
 
     def _execVcs(self, *args, **kwargs):
         localcmds = ("add", "revert", "cleanup", "mv")
-        kwargs["collecterr"] = False
+        cmd = self.vcs_command + list(args)
+        kwargs["collecterr"] = kwargs.get("collecterr", False)
         if kwargs.get("show"):
             if not kwargs.get("local"):
                kwargs["collecterr"] = True
         else:
-            if args[0] not in localcmds:
-                args = list(args)
-                args.append("--non-interactive")
+            if self.vcs_command is "svn" and args[0] not in localcmds:
+                cmd.append("--non-interactive")
             else:
                 if args[0] == "mv":
                     kwargs["collecterr"] = False
-                else:
-                    kwargs["collecterr"] = True
-        kwargs["cleanerr"] = True
+        kwargs["cleanerr"] = kwargs.get("cleanerr", True)
         if kwargs.get("xml"):
-            args.append("--xml")
-        cmdargs = [self.vcs_command]
-        cmdargs.extend(args)
+            cmd.append("--xml")
         try:
             if args[0] in ('info', 'checkout','log'):
                 kwargs['info'] = True
             else:
                 kwargs['info'] = False
-            return execcmd(cmdargs, **kwargs)
+            return execcmd(*cmd, **kwargs)
         except Error as e:
             msg = None
             if e.args:
