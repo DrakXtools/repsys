@@ -1,3 +1,12 @@
+* 1.10.8
+- Add a retry with building srpm in case of error in getrelease when creating a srpm    
+    use rpm -qp rpm instead of --specfile to get release number
+- Make mgarepo ci -s work    
+    When only fetching the spec file, mgarepo still tried to retrieve the
+    binaries. This resulted in an error message. Really only download the
+    spec file.  
+- Prefix svn info command with only LANGUAGE=C (mga#73)
+
 * 1.10.7
 - ignore 'mgarepo sync -c' and tell it's deprecated
 
