@@ -1,7 +1,7 @@
 from MgaRepo import Error, config
 from MgaRepo.util import execcmd
 from MgaRepo.VCS import *
-from os.path import basename, dirname
+from os.path import basename, dirname, abspath
 from os import chdir, getcwd
 import sys
 import re
@@ -24,7 +24,7 @@ class GIT(VCS):
 
     def clone(self, url, targetpath, **kwargs):
         if url.split(':')[0].find("svn") < 0:
-            return VCS.clone(self, url, targetpath, **kwargs)
+            return VCS.clone(self, url, **kwargs)
         else:
             # To speed things up on huge repositories, we'll just grab all the
             # revision numbers for this specific directory and grab these only
@@ -43,11 +43,10 @@ class GIT(VCS):
             trunk = basename(url)
             tags = "releases"
             # cloning svn braches as well should rather be optionalif reenabled..
-            #cmd = ["svn", "init", topurl, "--trunk="+trunk, "--tags="+tags, targetpath]
-            cmd = ["svn", "init", url, targetpath]
+            #cmd = ["svn", "init", topurl, "--trunk="+trunk, "--tags="+tags", targetpath]
+            cmd = ["svn", "init", url, abspath(targetpath)]
             self._execVcs(*cmd, **kwargs)
-            chdir(targetpath)
-            revisions.sort()
+            os.environ.update({"GIT_WORK_TREE" : abspath(targetpath)})
             for entry in logentries:
                 revisions.append(int(entry.attrib["revision"]))
             revisions.sort()
@@ -79,6 +78,8 @@ class GIT(VCS):
         return None
 
     def update(self, path, **kwargs):
+        os.environ.update({"GIT_WORK_TREE" : abspath(path)})
+
         cmd = ["svn", "log", "--oneline", "--limit=1"]
         retval, result = self._execVcs(*cmd)
         if retval:
@@ -119,7 +120,6 @@ class GIT(VCS):
         log = parser.close()
         logentries = log.getiterator("logentry")
         revisions = []
-        chdir(path)
         for entry in logentries:
             revisions.append(int(entry.attrib["revision"]))
         revisions.sort()

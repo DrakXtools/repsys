@@ -14,6 +14,7 @@ import string
 import glob
 import sys
 import os
+from time import sleep
 
 def detectVCS(url):
     if ':' in url:
@@ -514,16 +515,22 @@ def checkout(pkgdirurl, path=None, revision=None, branch=None, distro=None, back
     if not spec:
         binrepo.download_binaries(path)
     
-def clone(pkgdirurl, path=None, branch=None,
-        distro=None):
+def clone(pkgdirurl, path=None, revision=None, branch=None, distro=None, backports=None,
+        spec=False):
     o_pkgdirurl = pkgdirurl
-    pkgdirurl = layout.package_url(o_pkgdirurl, distro=distro)
-    current = layout.checkout_url(pkgdirurl, branch=branch)
+    pkgdirurl = layout.package_url(o_pkgdirurl, distro=distro, backports=backports)
+    append = None
+    if spec:
+        append = "SPECS"
+    current = layout.checkout_url(pkgdirurl, branch=branch, backports=backports,
+            append_path=append)
     if path is None:
         path = layout.package_name(pkgdirurl)
-    mirror.info(current)
+    mirror.info(current, write=True)
     git = GIT()
     git.clone(current, path, show=1)
+    if not spec:
+        binrepo.download_binaries(path)
 
 def getpkgtopdir(basedir=None):
 
