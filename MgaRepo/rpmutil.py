@@ -214,7 +214,6 @@ def patch_spec(pkgdirurl, patchfile, log=""):
 
 def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
         baseurl=None, baseold=None, logmsg=None, rename=True):
-    svn = detectVCS(pkgdirurl)
     srpm = SRPM(srpmfile)
     tmpdir = tempfile.mktemp()
     if baseurl:
@@ -222,6 +221,7 @@ def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
     else:
         pkgurl = layout.package_url(srpm.name, distro=branch,
                 mirrored=False)
+    svn = detectVCS(pkgdirurl)
     print("Importing package to %s" % pkgurl)
     try:
         if srpm.epoch:
@@ -547,8 +547,8 @@ def ispkgtopdir(path=None):
     return (vcs.vcs_dirname in names and "SPECS" in names and "SOURCES" in names)
 
 def sync(dryrun=False, commit=False, download=False):
-    svn = detectVCS(pkgdirurl)
     topdir = getpkgtopdir()
+    svn = detectVCS(topdir)
     spath = binrepo.sources_path(topdir)
     binrepoentries = binrepo.parse_sources(spath)
     # run svn info because svn st does not complain when topdir is not an
@@ -630,7 +630,7 @@ def sync(dryrun=False, commit=False, download=False):
             upload([path], commit=commit)
 
 def commit(target=".", message=None, logfile=None):
-    svn = detectVCS(pkgdirurl)
+    svn = detectVCS(target)
     status = svn.status(target, quiet=True)
     if not status:
         print("nothing to commit")
@@ -689,18 +689,17 @@ def update(target=None):
         binrepo.download_binaries(br_target)
 
 def upload(paths, commit=False):
+    topdir = getpkgtopdir()
+    svn = detectVCS(topdir)
     for path in paths:
         if os.path.isdir(path) or binrepo.is_binary(path):
-            topdir = getpkgtopdir()
             binrepo.upload_binary(topdir, os.path.basename(path))
             binrepo.update_sources(topdir, added=[path])
             if commit:
-                svn = detectVCS(pkgdirurl)
                 silent = config.get("log", "ignore-string", "SILENT")
                 message = "%s: new file %s" % (silent, path)
                 svn.commit(binrepo.sources_path(topdir), log=message)
         else:
-            svn = detectVCS(pkgdirurl)
             svn.add(path, local=True)
             if commit:
                 silent = config.get("log", "ignore-string", "SILENT")
@@ -709,16 +708,15 @@ def upload(paths, commit=False):
 
 def delete(paths, commit=False):
     silent = config.get("log", "ignore-string", "SILENT")
+    topdir = getpkgtopdir()
+    svn = detectVCS(topdir)
     for path in paths:
         message = "%s: delete file %s" % (silent, path)
         if binrepo.is_binary(path):
-            topdir = getpkgtopdir()
             binrepo.update_sources(topdir, removed=[os.path.basename(path)])
             if commit:
-                svn = detectVCS(pkgdirurl)
                 svn.commit(binrepo.sources_path(topdir), log=message)
         else:
-            svn = detectVCS(pkgdirurl)
             svn.remove(path, local=True)
             if commit:
                 svn.commit(path, log=message)
@@ -762,7 +760,7 @@ def get_submit_info(path):
     if not os.path.isdir(os.path.join(path, ".svn")):
         raise Error("subversion directory not found")
     
-    svn = detectVCS(pkgdirurl)
+    svn = detectVCS(path)
 
     # Now, extract the package name.
     info = svn.info2(path)
