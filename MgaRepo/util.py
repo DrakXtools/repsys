@@ -65,7 +65,7 @@ def execcmd(*cmd, **kwargs):
                     break
             output = err.getvalue()
         else:
-            status = os.system(prefix + cmdstr)
+            status = os.system(cmdstr)
             output = ""
     else:
         status, output = commands_getstatusoutput(prefix + cmdstr)
