@@ -18,7 +18,7 @@ class GIT(VCS):
     def __init__(self):
         VCS.__init__(self)
         self.vcs_name = "git"
-        self.vcs_command = config.get("global", "git-command", ["git", "svn"])
+        self.vcs_command = config.get("global", "git-command", ["git"])
         self.vcs_supports['clone'] = True
         self.env_defaults = {"GIT_SSH": self.vcs_wrapper}
 
@@ -43,8 +43,8 @@ class GIT(VCS):
             trunk = basename(url)
             tags = "releases"
             # cloning svn braches as well should rather be optionalif reenabled..
-            #cmd = ["init", topurl, "--trunk="+trunk, "--tags="+tags, targetpath]
-            cmd = ["init", url, targetpath]
+            #cmd = ["svn", "init", topurl, "--trunk="+trunk, "--tags="+tags, targetpath]
+            cmd = ["svn", "init", url, targetpath]
             self._execVcs(*cmd, **kwargs)
             chdir(targetpath)
             revisions.sort()
@@ -52,13 +52,34 @@ class GIT(VCS):
                 revisions.append(int(entry.attrib["revision"]))
             revisions.sort()
             while revisions:
-                cmd = ["fetch", "--log-window-size=1000", "-r%d" % revisions.pop(0)]
+                cmd = ["svn", "fetch", "--log-window-size=1000", "-r%d" % revisions.pop(0)]
                 self._execVcs(*cmd, **kwargs)
-            cmd = ["rebase", "--log-window-size=1000", "--local", "--fetch-all", "git-svn"]
+            cmd = ["svn", "rebase", "--log-window-size=1000", "--local", "--fetch-all", "git-svn"]
             return self._execVcs_success(*cmd, **kwargs)
 
+    def info(self, path, **kwargs):
+        cmd = ["svn", "info", path + '@' if '@' in path else path]
+        status, output = self._execVcs(local=True, noerror=True, *cmd, **kwargs)
+        if (("Not a git repository" not in output) and \
+                ("Unable to determine upstream SVN information from working tree history" not in output)):
+            return output.splitlines()
+        return None
+
+    def status(self, path, **kwargs):
+        cmd = ["status", path + '@' if '@' in path else path]
+        if kwargs.get("verbose"):
+            cmd.append("-v")
+        if kwargs.get("noignore"):
+            cmd.append("-u")
+        if kwargs.get("quiet"):
+            cmd.append("-s")
+        status, output = self._execVcs(*cmd, **kwargs)
+        if status == 0:
+            return [(x[0], x[8:]) for x in output.splitlines()]
+        return None
+
     def update(self, path, **kwargs):
-        cmd = ["log", "--oneline", "--limit=1"]
+        cmd = ["svn", "log", "--oneline", "--limit=1"]
         retval, result = self._execVcs(*cmd)
         if retval:
             return retval
@@ -70,17 +91,20 @@ class GIT(VCS):
         else:
             startrev = "BASE"
 
-        cmd = ["propget", "svn:entry:committed-rev"]
+        cmd = ["svn", "propget", "svn:entry:committed-rev"]
         retval, lastrev = self._execVcs(*cmd)
         if retval:
             return retval
 
-        cmd = ["git", "config", "--get-regexp", '^svn-remote.svn.(url|fetch)']
-        retval, result = execcmd(*cmd)
+        #cmd = ["config", "--get-regexp", '^svn-remote.svn.(url|fetch)']
+        cmd = ["config", "--get", "svn-remote.svn.url"]
+        retval, result = self._execVcs(*cmd)
         if retval:
             return retval
-        result = result.strip().split()
-        url = result[1] + "/" + result[3].split(":")[0]
+
+        #result = result.strip().split()
+        #url = result[1] + "/" + result[3].split(":")[0]
+        url = result.strip()
 
         # To speed things up on huge repositories, we'll just grab all the
         # revision numbers for this specific directory and grab these only
@@ -100,10 +124,10 @@ class GIT(VCS):
             revisions.append(int(entry.attrib["revision"]))
         revisions.sort()
         while revisions:
-            cmd = ["fetch", "--log-window-size=1000", "-r%d" % revisions.pop(0)]
+            cmd = ["svn", "fetch", "--log-window-size=1000", "-r%d" % revisions.pop(0)]
             self._execVcs(*cmd, **kwargs)
 
-        cmd = ["rebase", "--log-window-size=1000", "--local", "--fetch-all", "git-svn"]
+        cmd = ["svn", "rebase", "--log-window-size=1000", "--local", "--fetch-all", "git-svn"]
         status, output = self._execVcs(*cmd, **kwargs)
         if status == 0:
             return [x.split() for x in output.split()]
