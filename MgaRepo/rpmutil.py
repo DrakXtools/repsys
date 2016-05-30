@@ -377,6 +377,7 @@ def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
 def build_rpm(build_cmd="b",
         verbose=False,
         rpmlint=True,
+        short_circuit=False,
         packager = "",
         macros = []):
     top = os.getcwd()
@@ -408,6 +409,8 @@ def build_rpm(build_cmd="b",
 
     rpmbuild = config.get("helper", "rpmbuild", "rpmbuild")
     args = [rpmbuild, "-b"+build_cmd, spec]
+    if short_circuit:
+        args.append("--short-circuit")
     for pair in rpmdefs:
         args.extend(pair)
     for pair in macros:
