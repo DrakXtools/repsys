@@ -1,18 +1,11 @@
 #!/usr/bin/python
 #
-from MgaRepo import Error, config
-from MgaRepo.command import *
-from MgaRepo.layout import package_url
+from MgaRepo.command import do_command
 from MgaRepo.rpmutil import build_rpm
-import tempfile
-import shutil
 from optparse import *
-import glob
-import sys
-import os
 
 HELP = """\
-Usage: repsys buildrpm [OPTIONS]
+Usage: mgarepo buildrpm [OPTIONS]
 
 Builds the binary RPM(s) (.rpm) file(s) of a given package.
 """
