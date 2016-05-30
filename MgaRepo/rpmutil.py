@@ -374,7 +374,7 @@ def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
                  log="Copying release %s-%s to releases/ directory." %
                      (version, srpm.release))
 
-def build_rpm(build_cmd="a",
+def build_rpm(build_cmd="b",
         verbose=False,
         rpmlint=True,
         packager = "",
@@ -407,7 +407,7 @@ def build_rpm(build_cmd="a",
         rpmdefs.append(("--define", "_build_pkgcheck_set %{_bindir}/rpmlint"))
 
     rpmbuild = config.get("helper", "rpmbuild", "rpmbuild")
-    args = [rpmbuild, "-bb", spec]
+    args = [rpmbuild, "-b"+build_cmd, spec]
     for pair in rpmdefs:
         args.extend(pair)
     for pair in macros:

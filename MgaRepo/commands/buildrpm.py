@@ -10,6 +10,7 @@ Usage: mgarepo buildrpm [OPTIONS]
 Builds the binary RPM(s) (.rpm) file(s) of a given package.
 
 Options:
+    -bX        Build stage option, where X is stage, default is -bb
     -l         Disable rpmlint check of packages built
     -P USER    Define the RPM packager information to USER
     -q         Silent build output
