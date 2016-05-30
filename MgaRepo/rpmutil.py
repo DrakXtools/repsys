@@ -375,7 +375,7 @@ def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
                      (version, srpm.release))
 
 def build_rpm(build_cmd="b",
-        verbose=False,
+        verbose=True,
         rpmlint=True,
         short_circuit=False,
         packager = "",
