@@ -25,10 +25,13 @@ def execcmd(*cmd, **kwargs):
     assert (kwargs.get("collecterr") and kwargs.get("show")) or not kwargs.get("collecterr"), \
             ("execcmd is implemented to handle collecterr=True only if show=True")
     # split command args
-    if isinstance(cmd[0], str) and len(cmd) is 1:
-        cmdargs = shlex.split(cmd[0])
+    if isinstance(cmd[0], str):
+        if len(cmd) is 1:
+            cmdargs = shlex.split(cmd[0])
+        else:
+            cmdargs = cmd[:]
     else:
-        cmdargs = cmd[:]
+        cmdargs = cmd[0][:]
 
     stdout = None
     stderr = None
