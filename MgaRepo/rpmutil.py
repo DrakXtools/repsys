@@ -14,7 +14,6 @@ import string
 import glob
 import sys
 import os
-from time import sleep
 
 def detectVCS(url):
     if ':' in url:
@@ -377,6 +376,7 @@ def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
 
 def build_rpm(build_cmd="a",
         verbose=False,
+        rpmlint=True,
         packager = "",
         macros = []):
     top = os.getcwd()
@@ -402,6 +402,9 @@ def build_rpm(build_cmd="a",
 
     if packager:
         rpmdefs.append(("--define", "packager %s" % packager))
+
+    if rpmlint:
+        rpmdefs.append(("--define", "_build_pkgcheck_set %{_bindir}/rpmlint"))
 
     rpmbuild = config.get("helper", "rpmbuild", "rpmbuild")
     args = [rpmbuild, "-bb", spec]
