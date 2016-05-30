@@ -378,7 +378,8 @@ def build_rpm(build_cmd="b",
         verbose=True,
         rpmlint=True,
         short_circuit=False,
-        packager = "",
+        packager = None,
+        installdeps = True,
         macros = []):
     top = os.getcwd()
     topdir = "_topdir %s" % top
@@ -408,7 +409,7 @@ def build_rpm(build_cmd="b",
         rpmdefs.append(("--define", "_build_pkgcheck_set %{_bindir}/rpmlint"))
 
     rpmbuild = config.get("helper", "rpmbuild", "rpmbuild")
-    args = [rpmbuild, "-b"+build_cmd, spec]
+    args = [rpmbuild, spec]
     if short_circuit:
         args.append("--short-circuit")
     for pair in rpmdefs:
@@ -416,7 +417,30 @@ def build_rpm(build_cmd="b",
     for pair in macros:
         args.extend(("--define", "%s %s" % pair))
     os.environ["LC_ALL"] = "C"
-    execcmd(*args, show=verbose)
+    # First check whether dependencies are satisfied
+    status, output = execcmd(*args + ["--nobuild"], show=verbose, collecterr=True, noerror=True)
+    if status:
+        if "error: Failed build dependencies:" in output:
+            if not installdeps:
+                raise Error("Automatic installation of dependencies disabled,"
+                "aborting...")
+            else:
+                if verbose:
+                    print("Installing missing build dependencies")
+                if os.getuid() != 0:
+                    print("Trying to obtain privileges for urpmi:")
+                    sudocheck = ["sudo", "-l", "urpmi"]
+                    status, output = execcmd(*sudocheck, collecter=True, noerror=True)
+                    if status:
+                        raise Error("%s\nFailed! Cannot proceed without, aborting..."
+                                % output.splitlines()[-1])
+                    urpmi = ["sudo", "urpmi"]
+                else:
+                    urpmi = ["urpmi"]
+                cmd = urpmi + ["--auto", "--buildrequires", "--no-recommends", spec]
+                status, output = execcmd(*cmd, show=verbose, collecter=True, noerror=True)
+
+    status, output = execcmd(*args + ["-b"+build_cmd], show=verbose)
 
 def create_package(pkgdirurl, log="", verbose=0):
     svn = detectVCS(pkgdirurl)

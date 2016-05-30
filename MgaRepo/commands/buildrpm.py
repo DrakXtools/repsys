@@ -11,6 +11,7 @@ Builds the binary RPM(s) (.rpm) file(s) of a given package.
 
 Options:
     -bX        Build stage option, where X is stage, default is -bb
+    -I         Don't automatically try install missing build dependencies
     -l         Disable rpmlint check of packages built
     -P USER    Define the RPM packager information to USER
     -q         Quiet build output
@@ -21,6 +22,7 @@ Options:
 def parse_options():
     parser = OptionParser(HELP)
     parser.add_option("-b", dest="build_cmd", default="a")
+    parser.add_option("-I", dest="installdeps", action="store_false", default=True)
     parser.add_option("-l", dest="rpmlint", action="store_false", default=True)
     parser.add_option("-P", dest="packager", default="")
     parser.add_option("-q", "--quiet", dest="verbose", action="store_false", default=True)
