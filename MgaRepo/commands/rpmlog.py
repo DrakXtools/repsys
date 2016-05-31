@@ -60,6 +60,9 @@ def rpmlog(pkgdirurl, revision, size, template, oldlog, usespec, sort):
         spec, another = split_spec_changelog(StringIO(rawspec))
     newlog = get_changelog(pkgdirurl, another=another, rev=revision,
             size=size, sort=sort, template=template, oldlog=oldlog)
+    # make sure stdout support unicode, otherwise it'll croak when encountered
+    if not "UTF-8" in sys.stdout.encoding:
+        sys.stdout = open(sys.stdout.fileno(), mode="w", encoding="UTF-8")
     sys.stdout.writelines(newlog)
 
 def main():
