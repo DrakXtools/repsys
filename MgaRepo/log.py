@@ -26,7 +26,6 @@ def getrelease(pkgdirurl, rev=None, macros=[], exported=None):
     Is here where things should be changed if "automatic release increasing" 
     will be used.
     """
-    from MgaRepo.rpmutil import rpm_macros_defs
     svn = SVN()
     pkgcurrenturl = os.path.join(pkgdirurl, "current")
     specurl = os.path.join(pkgcurrenturl, "SPECS")
@@ -40,11 +39,11 @@ def getrelease(pkgdirurl, rev=None, macros=[], exported=None):
         if not found:
             raise Error("no .spec file found inside %s" % specurl)
         specpath = found[0]
-        options = rpm_macros_defs(macros)
-        command = (("rpm -q --qf '%%{EPOCH}:%%{VERSION}-%%{RELEASE}\n' "
-                   "--specfile %s %s") %
-                   (specpath, options))
-        output = get_output_exec(command)
+        options = [("--define", expr) for expr in macros]
+        command = ["rpm", "-q", "--qf", "%{EPOCH}:%{VERSION}-%{RELEASE}\n",
+                   "--specfile", specpath]
+        command.extend(options)
+        status, output = execcmd(*command)
         releases = output.split()
         try:
             epoch, vr = releases[0].split(":", 1)
