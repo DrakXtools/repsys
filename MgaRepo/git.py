@@ -33,11 +33,8 @@ class GIT(VCS):
             retval, result = execcmd(*cmd)
             if retval:
                 return retval
-            parser = ElementTree.XMLParser()
-            result = "".join(result.split("\n"))
-            parser.feed(result)
-            log = parser.close()
-            logentries = log.getiterator("logentry")
+            xmllog = ElementTree.fromstring(result)
+            logentries = xmllog.getiterator("logentry")
             revisions = []
             topurl = dirname(url)
             trunk = basename(url)
@@ -114,11 +111,8 @@ class GIT(VCS):
         retval, result = execcmd(*cmd)
         if retval:
             return retval
-        parser = ElementTree.XMLParser()
-        result = "".join(result.split("\n"))
-        parser.feed(result)
-        log = parser.close()
-        logentries = log.getiterator("logentry")
+        xmllog = ElementTree.fromstring(result)
+        logentries = xmllog.getiterator("logentry")
         revisions = []
         for entry in logentries:
             revisions.append(int(entry.attrib["revision"]))
