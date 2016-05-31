@@ -78,7 +78,8 @@ def execcmd(*cmd, **kwargs):
             if proc.stdout is not None:
                 output += proc.stdout.read(8192).decode('utf8')
         # Make sure that we've emptied the buffer entirely
-        output += proc.stdout.read().decode('utf8')
+        if proc.stdout is not None:
+            output += proc.stdout.read().decode('utf8')
 
         if kwargs.get("strip", True):
             output = output.rstrip()
