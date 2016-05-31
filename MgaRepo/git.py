@@ -128,7 +128,7 @@ class GIT(VCS):
         return None
 
 
-class SVNLook(VCSLook):
+class GITLook(VCSLook):
     def __init__(self, repospath, txn=None, rev=None):
         VCSLook.__init__(self, repospath, txn, rev)
 
