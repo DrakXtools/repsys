@@ -71,11 +71,17 @@ def execcmd(*cmd, **kwargs):
                     sys.stdout.write(data)
         output = error.getvalue()
     else:
-        proc.wait()
-        if proc.stdout is not None:
-            output = proc.stdout.read().decode('utf8')
-            if kwargs.get("strip", True):
-                output = output.rstrip()
+        # Make sure to avoid buffer getting full.
+        # Otherwise if ie. using proc.wait() both python
+        # and the process will just hang
+        while proc.poll() is None:
+            if proc.stdout is not None:
+                output += proc.stdout.read(8192).decode('utf8')
+        # Make sure that we've emptied the buffer entirely
+        output += proc.stdout.read().decode('utf8')
+
+        if kwargs.get("strip", True):
+            output = output.rstrip()
 
     if (not kwargs.get("noerror")) and proc.returncode != 0:
         if kwargs.get("cleanerr"):
