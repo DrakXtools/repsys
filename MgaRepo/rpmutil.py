@@ -58,7 +58,7 @@ def get_spec(pkgdirurl, targetdir=".", submit=False):
 
 #FIXME move it to another module
 def rev_touched_url(url, rev):
-    svn = detectVCS(pkgdirurl)
+    svn = detectVCS(url)
     info = svn.info2(url)
     if info is None:
         raise Error("can't fetch svn info about the URL: %s" % url)
