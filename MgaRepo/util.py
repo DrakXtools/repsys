@@ -48,6 +48,10 @@ def execcmd(*cmd, **kwargs):
         else:
             stderr = subprocess.STDOUT
 
+    verbose = config.getbool("global", "verbose", 0)
+    if verbose:
+        print("cmd: " + str(cmd).lstrip("(").rstrip(")").replace("', '", "' '")))
+
     proc = subprocess.Popen(cmdargs, shell=False, stdout=stdout,
             stderr=stderr, env=env)
 
