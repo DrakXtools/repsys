@@ -1,17 +1,18 @@
 from MgaRepo import Error, SilentError, config
 from MgaRepo.util import execcmd, get_auth
+from xml.etree import ElementTree
 import sys
 import os
 import re
 import time
 
 class VCSLogEntry(object):
-    def __init__(self, revision, author, date):
+    def __init__(self, revision, author, date, lines=[], changed=[]):
         self.revision = revision
         self.author = author
         self.date = date
-        self.changed = []
-        self.lines = []
+        self.changed = changed
+        self.lines = lines
 
     def __lt__(self, other):
         return (self.date < other.date)
@@ -347,52 +348,30 @@ class VCS(object):
             except (ValueError, TypeError):
                 raise Error("invalid limit number provided")
             cmd.extend(("--limit", str(limit)))
-        status, output = self._execVcs(*cmd, **kwargs)
+
+        status, output = self._execVcs(*cmd, **kwargs, xml=True)
         if status != 0:
             return None
 
-        revheader = re.compile("^r(?P<revision>[0-9]+) \| (?P<author>[^\|]+) \| (?P<date>[^\|]+) \| (?P<lines>[0-9]+) (?:line|lines)$")
-        changedpat = re.compile(r"^\s+(?P<action>[^\s]+) (?P<path>[^\s]+)(?: \([^\s]+ (?P<from_path>[^:]+)(?:\:(?P<from_rev>[0-9]+))?\))?$")
-        logseparator = "-"*72
-        linesleft = 0
-        entry = None
+        xmllog = ElementTree.fromstring(output)
         log = []
-        appendchanged = 0
-        changedheader = 0
-        for line in output.splitlines():
-            line = line.rstrip()
-            if changedheader:
-                appendchanged = 1
-                changedheader = 0
-            elif appendchanged:
-                if not line:
-                    appendchanged = 0
-                    continue
-                m = changedpat.match(line)
-                if m:
-                    changed = m.groupdict().copy()
-                    from_rev = changed.get("from_rev")
-                    if from_rev is not None:
-                        try:
-                            changed["from_rev"] = int(from_rev)
-                        except (ValueError, TypeError):
-                            raise Error("invalid revision number in % log" % self.vcs_name)
-                    entry.changed.append(changed)
-            elif linesleft == 0:
-                if line != logseparator:
-                    m = revheader.match(line)
-                    if m:
-                        linesleft = int(m.group("lines"))
-                        timestr = " ".join(m.group("date").split()[:2])
-                        timetuple = time.strptime(timestr,
-                                                  "%Y-%m-%d %H:%M:%S")
-                        entry = VCSLogEntry(int(m.group("revision")),
-                                            m.group("author"), timetuple)
-                        log.append(entry)
-                        changedheader = 1
-            else:
-                entry.lines.append(line)
-                linesleft -= 1
+        logentries = xmllog.getiterator("logentry")
+        for entry in logentries:
+            changed = []
+            lines = []
+            for pathelem in entry.getiterator("paths"):
+                path = pathelem.find("path")
+                from_rev = path.get("copyfrom-rev")
+                if from_rev:
+                    from_rev = int(from_rev)
+                changed.append({"from_rev" : from_rev, "from_path" : path.get("copyfrom-path"), "action" : path.get("action"), "path" : path.text})
+            date = entry.findtext("date").split("T")
+            timestr = "%s %s" % (date[0], date[1].split(".")[0])
+            timetuple = time.strptime(timestr, "%Y-%m-%d %H:%M:%S")
+            lines.extend(entry.findtext("msg").rstrip().split("\n"))
+            logentry = VCSLogEntry(int(entry.attrib["revision"]),
+                    entry.findtext("author"), timetuple, [line.rstrip() for line in lines], changed)
+            log.append(logentry)
         log.sort()
         log.reverse()
         return log
