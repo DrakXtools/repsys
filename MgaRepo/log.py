@@ -213,7 +213,7 @@ emailpat = re.compile("(?P<name>.*?)\s*<(?P<email>.*?)>")
 def get_author_name(author):
     found = emailpat.match(config.get("users", author, author))
     name = ((found and found.group("name")) or author)
-    email = ((found and found.group("email")) or author)
+    email = ((found and found.group("email")) or author+"@mageia.org")
     return name, email
 
 def parse_raw_date(rawdate):
