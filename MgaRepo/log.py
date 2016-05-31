@@ -313,8 +313,10 @@ def dump_file(releases, currentlog=None, template=None):
             releases_author = releases_author[:-1]
         for rel in releases_author:
             if not rel.released: 
-                draft = "  (not released yet)\n"
-            draft = draft + "* {0} {1} <{2}> {3}-{4}\n+ Revision: {5}\n".format(rel.date, rel.author_name, rel.author_email, rel.version, rel.release, rel.revision)
+                unreleased = "  (not released yet)\n"
+            else:
+                unreleased = ""
+            draft = draft + "* {0} {1} <{2}> {3}-{4}\n{5}+ Revision: {6}\n".format(rel.date, rel.author_name, rel.author_email, rel.version, rel.release, unreleased, rel.revision)
             if not rel.visible:
                 draft = draft + "+ rebuild (emptylog)\n"
             for rev in rel.release_revisions:
