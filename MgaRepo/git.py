@@ -25,7 +25,7 @@ class GIT(VCS):
 
     def clone(self, url, targetpath, **kwargs):
         if lexists(join(targetpath, SVN.vcs_dirname)):
-            raise Error("Target path %s already contains svn checkout, aborting...")
+            raise Error("Target path %s already contains svn checkout, aborting..." % targetpath)
         if url.split(':')[0].find("svn") < 0:
             return VCS.clone(self, url, **kwargs)
         else:
@@ -46,7 +46,7 @@ class GIT(VCS):
             #cmd = ["svn", "init", topurl, "--trunk="+trunk, "--tags="+tags", targetpath]
             cmd = ["svn", "init", url, abspath(targetpath)]
             self._execVcs(*cmd, **kwargs)
-            os.environ.update({"GIT_WORK_TREE" : abspath(targetpath)})
+            os.environ.update({"GIT_WORK_TREE" : abspath(targetpath), "GIT_DIR" : join(abspath(targetpath),".git")})
             for entry in logentries:
                 revisions.append(int(entry.attrib["revision"]))
             revisions.sort()
@@ -78,7 +78,7 @@ class GIT(VCS):
         return None
 
     def update(self, path, **kwargs):
-        os.environ.update({"GIT_WORK_TREE" : abspath(path)})
+        os.environ.update({"GIT_WORK_TREE" : abspath(targetpath), "GIT_DIR" : join(abspath(targetpath),".git")})
 
         cmd = ["svn", "log", "--oneline", "--limit=1"]
         retval, result = self._execVcs(*cmd)
