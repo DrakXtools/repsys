@@ -561,15 +561,40 @@ def get_old_log(pkgdirurl):
     chlog.seek(0)
     return chlog
 
+from html.parser import HTMLParser
+class TagParser(HTMLParser):
+    li = False
+    ahref = False
+    namepat = re.compile("(?P<name>.*?)\s*\((?P<user>.*?)\)")
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "li":
+            self.li = True
+        if self.li and tag == "a":
+            for att in attrs:
+                if att[0] == "href":
+                    self.ahref = True
+
+    def handle_endtag(self, tag):
+        if self.li and tag == "a":
+            self.ahref = False
+        if tag == "li":
+            self.li = False
+
+    def handle_data(self, data):
+        if self.li and self.ahref:
+            found = self.namepat.match(data)
+            if found and found.group("user") and found.group("name"):
+                usermap[found.group("user")] = "%s <%s@mageia.org>" % (found.group("name"), found.group("user"))
+
 def _map_user_names():
     import urllib.request
     if not usermap:
-        # This user map is from 2013-08-24, so it's rather dated, but sufficing for those listed...
-        f = urllib.request.urlopen("http://gitweb.mageia.org/software/infrastructure/svn-git-migration/plain/metadata/mageia-user-map.txt")
-        for user in f.read().decode("UTF-8").splitlines():
-            username, namemail = user.split(" = ")
-            usermap[username] = namemail
+        f = urllib.request.urlopen("https://people.mageia.org/u/")
+        users = f.read().decode("UTF-8")
         f.close()
+        parser = TagParser()
+        parser.feed(users)
 
 def get_changelog(pkgdirurl, another=None, svn=True, rev=None, size=None,
         submit=False, sort=False, template=None, macros=[], exported=None,
