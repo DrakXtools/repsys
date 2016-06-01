@@ -77,7 +77,7 @@ class GIT(VCS):
             return [(x[0], x[8:]) for x in output.splitlines()]
         return None
 
-    def update(self, path, **kwargs):
+    def update(self, targetpath, **kwargs):
         os.environ.update({"GIT_WORK_TREE" : abspath(targetpath), "GIT_DIR" : join(abspath(targetpath),".git")})
 
         cmd = ["svn", "log", "--oneline", "--limit=1"]
