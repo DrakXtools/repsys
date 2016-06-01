@@ -87,7 +87,8 @@ def get_srpm(pkgdirurl,
              template = None,
              macros = [],
              verbose = 0,
-             strict = False):
+             strict = False,
+             fullnames = False):
     svn = detectVCS(pkgdirurl)
     tmpdir = tempfile.mktemp()
     topdir = "_topdir %s" % tmpdir
@@ -136,7 +137,7 @@ def get_srpm(pkgdirurl,
         if svnlog:
             submit = not not revision
             log.specfile_svn2rpm(pkgdirurl, spec, revision, submit=submit,
-                    template=template, macros=macros, exported=tmpdir)
+                    template=template, macros=macros, exported=tmpdir, fullnames=fullnames)
         for script in scripts:
             #FIXME revision can be "None"
             status, output = execcmd(script, tmpdir, spec, str(revision),

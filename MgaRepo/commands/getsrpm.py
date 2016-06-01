@@ -30,6 +30,7 @@ Options:
     -n         Rename the package to include the revision number
     -l         Use subversion log to build rpm %changelog
     -T FILE    Template to be used to generate the %changelog
+    -F         Do not use full name & email for packagers in %changelog
     -M         Do not use the mirror (use the main repository)
     -h         Show this message
     --strict   Check if the given revision contains changes in REPPKGURL
@@ -76,6 +77,8 @@ def parse_options():
     parser.add_option("-n", dest="revname", action="store_true")
     parser.add_option("-l", dest="svnlog", action="store_true")
     parser.add_option("-T", dest="template", type="string", default=None)
+    parser.add_option("-F", dest="fullnames", default=True,
+            action="store_false")
     parser.add_option("-M", "--no-mirror", action="callback",
             callback=disable_mirror)
     parser.add_option("--strict", dest="strict", default=False,

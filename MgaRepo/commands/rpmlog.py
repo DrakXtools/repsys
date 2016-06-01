@@ -25,6 +25,7 @@ Options:
     -p       Append changelog found in .spec file
     -s       Sort changelog entries, even from the old log
     -M       Do not use the mirror (use the main repository)
+    -F       Do not use full name & email for packagers where available
     -h       Show this message
 
 Examples:
@@ -45,13 +46,15 @@ def parse_options():
             action="store_true")
     parser.add_option("-M", "--no-mirror", action="callback",
             callback=disable_mirror)
+    parser.add_option("-F", dest="fullnames", default=True,
+            action="store_false")
     opts, args = parser.parse_args()
     if len(args) != 1:
         raise Error("invalid arguments")
     opts.pkgdirurl = layout.package_url(args[0])
     return opts
 
-def rpmlog(pkgdirurl, revision, size, template, oldlog, usespec, sort):
+def rpmlog(pkgdirurl, revision, size, template, oldlog, usespec, sort, fullnames):
     another = None
     if usespec:
         svn = SVN()
@@ -59,7 +62,7 @@ def rpmlog(pkgdirurl, revision, size, template, oldlog, usespec, sort):
         rawspec = svn.cat(specurl, rev=revision)
         spec, another = split_spec_changelog(StringIO(rawspec))
     newlog = get_changelog(pkgdirurl, another=another, rev=revision,
-            size=size, sort=sort, template=template, oldlog=oldlog)
+            size=size, sort=sort, template=template, oldlog=oldlog, fullnames=fullnames)
     # make sure stdout support unicode, otherwise it'll croak when encountered
     if not "UTF-8" in sys.stdout.encoding:
         sys.stdout = open(sys.stdout.fileno(), mode="w", encoding="UTF-8")

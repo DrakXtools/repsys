@@ -209,11 +209,12 @@ def group_revisions_by_author(currentlog):
 
 
 emailpat = re.compile("(?P<name>.*?)\s*<(?P<email>.*?)>")
-
+usermap = {}
 def get_author_name(author):
     found = emailpat.match(config.get("users", author, author))
-    name = ((found and found.group("name")) or author)
-    email = ((found and found.group("email")) or author+"@mageia.org")
+    gold = emailpat.match(usermap.get(author,""))
+    name = ((found and found.group("name")) or (gold and gold.group("name")) or author)
+    email = ((found and found.group("email")) or (gold and gold.group("email")) or author+"@mageia.org")
     return name, email
 
 def parse_raw_date(rawdate):
@@ -560,9 +561,19 @@ def get_old_log(pkgdirurl):
     chlog.seek(0)
     return chlog
 
+def _map_user_names():
+    import urllib.request
+    if not usermap:
+        # This user map is from 2013-08-24, so it's rather dated, but sufficing for those listed...
+        f = urllib.request.urlopen("http://gitweb.mageia.org/software/infrastructure/svn-git-migration/plain/metadata/mageia-user-map.txt")
+        for user in f.read().decode("UTF-8").splitlines():
+            username, namemail = user.split(" = ")
+            usermap[username] = namemail
+        f.close()
+
 def get_changelog(pkgdirurl, another=None, svn=True, rev=None, size=None,
         submit=False, sort=False, template=None, macros=[], exported=None,
-        oldlog=False):
+        oldlog=False, fullnames=False):
     """Generates the changelog for a given package URL
 
     @another:   a stream with the contents of a changelog to be merged with
@@ -587,6 +598,8 @@ def get_changelog(pkgdirurl, another=None, svn=True, rev=None, size=None,
     """
     newlog = StringIO()
     if svn:
+        if fullnames:
+            _map_user_names()
         rawsvnlog = svn2rpm(pkgdirurl, rev=rev, size=size, submit=submit,
                 template=template, macros=macros, exported=exported)
         newlog.write(rawsvnlog)
@@ -601,13 +614,15 @@ def get_changelog(pkgdirurl, another=None, svn=True, rev=None, size=None,
     return newlog
 
 def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
-        submit=False, sort=False, template=None, macros=[], exported=None):
+        submit=False, sort=False, template=None, macros=[], exported=None, fullnames=False):
     with open(specfile, encoding = 'utf-8') as fi:
         spec, oldchlog = split_spec_changelog(fi)
     another = None
     if config.getbool("log", "merge-spec", False):
         another = oldchlog
     sort = sort or config.getbool("log", "sort", False)
+    if fullnames:
+        _map_user_names()
     chlog = get_changelog(pkgdirurl, another=another, rev=rev, size=size,
                 submit=submit, sort=sort, template=template, macros=macros,
                 exported=exported, oldlog=True)
