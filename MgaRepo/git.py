@@ -1,7 +1,8 @@
 from MgaRepo import Error, config
 from MgaRepo.util import execcmd
 from MgaRepo.VCS import *
-from os.path import basename, dirname, abspath
+from MgaRepo.svn import SVN
+from os.path import basename, dirname, abspath, lexists, join
 from os import chdir, getcwd
 import sys
 import re
@@ -23,6 +24,8 @@ class GIT(VCS):
         self.env_defaults = {"GIT_SSH": self.vcs_wrapper}
 
     def clone(self, url, targetpath, **kwargs):
+        if lexists(join(targetpath, SVN.vcs_dirname)):
+            raise Error("Target path %s already contains svn checkout, aborting...")
         if url.split(':')[0].find("svn") < 0:
             return VCS.clone(self, url, **kwargs)
         else:
