@@ -565,6 +565,7 @@ from html.parser import HTMLParser
 class TagParser(HTMLParser):
     li = False
     ahref = False
+    userpage = None
     namepat = re.compile("(?P<name>.*?)\s*\((?P<user>.*?)\)")
 
     def handle_starttag(self, tag, attrs):
@@ -574,17 +575,19 @@ class TagParser(HTMLParser):
             for att in attrs:
                 if att[0] == "href":
                     self.ahref = True
+                    self.userpage = att[1]
 
     def handle_endtag(self, tag):
         if self.li and tag == "a":
             self.ahref = False
+            self.userpage = None
         if tag == "li":
             self.li = False
 
     def handle_data(self, data):
         if self.li and self.ahref:
             found = self.namepat.match(data)
-            if found and found.group("user") and found.group("name"):
+            if found and found.group("user") and found.group("name") and found.group("user")+".html" == self.userpage:
                 usermap[found.group("user")] = "%s <%s@mageia.org>" % (found.group("name"), found.group("user"))
 
 def _map_user_names():
