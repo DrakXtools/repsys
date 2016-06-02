@@ -14,6 +14,7 @@ Options:
     -I         Don't automatically try install missing build dependencies
     -l         Disable rpmlint check of packages built
     -P USER    Define the RPM packager information to USER
+    -d         Use DNF
     -q         Quiet build output
     -s         Jump to specific build stage (--short-circuit)
 
@@ -25,6 +26,7 @@ def parse_options():
     parser.add_option("-I", dest="installdeps", action="store_false", default=True)
     parser.add_option("-l", dest="rpmlint", action="store_false", default=True)
     parser.add_option("-P", dest="packager", default="")
+    parser.add_option("-d", "--dnf", dest="use_dnf", action="store_true", default=False)
     parser.add_option("-q", "--quiet", dest="verbose", action="store_false", default=True)
     parser.add_option("-s", "--short-circuit", dest="short_circuit", action="store_true", default=False)
     opts, args = parser.parse_args()
