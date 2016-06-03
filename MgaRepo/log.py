@@ -685,7 +685,7 @@ def specfile_svn2rpm(pkgdirurl, specfile, rev=None, size=None,
                 exported=exported, oldlog=True)
     with open(specfile, "w", encoding='utf-8') as fo:
         fo.writelines(spec)
-        fo.write("\n\n%changelog\n")
+        fo.write("\n%changelog\n")
         fo.writelines(chlog)
  
 if __name__ == "__main__":
