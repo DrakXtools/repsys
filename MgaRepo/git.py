@@ -18,9 +18,9 @@ class GITLogEntry(VCSLogEntry):
 
 class GIT(VCS):
     vcs_dirname = ".git"
+    vcs_name = "git"
     def __init__(self):
         VCS.__init__(self)
-        self.vcs_name = "git"
         self.vcs_command = config.get("global", "git-command", ["git"])
         self.vcs_supports['clone'] = True
         self.env_defaults = {"GIT_SSH": self.vcs_wrapper}
@@ -42,8 +42,9 @@ class GIT(VCS):
         return True
 
     def clone(self, url, targetpath, fullnames=True, **kwargs):
-        if lexists(join(targetpath, SVN.vcs_dirname)):
-            raise Error("Target path %s already contains svn checkout, aborting..." % targetpath)
+        for vcs in (SVN, GIT):
+            if lexists(join(targetpath, vcs.vcs_dirname)):
+                raise Error("target path %s already contains %s repository, aborting..." % (targetpath, vcs.vcs_name))
         if url.split(':')[0].find("svn") < 0:
             return VCS.clone(self, url, **kwargs)
         else:
