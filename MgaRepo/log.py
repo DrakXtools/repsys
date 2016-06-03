@@ -308,7 +308,8 @@ def dump_file(releases, currentlog=None, template=None):
                             first = False
                         else:
                             draft = draft + spaces + line + "\n"
-            draft += '\n'
+            if rel is not releases_author[-1]:
+                draft += "\n"
     else:
         #  default template
         if not releases_author[-1].visible:
@@ -331,7 +332,8 @@ def dump_file(releases, currentlog=None, template=None):
                 for rev in author.revisions:
                     for line in rev.lines:
                         draft = draft + line + "\n"
-            draft += "\n"
+            if rel is not releases_author[-1]:
+                draft += "\n"
     return draft
 
 class InvalidEntryError(Exception):
