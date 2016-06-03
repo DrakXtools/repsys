@@ -381,6 +381,7 @@ def build_rpm(build_cmd="b",
         short_circuit=False,
         packager = None,
         installdeps = True,
+        use_dnf = False,
         macros = []):
     top = os.getcwd()
     topdir = "_topdir %s" % top
@@ -428,17 +429,23 @@ def build_rpm(build_cmd="b",
             else:
                 if verbose:
                     print("Installing missing build dependencies")
+                if use_dnf:
+                    pkg_mgr_base = ["dnf"]
+                    pkg_mgr_builddep = pkg_mgr_base + ["--assume-yes", "--setopt=install_weak_deps=False", "builddep"]
+                else:
+                    pkg_mgr_base = ["urpmi"]
+                    pkg_mgr_builddep = pkg_mgr_base + ["--auto", "--buildrequires", "--no-recommends"]
                 if os.getuid() != 0:
-                    print("Trying to obtain privileges for urpmi:")
-                    sudocheck = ["sudo", "-l", "urpmi"]
+                    print("Trying to obtain privileges for installing build dependencies:")
+                    sudocheck = ["sudo", "-l"] + pkg_mgr_base
                     status, output = execcmd(*sudocheck, collecter=True, noerror=True)
                     if status:
                         raise Error("%s\nFailed! Cannot proceed without, aborting..."
                                 % output.splitlines()[-1])
-                    urpmi = ["sudo", "urpmi"]
+                    cmd_base = ["sudo"] + pkg_mgr_builddep
                 else:
-                    urpmi = ["urpmi"]
-                cmd = urpmi + ["--auto", "--buildrequires", "--no-recommends", spec]
+                    cmd_base = pkg_mgr_builddep
+                cmd = cmd_base + [spec]
                 status, output = execcmd(*cmd, show=verbose, collecter=True, noerror=True)
 
     status, output = execcmd(*args + ["-b"+build_cmd], show=verbose)
