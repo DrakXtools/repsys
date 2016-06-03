@@ -8,6 +8,7 @@ from io import StringIO
 
 import sys
 import os
+import os.path
 import re
 import time
 import locale
@@ -569,11 +570,12 @@ class UserTagParser(HTMLParser):
     userpage = None
     namepat = re.compile("(?P<name>.*?)\s*\((?P<user>.*?)\)")
     usermap = {}
+    usermapfile = None
 
-    def __init__(self, url="https://people.mageia.org/u/", defaultmail="mageia.org", *cmd, **kwargs):
+    def __init__(self, url=None, defaultmail=None, *cmd, **kwargs):
         HTMLParser.__init__(self, *cmd, **kwargs)
-        self.url = url
-        self.defaultmail = defaultmail
+        self.url = url or "http://people.mageia.org/u/"
+        self.defaultmail = defaultmail or "mageia.org"
 
     def handle_starttag(self, tag, attrs):
         if tag == "li":
@@ -606,6 +608,19 @@ class UserTagParser(HTMLParser):
         f.close()
         self.feed(userhtml)
         return self.usermap
+
+    def get_user_map_file(self):
+        if not self.usermap:
+            self.get_user_map()
+        self.usermapfile = tempfile.mkstemp(suffix=".txt", prefix="usermap")
+        f = open(self.usermapfile[0], "w", encoding="UTF-8")
+        f.writelines("%s = %s\n" % user for user in sorted(self.usermap.items()))
+        f.close()
+        return self.usermapfile[1]
+
+    def cleanup(self):
+        if os.path.exists(self.usermapfile[1]):
+            os.unlink(self.usermapfile[1])
 
 def _map_user_names():
     if not usermap:

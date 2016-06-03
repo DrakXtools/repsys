@@ -20,6 +20,7 @@ Options:
     -b      The package branch
     -M      Do not use the mirror (use the main repository)
     -h      Show this message
+    -F      Do not convert svn usernames to full name & email
 
 Examples:
     repsys clone pkgname
@@ -33,6 +34,8 @@ def parse_options():
     parser = OptionParser(help=HELP)
     parser.add_option("--distribution", "-d", dest="distro", default=None)
     parser.add_option("--branch", "-b", dest="branch", default=None)
+    parser.add_option("-F", dest="fullnames", default=True,
+            action="store_false")
     opts, args = parser.parse_args()
     if len(args) not in (1, 2):
         raise Error("invalid arguments")

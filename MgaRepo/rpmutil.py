@@ -584,7 +584,7 @@ def checkout(pkgdirurl, path=None, revision=None, branch=None, distro=None, back
         binrepo.download_binaries(path)
     
 def clone(pkgdirurl, path=None, revision=None, branch=None, distro=None, backports=None,
-        spec=False):
+        spec=False, fullnames = True):
     o_pkgdirurl = pkgdirurl
     pkgdirurl = layout.package_url(o_pkgdirurl, distro=distro, backports=backports)
     append = None
@@ -596,7 +596,7 @@ def clone(pkgdirurl, path=None, revision=None, branch=None, distro=None, backpor
         path = layout.package_name(pkgdirurl)
     mirror.info(current, write=True)
     git = GIT()
-    git.clone(current, path, show=1)
+    git.clone(current, path, fullnames=fullnames, show=1)
     if not spec:
         binrepo.download_binaries(path)
 
