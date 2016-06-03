@@ -382,6 +382,8 @@ def build_rpm(build_cmd="b",
         packager = None,
         installdeps = True,
         use_dnf = False,
+        svnlog = False,
+        fullnames = True,
         macros = []):
     top = os.getcwd()
     topdir = "_topdir %s" % top
@@ -400,6 +402,21 @@ def build_rpm(build_cmd="b",
     if not speclist:
         raise Error("no spec files found")
     spec = speclist[0]
+
+    # If we're building package with %changelog, we'll make a temporary
+    # copy of the spec file with %changelog applied that we'll use for
+    # building. This way we avoid modifying files in repository.
+    # TODO: implement support for external changelog in rpm
+    if svnlog:
+        vcs = detectVCS(top)
+        specsdir = tempfile.mkdtemp()
+        shutil.copy(spec, specsdir)
+        specdir = "_specdir "+specsdir
+        spec = os.path.join(specsdir,os.path.basename(spec))
+        info = vcs.info2(top)
+        pkgdirurl = layout.remove_current(info["URL"])
+        log.specfile_svn2rpm(pkgdirurl, spec, rev=None, submit=False,
+                    template=None, macros=macros, exported=top, fullnames=fullnames)
 
     rpmdefs = [("--define", expr) for expr in (topdir, builddir, rpmdir,
         sourcedir, specdir, srcrpmdir, patchdir)]
@@ -449,6 +466,9 @@ def build_rpm(build_cmd="b",
                 status, output = execcmd(*cmd, show=verbose, collecter=True, noerror=True)
 
     status, output = execcmd(*args + ["-b"+build_cmd], show=verbose)
+    if svnlog:
+        if os.path.isdir(specsdir):
+            shutil.rmtree(specsdir)
 
 def create_package(pkgdirurl, log="", verbose=0):
     svn = detectVCS(pkgdirurl)
