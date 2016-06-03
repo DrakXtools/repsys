@@ -562,11 +562,18 @@ def get_old_log(pkgdirurl):
     return chlog
 
 from html.parser import HTMLParser
-class TagParser(HTMLParser):
+from urllib.request import urlopen
+class UserTagParser(HTMLParser):
     li = False
     ahref = False
     userpage = None
     namepat = re.compile("(?P<name>.*?)\s*\((?P<user>.*?)\)")
+    usermap = {}
+
+    def __init__(self, url="https://people.mageia.org/u/", defaultmail="mageia.org", *cmd, **kwargs):
+        HTMLParser.__init__(self, *cmd, **kwargs)
+        self.url = url
+        self.defaultmail = defaultmail
 
     def handle_starttag(self, tag, attrs):
         if tag == "li":
@@ -587,17 +594,23 @@ class TagParser(HTMLParser):
     def handle_data(self, data):
         if self.li and self.ahref:
             found = self.namepat.match(data)
-            if found and found.group("user") and found.group("name") and found.group("user")+".html" == self.userpage:
-                usermap[found.group("user")] = "%s <%s@mageia.org>" % (found.group("name"), found.group("user"))
+            if found:
+                user = found.group("user")
+                name = found.group("name")
+                if user and name and user+".html" == self.userpage:
+                    self.usermap[user] = "%s <%s@%s>" % (name, user, self.defaultmail)
+
+    def get_user_map(self):
+        f = urlopen(self.url)
+        userhtml = f.read().decode("UTF-8")
+        f.close()
+        self.feed(userhtml)
+        return self.usermap
 
 def _map_user_names():
-    import urllib.request
     if not usermap:
-        f = urllib.request.urlopen("https://people.mageia.org/u/")
-        users = f.read().decode("UTF-8")
-        f.close()
-        parser = TagParser()
-        parser.feed(users)
+        parser = UserTagParser()
+        usermap.update(parser.get_user_map())
 
 def get_changelog(pkgdirurl, another=None, svn=True, rev=None, size=None,
         submit=False, sort=False, template=None, macros=[], exported=None,
@@ -627,7 +640,8 @@ def get_changelog(pkgdirurl, another=None, svn=True, rev=None, size=None,
     newlog = StringIO()
     if svn:
         if fullnames:
-            _map_user_names()
+            if not usermap:
+                _map_user_names()
         rawsvnlog = svn2rpm(pkgdirurl, rev=rev, size=size, submit=submit,
                 template=template, macros=macros, exported=exported)
         newlog.write(rawsvnlog)
