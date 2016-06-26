@@ -22,8 +22,8 @@ class VCSLogEntry(object):
 
 class VCS(object):
     vcs_dirname = None
+    vcs_name = None
     def __init__(self):
-        self.vcs_name = None
         self.vcs_command = None
         self.vcs_wrapper = "mga-ssh"
         self.vcs_supports = {'clone' : False}
