@@ -349,7 +349,7 @@ class VCS(object):
                 raise Error("invalid limit number provided")
             cmd.extend(("--limit", str(limit)))
 
-        status, output = self._execVcs(*cmd, **kwargs, xml=True)
+        status, output = self._execVcs(*cmd, xml=True, **kwargs)
         if status != 0:
             return None
 
