@@ -27,8 +27,7 @@ def detectVCS(url):
                 return GIT()
             elif "svn" in uri:
                 return SVN()
-            else:
-                raise Error("Unknown protocol %s for %s" % (protocol, url))
+        raise Error("Unknown protocol %s for %s" % (protocol, url))
     elif os.path.exists(url) and os.path.isdir(url):
         if os.path.exists(os.path.join(url,".svn")) and os.path.isdir(os.path.join(url,".svn")):
             return SVN()
