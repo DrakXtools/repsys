@@ -916,6 +916,9 @@ def get_pkg_tag(tag, path=os.path.curdir, subpkg=None):
         raise Error("Subpkg must be the index number of a package,"\
                 "or None for source package")
 
-    return header[tag]
+    if isinstance(header[tag],bytes):
+        return header[tag].decode("utf8")
+    else:
+        return header[tag]
 
 # vim:et:ts=4:sw=4
