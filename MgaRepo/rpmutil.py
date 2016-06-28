@@ -625,19 +625,12 @@ def clone(pkgdirurl, path=None, revision=None, branch=None, distro=None, backpor
     if not spec:
         binrepo.download_binaries(path)
 
-def getpkgtopdir(basedir=None):
-
-    #FIXME this implementation doesn't work well with relative path names,
-    # which is something we need in order to have a friendlier output
-    if basedir is None:
-        basedir = os.path.curdir
+def getpkgtopdir(basedir=os.path.curdir):
     while not ispkgtopdir(basedir):
         if os.path.abspath(basedir) == "/":
             raise Error("can't find top package directories SOURCES and SPECS")
         basedir = os.path.join(basedir, os.path.pardir)
-    if basedir.startswith("./"):
-        basedir = basedir[2:]
-    return basedir
+    return os.path.normpath(basedir)
 
 def ispkgtopdir(path=None):
     if path is None:
