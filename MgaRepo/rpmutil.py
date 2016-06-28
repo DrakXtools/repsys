@@ -34,8 +34,7 @@ def detectVCS(url):
             return SVN()
         if os.path.exists(os.path.join(url,".git")) and os.path.isdir(os.path.join(url,".git")):
             return GIT()
-    else:
-        raise Error("No supported repository found at path: %s" % url)
+    raise Error("No supported repository found at path: %s" % url)
 
 def get_spec(pkgdirurl, targetdir=".", submit=False):
     svn = detectVCS(pkgdirurl)
