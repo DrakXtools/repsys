@@ -900,8 +900,8 @@ def get_submit_info(path):
     
     return name, url, max
 
-def get_pkg_tag(tag, subpkg=None):
-    topdir = getpkgtopdir()
+def get_pkg_tag(tag, path=os.path.curdir, subpkg=None):
+    topdir = getpkgtopdir(path)
     speclist = glob.glob(os.path.join(topdir, "SPECS", "*.spec"))
     if not speclist:
         raise Error("no spec files found")
