@@ -175,6 +175,15 @@ class GIT(VCS):
             return [x.split() for x in output.split()]
         return None
 
+    def remote(self, *args, **kwargs):
+        cmd = ["remote"] + list(args)
+        status, output = self._execVcs(*cmd, **kwargs)
+        return status, output
+
+    def push(self, *args, **kwargs):
+        cmd = ["push"] + list(args)
+        status, output = self._execVcs(*cmd, **kwargs)
+        return status, output
 
 class GITLook(VCSLook):
     def __init__(self, repospath, txn=None, rev=None):
