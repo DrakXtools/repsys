@@ -29,10 +29,15 @@ def detectVCS(url):
                 return SVN()
         raise Error("Unknown protocol %s for %s" % (protocol, url))
     elif os.path.exists(url) and os.path.isdir(url):
-        if os.path.exists(os.path.join(url,".svn")) and os.path.isdir(os.path.join(url,".svn")):
-            return SVN()
-        if os.path.exists(os.path.join(url,".git")) and os.path.isdir(os.path.join(url,".git")):
-            return GIT()
+        while True:
+            url = os.path.abspath(url)
+            for vcs in (SVN, GIT):
+                vcsdir = os.path.join(url, vcs.vcs_dirname)
+                if os.path.exists(vcsdir) and os.path.isdir(vcsdir):
+                    return vcs(url)
+            url = os.path.dirname(url)
+            if url == "/":
+                break
     raise Error("No supported repository found at path: %s" % url)
 
 def get_spec(pkgdirurl, targetdir=".", submit=False):
@@ -626,18 +631,21 @@ def clone(pkgdirurl, path=None, revision=None, branch=None, distro=None, backpor
         binrepo.download_binaries(path)
 
 def getpkgtopdir(basedir=os.path.curdir):
-    while not ispkgtopdir(basedir):
-        if os.path.abspath(basedir) == "/":
-            raise Error("can't find top package directories SOURCES and SPECS")
-        basedir = os.path.join(basedir, os.path.pardir)
-    return os.path.normpath(basedir)
+    vcs = detectVCS(basedir)
+    if vcs:
+        basedir = os.path.relpath(vcs.get_topdir())
+        if ispkgtopdir(basedir, vcs_dirname=vcs.vcs_dirname):
+            return basedir
+    raise Error("can't find top package directories SOURCES and SPECS")
 
-def ispkgtopdir(path=None):
+def ispkgtopdir(path=None, vcs_dirname=None):
     if path is None:
         path = os.getcwd()
     names = os.listdir(path)
-    vcs = detectVCS(path)
-    return (vcs.vcs_dirname in names and "SPECS" in names and "SOURCES" in names)
+    if not vcs_dirname:
+        vcs = detectVCS(path)
+        vcs_dirname = vcs.vcs_dirname
+    return (vcs_dirname in names and "SPECS" in names and "SOURCES" in names)
 
 def sync(dryrun=False, commit=False, download=False):
     topdir = getpkgtopdir()

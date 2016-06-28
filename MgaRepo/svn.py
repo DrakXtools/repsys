@@ -14,8 +14,8 @@ class SVNLogEntry(VCSLogEntry):
 class SVN(VCS):
     vcs_dirname = ".svn"
     vcs_name = "svn"
-    def __init__(self):
-        VCS.__init__(self)
+    def __init__(self, path=os.path.curdir):
+        VCS.__init__(self, path)
         self.vcs_command = config.get("global", "svn-command", ["svn"])
         self.env_defaults = {"SVN_SSH": self.vcs_wrapper}
 

@@ -19,8 +19,8 @@ class GITLogEntry(VCSLogEntry):
 class GIT(VCS):
     vcs_dirname = ".git"
     vcs_name = "git"
-    def __init__(self):
-        VCS.__init__(self)
+    def __init__(self, path=os.path.curdir):
+        VCS.__init__(self, path)
         self.vcs_command = config.get("global", "git-command", ["git"])
         self.vcs_supports['clone'] = True
         self.env_defaults = {"GIT_SSH": self.vcs_wrapper}

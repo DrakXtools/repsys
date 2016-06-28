@@ -23,12 +23,13 @@ class VCSLogEntry(object):
 class VCS(object):
     vcs_dirname = None
     vcs_name = None
-    def __init__(self):
+    def __init__(self, path):
         self.vcs_command = None
         self.vcs_wrapper = "mga-ssh"
         self.vcs_supports = {'clone' : False}
         self.vcs_type = None
         self.env_defaults = None
+        self._path = path
 
     def _execVcs(self, *args, **kwargs):
         localcmds = ("add", "revert", "cleanup", "mv")
@@ -384,6 +385,13 @@ class VCS(object):
             kwargs['show'] = True
         self._add_log(cmd, kwargs)
         return self._execVcs_success(*cmd, **kwargs)
+
+    def get_topdir(self):
+        vcsdir = os.path.join(self._path, self.vcs_dirname)
+        if os.path.exists(vcsdir) and os.path.isdir(vcsdir):
+            return self._path
+        else:
+            return None
 
 class VCSLook(object):
     def __init__(self, repospath, txn=None, rev=None):
