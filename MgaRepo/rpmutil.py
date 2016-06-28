@@ -899,4 +899,22 @@ def get_submit_info(path):
     
     return name, url, max
 
+def get_pkg_tag(tag, subpkg=None):
+    topdir = getpkgtopdir()
+    speclist = glob.glob(os.path.join(topdir, "SPECS", "*.spec"))
+    if not speclist:
+        raise Error("no spec files found")
+    specfile = speclist[0]
+
+    pkg = rpm.spec(specfile)
+    if subpkg is None:
+        header = pkg.sourceHeader
+    elif isinstance(subpkg,int):
+        header = pkg.packages(subpkg)
+    else:
+        raise Error("Subpkg must be the index number of a package,"\
+                "or None for source package")
+
+    return header[tag]
+
 # vim:et:ts=4:sw=4
