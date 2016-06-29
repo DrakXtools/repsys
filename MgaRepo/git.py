@@ -147,9 +147,11 @@ class GIT(VCS):
             usermap = UserTagParser(url=gitconfig.get("svn-remote.authorlog.url"),defaultmail=gitconfig.get("svn-remote.authorlog.defaultmail"))
             usermapfile = usermap.get_user_map_file()
             fetchcmd.extend(("--authors-file", usermapfile))
+        fetchcmd.append("")
 
         while revisions:
-            self._execVcs(*fetchcmd + ["-r%d"%revisions.pop(0)], **kwargs)
+            fetchcmd[-1] = "-r%d"%revisions.pop(0)
+            self._execVcs(*fetchcmd, **kwargs)
         if gitconfig:
             usermap.cleanup()
 
