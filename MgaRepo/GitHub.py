@@ -1,5 +1,5 @@
 from MgaRepo import Error, config
-from MgaRepo.rpmutil import detectVCS, get_pkg_tag
+from MgaRepo.rpmutil import detectVCS, get_pkg_tag, clone
 from MgaRepo.layout import package_name, remove_current
 from MgaRepo.git import GIT
 from MgaRepo.svn import SVN
@@ -79,6 +79,10 @@ class GitHub(object):
                 if status == 0:
                     print("Success!")
                     return True
+            elif isinstance(vcs, SVN):
+                clone(info["URL"], bindownload=False)
+                return self.import_package(pkgname)
+
         else:
             raise Error("GitHub repository already exists at " + repository.html_url)
         raise Error("GitHub import failed...")
