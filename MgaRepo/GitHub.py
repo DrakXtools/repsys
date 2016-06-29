@@ -22,6 +22,14 @@ class GitHub(object):
         repository = self._organization.create_repo(pkgname, **kwargs)
         return repository
 
+    def delete_repository(self, pkgname, **kwargs):
+        repository = self.repository_exists(pkgname)
+        if repository:
+            print("deleting repository %s" % repository.full_name)
+            repository.delete()
+            return True
+        raise Error("repository %s doesn't exist!" % (self._organization.login+"/"+pkgname))
+
     # workaround pygithub bug
     @staticmethod
     def __get_stats_commit_activity(self):
