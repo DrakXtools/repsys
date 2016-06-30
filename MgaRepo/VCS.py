@@ -1,5 +1,6 @@
 from MgaRepo import Error, SilentError, config
 from MgaRepo.util import execcmd, get_auth
+from MgaRepo import layout
 from xml.etree import ElementTree
 import sys
 import os
@@ -23,13 +24,19 @@ class VCSLogEntry(object):
 class VCS(object):
     vcs_dirname = None
     vcs_name = None
-    def __init__(self, path):
+    def __init__(self, path, url):
         self.vcs_command = None
         self.vcs_wrapper = "mga-ssh"
         self.vcs_supports = {'clone' : False}
         self.vcs_type = None
         self.env_defaults = None
-        self._path = path
+        if not path and not url:
+            self._path = os.path.curdir
+        elif not path and url:
+            self._path = layout.package_name(layout.remove_current(url))
+        else:
+            self._path = path
+        self._url = url
 
     def _execVcs(self, *args, **kwargs):
         localcmds = ("add", "revert", "cleanup", "mv")
@@ -392,6 +399,16 @@ class VCS(object):
             return self._path
         else:
             return None
+
+    @property
+    def path(self):
+        return self._path
+
+    @property
+    def url(self):
+        if not self._url:
+            self._url = self.info2(self._path)["URL"]
+        return self._url
 
 class VCSLook(object):
     def __init__(self, repospath, txn=None, rev=None):

@@ -19,14 +19,14 @@ def detectVCS(url):
     if ':' in url:
         protocol,uri = url.split(":")
         if "svn" in protocol:
-            return SVN()
+            return SVN(url=url)
         elif "git" in protocol:
-            return GIT()
+            return GIT(url=url)
         elif "http" in protocol:
             if uri.endswith(".git"):
-                return GIT()
+                return GIT(url=url)
             elif "svn" in uri:
-                return SVN()
+                return SVN(url=url)
         raise Error("Unknown protocol %s for %s" % (protocol, url))
     elif os.path.exists(url) and os.path.isdir(url):
         while True:
@@ -34,7 +34,7 @@ def detectVCS(url):
             for vcs in (SVN, GIT):
                 vcsdir = os.path.join(url, vcs.vcs_dirname)
                 if os.path.exists(vcsdir) and os.path.isdir(vcsdir):
-                    return vcs(url)
+                    return vcs(path=url)
             url = os.path.dirname(url)
             if url == "/":
                 break
