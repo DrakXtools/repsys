@@ -1,10 +1,11 @@
 from MgaRepo import Error, config
 from MgaRepo.rpmutil import detectVCS, get_pkg_tag, clone
-from MgaRepo.layout import package_name, remove_current
+from MgaRepo import layout
 from MgaRepo.git import GIT
 from MgaRepo.svn import SVN
-import github
 from rpm import RPMTAG_SUMMARY, RPMTAG_URL
+import github
+import os
 
 class GitHub(object):
     def __init__(self, username = config.get("github", "login"), password = config.get("github", "password")):
@@ -50,19 +51,21 @@ class GitHub(object):
                     ]
 
     def import_package(self, target):
+        if not os.path.exists(target):
+            target = layout.checkout_url(layout.package_url(target))
         vcs = detectVCS(target)
         top_dir = vcs.get_topdir()
-        info = vcs.info2(top_dir)
-        pkgname = package_name(remove_current(info["URL"]))
+        pkgname = layout.package_name(layout.remove_current(vcs.url))
 
         repository = self.repository_exists(pkgname)
-        #if not repository or repository.get_stats_commit_activity() is None:
+        #if not repository or not repository.get_stats_commit_activity():
         if not repository or self.__get_stats_commit_activity(repository) is None:
             if not repository:
-                summary = get_pkg_tag(RPMTAG_SUMMARY, path=top_dir)
-                url = get_pkg_tag(RPMTAG_URL, path=top_dir)
-                repository = self.create_repository(pkgname, description=summary, homepage=url)
-                print("GitHub repository created at " + repository.html_url)
+                if os.path.exists(vcs.path):
+                    summary = get_pkg_tag(RPMTAG_SUMMARY, path=top_dir)
+                    url = get_pkg_tag(RPMTAG_URL, path=top_dir)
+                    repository = self.create_repository(pkgname, description=summary, homepage=url)
+                    print("GitHub repository created at " + repository.html_url)
             else:
                 print("Empty GitHub repository already created at %s, using" % repository.html_url)
 
@@ -80,7 +83,7 @@ class GitHub(object):
                     print("Success!")
                     return True
             elif isinstance(vcs, SVN):
-                clone(info["URL"], bindownload=False)
+                clone(vcs.url, bindownload=False)
                 return self.import_package(pkgname)
 
         else:
