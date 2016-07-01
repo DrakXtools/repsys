@@ -31,25 +31,6 @@ class GitHub(object):
             return True
         raise Error("repository %s doesn't exist!" % (self._organization.login+"/"+pkgname))
 
-    # workaround pygithub bug
-    @staticmethod
-    def __get_stats_commit_activity(self):
-        """
-        :calls: `GET /repos/:owner/:repo/stats/commit_activity <developer.github.com/v3/repos/statistics/#get-the-number-of-commits-per-hour-in-each-day>`_
-        :rtype: None or list of :class:`github.StatsCommitActivity.StatsCommitActivity`
-        """
-        headers, data = self._requester.requestJsonAndCheck(
-                "GET",
-                self.url + "/stats/commit_activity"
-                )
-        if data == None:
-            return None
-        else:
-            return [
-                    github.StatsCommitActivity.StatsCommitActivity(self._requester, headers, attributes, completed=True)
-                    for attributes in data
-                    ]
-
     def import_package(self, target):
         if not os.path.exists(target):
             target = layout.checkout_url(layout.package_url(target))
@@ -58,8 +39,7 @@ class GitHub(object):
         pkgname = layout.package_name(layout.remove_current(vcs.url))
 
         repository = self.repository_exists(pkgname)
-        #if not repository or not repository.get_stats_commit_activity():
-        if not repository or self.__get_stats_commit_activity(repository) is None:
+        if not repository or not repository.get_stats_commit_activity():
             if not repository:
                 if os.path.exists(vcs.path):
                     summary = get_pkg_tag(RPMTAG_SUMMARY, path=top_dir)
