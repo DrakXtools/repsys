@@ -19,6 +19,7 @@ Options:
     -s         Jump to specific build stage (--short-circuit)
     -l         Use subversion log to build rpm %changelog
     -F         Do not use full name & email for packagers in %changelog
+    --         Options and arguments following will be passed to rpmbuild
 
 """
 
@@ -35,6 +36,7 @@ def parse_options():
     parser.add_option("-F", dest="fullnames", default=True,
             action="store_false")
     opts, args = parser.parse_args()
+    opts.rpmargs = parser.rargs
     return opts
 
 def main():

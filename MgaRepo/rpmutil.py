@@ -387,7 +387,8 @@ def build_rpm(build_cmd="b",
         use_dnf = False,
         svnlog = False,
         fullnames = True,
-        macros = []):
+        macros = [],
+        **rpmargs):
     top = os.getcwd()
     topdir = "_topdir %s" % top
     builddir = "_builddir %s/%s" % (top, "BUILD")
@@ -438,6 +439,7 @@ def build_rpm(build_cmd="b",
         args.extend(pair)
     for pair in macros:
         args.extend(("--define", "%s %s" % pair))
+    args.extend(*rpmargs.values())
     os.environ["LC_ALL"] = "C"
     # First check whether dependencies are satisfied
     status, output = execcmd(*args + ["--nobuild"], show=verbose, collecterr=True, noerror=True)
