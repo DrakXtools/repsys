@@ -53,6 +53,9 @@ class GIT(VCS):
             return self.update(targetpath, clone=True, **kwargs)
 
     def init(self, url, targetpath, fullnames=True, **kwargs):
+        # verify repo url
+        execcmd("svn", "info", url)
+
         topurl = dirname(url)
         trunk = basename(url)
         tags = "releases"
