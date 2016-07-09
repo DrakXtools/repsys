@@ -166,6 +166,11 @@ class GIT(VCS):
         status, output = self._execVcs(*cmd, **kwargs)
         return status, output
 
+    def pull(self, *args, **kwargs):
+        cmd = ["pull"] + list(args)
+        status, output = self._execVcs(*cmd, **kwargs)
+        return status, output
+
     def push(self, *args, **kwargs):
         cmd = ["push"] + list(args)
         status, output = self._execVcs(*cmd, **kwargs)
