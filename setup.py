@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from distutils.core import setup
+from setuptools import setup
 import sys
 import re
 
