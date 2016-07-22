@@ -439,6 +439,7 @@ def build_rpm(build_cmd="b",
         args.extend(pair)
     for pair in macros:
         args.extend(("--define", "%s %s" % pair))
+    args.extend(("--define", "_disable_source_fetch 0"))
     args.extend(*rpmargs.values())
     os.environ["LC_ALL"] = "C"
     # First check whether dependencies are satisfied
@@ -470,7 +471,6 @@ def build_rpm(build_cmd="b",
                 cmd = cmd_base + [spec]
                 status, output = execcmd(*cmd, show=verbose, collecter=True, noerror=True)
 
-    args.extend(("--define", "_disable_source_fetch 0"))
     status, output = execcmd(*args + ["-b"+build_cmd], show=verbose)
     if svnlog:
         if os.path.isdir(specsdir):
