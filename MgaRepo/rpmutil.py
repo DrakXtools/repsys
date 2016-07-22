@@ -470,6 +470,7 @@ def build_rpm(build_cmd="b",
                 cmd = cmd_base + [spec]
                 status, output = execcmd(*cmd, show=verbose, collecter=True, noerror=True)
 
+    args.extend(("--define", "_disable_source_fetch 0"))
     status, output = execcmd(*args + ["-b"+build_cmd], show=verbose)
     if svnlog:
         if os.path.isdir(specsdir):
