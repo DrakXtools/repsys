@@ -32,11 +32,12 @@ def github_delete(pkg, **kwargs):
 def parse_options():
     parser = OptionParser(help=HELP)
     opts, args = parser.parse_args()
-    if len(args) < 2:#not in (2, 3):
+    if len(args) < 1
         raise Error("invalid arguments")
     opts.func = globals().get("github_"+args[0], None)
     if args[0] == "import":
-        opts.target = args[1]
+        if len(args) > 1:
+            opts.target = args[1]
     elif args[0] == "delete" or args[0] == "clone":
         opts.pkg = args[1]
     else:
