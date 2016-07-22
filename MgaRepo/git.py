@@ -52,7 +52,7 @@ class GIT(VCS):
         else:
             return self.update(targetpath, clone=True, **kwargs)
 
-    def init(self, url, targetpath, fullnames=True, **kwargs):
+    def init(self, url, targetpath, fullnames=True, branch=None, **kwargs):
         # verify repo url
         execcmd("svn", "info", url)
 
@@ -72,6 +72,12 @@ class GIT(VCS):
             gitconfig = {"svn-remote.authorlog.url" : usermap.url,
                     "svn-remote.authorlog.defaultmail": usermap.defaultmail}
             self.configset(gitconfig)
+
+        if branch:
+            execcmd(("git", "init", "-q", self.path), **kwargs)
+            execcmd(("git", "checkout", "-q", branch), **kwargs)
+            cmd = ["svn", "rebase", "--local"]
+            status, output = self._execVcs(*cmd, **kwargs)
 
         return True
 
