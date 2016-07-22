@@ -17,6 +17,9 @@ Examples:
     mgarepo github import existingpkg
     mgarepo github import svn://svn.mageia.org/svn/packages/cauldron/existingpkg
 """
+def github_clone(pkg, **kwargs):
+    github = GitHub()
+    github.clone_repository(pkg)
 
 def github_import(target=".", **kwargs):
     github = GitHub()
@@ -34,7 +37,7 @@ def parse_options():
     opts.func = globals().get("github_"+args[0], None)
     if args[0] == "import":
         opts.target = args[1]
-    elif args[0] == "delete":
+    elif args[0] == "delete" or args[0] == "clone":
         opts.pkg = args[1]
     else:
         raise Error("invalid arguments: %s" % str(args))

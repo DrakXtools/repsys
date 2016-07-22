@@ -1,5 +1,6 @@
 from MgaRepo import Error, config
 from MgaRepo.rpmutil import detectVCS, get_pkg_tag, clone
+from MgaRepo.util import execcmd
 from MgaRepo import layout
 from MgaRepo.git import GIT
 from MgaRepo.svn import SVN
@@ -58,7 +59,7 @@ class GitHub(object):
                     else:
                         raise Error(output)
 
-                status, output = vcs.push(repository.full_name, "master", show=True)
+                status, output = vcs.push("--mirror", repository.full_name, show=True)
                 if status == 0:
                     print("Success!")
                     return True
@@ -69,3 +70,20 @@ class GitHub(object):
         else:
             raise Error("GitHub repository already exists at " + repository.html_url)
         raise Error("GitHub import failed...")
+
+    def clone_repository(self, pkgname, target=None):
+        if not target:
+            target = pkgname
+        repository = self.repository_exists(pkgname)
+        if repository:
+            svnurl = layout.checkout_url(layout.package_url(pkgname))
+            if repository.permissions:
+                giturl = repository.ssh_url
+            else:
+                giturl = repository.git_url
+            execcmd(("git", "clone", "--mirror", giturl, os.path.join(target, ".git")), show=True)
+            git_svn = GIT(path=target, url=svnurl)
+            git_svn.init(svnurl, pkgname, branch="master", fullnames=True)
+
+            return True
+        raise Error("Repository %s doesn't exist!" % (self._organization.login+"/"+pkgname))
