@@ -27,7 +27,8 @@ setup(name="mgarepo",
               ("share/bash-completion/completions",
                ["bash-completion/mgarepo"]),
 	      ("/etc/", ["mgarepo.conf"]),
-          ("share/man/man8/", ["mgarepo.8"])]
+          ("share/man/man8/", ["mgarepo.8"])],
+      install_requires=['PyGithub>=1.26.0']
       )
 
 # vim:ts=4:sw=4:et
