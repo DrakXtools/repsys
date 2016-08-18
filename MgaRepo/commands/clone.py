@@ -6,9 +6,9 @@ import getopt
 import sys
 
 HELP = """\
-Usage: repsys co [OPTIONS] URL [LOCALPATH]
+Usage: mgarepo co [OPTIONS] URL [LOCALPATH]
 
-Checkout the package source from the Mandriva repository.
+Clone the package source from the Mageia repository.
 
 If the 'mirror' option is enabled, the package is obtained from the mirror
 repository.
@@ -23,11 +23,11 @@ Options:
     -F      Do not convert svn usernames to full name & email
 
 Examples:
-    repsys clone pkgname
-    repsys clone -d 2009.0 pkgname
-    repsys clone 2009.0/pkgame
-    repsys clone http://repos/svn/cnc/snapshot/foo
-    repsys clone http://repos/svn/cnc/snapshot/foo foo-pkg
+    mgarepo co pkgname
+    mgarepo co -d 1 pkgname
+    mgarepo co 1/pkgame
+    mgarepo co http://repos/svn/cnc/snapshot/foo
+    mgarepo co http://repos/svn/cnc/snapshot/foo foo-pkg
 """
 
 def parse_options():
