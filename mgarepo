@@ -21,6 +21,7 @@ Useful commands:
     getspec       print the spec
     rpmlog        print the RPM changelog
     getsrpm       create the source RPM
+    buildrpm      build rpm from local package repository checkout
     maintdb       interact with the maintainer db
     create        create the structure of a new package
     changed       show changes not submitted
