@@ -6,7 +6,6 @@ include README
 include CHANGES
 include README.LDAP README.BINREPO
 include mgarepo-example.conf
-include *.chlog
 include create-srpm mgarepo-ssh
 include youridb.sql
 include bash-completion/mgarepo
