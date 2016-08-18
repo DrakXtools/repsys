@@ -570,14 +570,14 @@ def get_old_log(pkgdirurl):
     chlog = StringIO()
     oldurl = config.get("log", "oldurl")
     if oldurl:
-        svn = SVN()
+        svn = SVN(url=oldurl)
         tmpdir = tempfile.mktemp()
         try:
             if oldurl == '.' or oldurl.startswith('./'):
                 pkgoldurl = os.path.join(pkgdirurl, oldurl)
             else:
                 pkgname = layout.package_name(pkgdirurl)
-                pkgoldurl = os.path.join(oldurl, pkgname)
+                pkgoldurl = os.path.join(svn.url, pkgname)
             try:
                 # we're using HEAD here because fixes in misc/ (oldurl) may
                 # be newer than packages' last changed revision.

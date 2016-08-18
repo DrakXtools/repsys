@@ -19,6 +19,17 @@ class SVN(VCS):
         self.vcs_command = config.get("global", "svn-command", ["svn"])
         self.env_defaults = {"SVN_SSH": self.vcs_wrapper}
 
+    def drop_ssh_if_no_auth(self, url):
+        if url and url.startswith("svn+ssh://"):
+            cmd = ["info", "--non-interactive", "--no-newline", "--show-item", "url", url]
+            status, output = self._execVcs(*cmd, local=True, noerror=True, show=False)
+            if status == 1 and (("E170013" in output) or ("E210002" in output)):
+                url = url.replace("svn+ssh://", "svn://")
+                status, output = self._execVcs(*cmd, local=True, noerror=True, show=False)
+                if status == 0 and output == url:
+                    pass
+        return url
+
 class SVNLook(VCSLook):
     def __init__(self, repospath, txn=None, rev=None):
         VCSLook.__init__(self, repospath, txn, rev)

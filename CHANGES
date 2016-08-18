@@ -1,3 +1,6 @@
+- auomatically fallback to non-ssh (ie. svn:// rather than svn+ssh://) when
+  authentication fails
+
 * 1.13.0
 - implement 'clone' command with support for quick git-svn cloning
 - implement 'github' command initial support for github integration

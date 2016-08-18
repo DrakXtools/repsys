@@ -36,7 +36,9 @@ class VCS(object):
             self._path = layout.package_name(layout.remove_current(url))
         else:
             self._path = path
-        self._url = url
+        # FIXME
+        self._url = None
+        self.__url = url
 
     def _execVcs(self, *args, **kwargs):
         localcmds = ("add", "revert", "cleanup", "mv")
@@ -400,6 +402,9 @@ class VCS(object):
         else:
             return None
 
+    def drop_ssh_if_no_auth(self, url):
+        return url
+
     @property
     def path(self):
         return self._path
@@ -407,7 +412,7 @@ class VCS(object):
     @property
     def url(self):
         if not self._url:
-            self._url = self.info2(self._path)["URL"]
+            self._url = self.drop_ssh_if_no_auth(self.__url or self.info2(self._path)["URL"])
         return self._url
 
 class VCSLook(object):

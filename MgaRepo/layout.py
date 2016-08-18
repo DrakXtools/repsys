@@ -5,6 +5,7 @@ import urllib.parse
 
 from MgaRepo import Error, config
 from MgaRepo.svn import SVN
+from MgaRepo.rpmutil import detectVCS
 
 __all__ = ["package_url", "checkout_url", "repository_url", "get_url_revision"]
 
@@ -132,7 +133,8 @@ def repository_url(mirrored=False):
                 raise Error("you need to set the 'repository' " \
                         "configuration option on mgarepo.conf")
             url = convert_default_parent(default_parent)
-    return url
+    vcs = detectVCS(url)
+    return vcs.url
 
 def package_url(name_or_url, version=None, release=None, distro=None, backports=None,
         mirrored=True, obsolete=None):
