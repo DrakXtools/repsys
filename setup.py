@@ -28,7 +28,7 @@ setup(name="mgarepo",
                ["bash-completion/mgarepo"]),
 	      ("/etc/", ["mgarepo.conf"]),
           ("share/man/man8/", ["mgarepo.8"])],
-      install_requires=['PyGithub>=1.26.0', 'httplib2', 'rpm-python']
+      install_requires=['PyGithub>=1.27.1', 'httplib2', 'rpm-python']
       )
 
 # vim:ts=4:sw=4:et
