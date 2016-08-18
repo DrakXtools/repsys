@@ -1,3 +1,21 @@
+* 1.13.0
+- implement 'clone' command with support for quick git-svn cloning
+- implement 'github' command initial support for github integration
+- implement 'buildrpm' command for easy package building from local package
+  repository
+	o implement automatic satisfaction of build dependencies using urpmi
+	o implement automatic satisfaction of build dependencies using DNF
+- implement support for generating complete %changelog with full packager
+  names & mail addresses in entries
+- refactorize & clean up much of code
+- fix python 3 issue with bytes strings, properly converting them to utf-8
+- make execcmd() safe by only accepting individual arguments through a
+  list/tuple rather than accepting strings of arguments run through shell
+- fetch svn log in xml format for more reliable parsing using ElementTree
+- use setuptools rather than distutils
+- enable (optional) automatic rpmlint checking of packages
+- various minor bug fixes and improvements...
+
 * 1.12.3
 - syntax correction
 
