@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # This program will try to patch a spec file from a given package url.
 #

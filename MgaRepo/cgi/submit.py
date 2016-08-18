@@ -1,4 +1,3 @@
-#!/usr/bin/python
 from MgaRepo import Error, config
 from MgaRepo.rpmutil import get_srpm
 from MgaRepo.cgiutil import CgiError, get_targets

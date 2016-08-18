@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 from MgaRepo import Error, config
 
 import shlex

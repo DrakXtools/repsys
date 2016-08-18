@@ -1,4 +1,3 @@
-#!/usr/bin/python
 from MgaRepo import config, mirror, disable_mirror
 from MgaRepo.command import *
 from MgaRepo.layout import package_url, checkout_url

@@ -1,4 +1,3 @@
-#!/usr/bin/python
 from MgaRepo import Error, disable_mirror
 from MgaRepo.command import *
 from MgaRepo.rpmutil import checkout

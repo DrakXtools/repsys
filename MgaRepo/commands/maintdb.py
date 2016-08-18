@@ -1,4 +1,3 @@
-#!/usr/bin/python
 from MgaRepo import Error, config
 from MgaRepo.command import *
 from MgaRepo.util import execcmd, get_helper

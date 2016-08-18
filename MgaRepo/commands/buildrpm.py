@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 from MgaRepo.command import do_command
 from MgaRepo.rpmutil import build_rpm
 from optparse import *

@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # This program will convert the output of "svn log" to be suitable
 # for usage in an rpm %changelog session.

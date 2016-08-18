@@ -1,4 +1,3 @@
-#!/usr/bin/python
 from MgaRepo.command import *
 from MgaRepo.rpmutil import sync
 

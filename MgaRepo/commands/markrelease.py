@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # This program will append a release to the Conectiva Linux package
 # repository system.  It's meant to be a startup system to include

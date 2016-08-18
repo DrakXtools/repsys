@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 from MgaRepo import Error, config
 from MgaRepo import mirror, layout, log, binrepo
 from MgaRepo.git import GIT

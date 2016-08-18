@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # This program will extract given version/revision of the named package
 # from the Conectiva Linux repository system.

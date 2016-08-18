@@ -1,4 +1,3 @@
-#!/usr/bin/python
 from MgaRepo import Error, config, layout, mirror
 from MgaRepo.svn import SVN
 from MgaRepo.command import *

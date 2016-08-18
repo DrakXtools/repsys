@@ -1,4 +1,3 @@
-#!/usr/bin/python
 from MgaRepo import Error
 from MgaRepo.command import *
 from MgaRepo.rpmutil import clone
