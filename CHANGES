@@ -1,3 +1,10 @@
+* 1.12.3
+- syntax correction
+
+* 1.12.2
+- Suppress prefix with no effect on import command (cf 1.12.0)
+- Add a retry with building srpm in case of error in getrelease when creating a srpm
+
 * 1.12.1
 - prefix the command svn log without LC_ALL=C (mga#73)
 

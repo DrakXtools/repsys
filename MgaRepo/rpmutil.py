@@ -76,6 +76,32 @@ def rev_touched_url(url, rev):
             touched = True
     return touched
 
+def cp_srpms(revision, revname, geturl, targetdirs, srpmsdir, verbose):
+    targetsrpms = []
+    urlrev = None
+    if revname:
+        urlrev = revision or layout.get_url_revision(geturl)
+    if not targetdirs:
+        targetdirs = (".",)
+    srpms = glob.glob(os.path.join(srpmsdir, "*.src.rpm"))
+    if not srpms:
+        # something fishy happened
+        raise Error("no SRPMS were found at %s" % srpmsdir)
+    for srpm in srpms:
+        name = os.path.basename(srpm)
+        if revname:
+            name = "@%s:%s" % (urlrev, name)
+        for targetdir in targetdirs:
+            newpath = os.path.join(targetdir, name)
+            targetsrpms.append(newpath)
+            if os.path.exists(newpath):
+                # should we warn?
+                os.unlink(newpath)
+            shutil.copy(srpm, newpath)
+            if verbose:
+                sys.stderr.write("Wrote: %s\n" %  newpath)
+    return targetsrpms
+
 def get_srpm(pkgdirurl,
              mode = "current",
              targetdirs = None,
@@ -137,19 +163,10 @@ def get_srpm(pkgdirurl,
         if not speclist:
             raise Error("no spec files found")
         spec = speclist[0]
-        if svnlog:
-            submit = not not revision
-            log.specfile_svn2rpm(pkgdirurl, spec, revision, submit=submit,
-                    template=template, macros=macros, exported=tmpdir, fullnames=fullnames)
-        for script in scripts:
-            #FIXME revision can be "None"
-            status, output = execcmd(script, tmpdir, spec, str(revision),
-                                     noerror=1)
-            if status != 0:
-                raise Error("script %s failed" % script)
+
+        sourcecmd = config.get("helper", "rpmbuild", "rpmbuild")
         if packager:
             packager = " --define 'packager %s'" % packager
-
         sourcecmd = config.get("helper", "rpmbuild", "rpmbuild")
         args = [sourcecmd, "-bs", "--nodeps"]
         for pair in rpmdefs:
@@ -157,6 +174,25 @@ def get_srpm(pkgdirurl,
         for pair in macros:
             args.extend(("--define", "%s %s" % pair))
         args.append(spec)
+        if svnlog:
+            submit = not not revision
+            try:
+                log.specfile_svn2rpm(pkgdirurl, spec, revision, submit=submit,
+                    template=template, macros=macros, exported=tmpdir, fullnames=fullnames)
+            except:
+                #cmd = [sourcecmd, topdir, builddir, rpmdir, sourcedir, specdir
+                execcmd(args)
+                cp_srpms(revision, revname, geturl, targetdirs, srpmsdir, verbose)
+                log.specfile_svn2rpm(pkgdirurl, spec, revision, submit=submit,
+                    template=template, macros=macros, exported=tmpdir, create=True)
+            
+        for script in scripts:
+            #FIXME revision can be "None"
+            status, output = execcmd(script, tmpdir, spec, str(revision),
+                                     noerror=1)
+            if status != 0:
+                raise Error("script %s failed" % script)
+
         try:
             execcmd(args)
         except CommandError as e:
@@ -168,29 +204,7 @@ def get_srpm(pkgdirurl,
                         "(with %s):\n%s%s" % (sourcecmd, cmdline, e.output))
 
         # copy the generated SRPMs to their target locations
-        targetsrpms = []
-        urlrev = None
-        if revname:
-            urlrev = revision or layout.get_url_revision(geturl)
-        if not targetdirs:
-            targetdirs = (".",)
-        srpms = glob.glob(os.path.join(srpmsdir, "*.src.rpm"))
-        if not srpms:
-            # something fishy happened
-            raise Error("no SRPMS were found at %s" % srpmsdir)
-        for srpm in srpms:
-            name = os.path.basename(srpm)
-            if revname:
-                name = "@%s:%s" % (urlrev, name)
-            for targetdir in targetdirs:
-                newpath = os.path.join(targetdir, name)
-                targetsrpms.append(newpath)
-                if os.path.exists(newpath):
-                    # should we warn?
-                    os.unlink(newpath)
-                shutil.copy(srpm, newpath)
-                if verbose:
-                    sys.stderr.write("Wrote: %s\n" %  newpath)
+        targetsrpms = cp_srpms(revision, revname, geturl, targetdirs, srpmsdir, verbose)
         return targetsrpms
     finally:
         if os.path.isdir(tmpdir):
