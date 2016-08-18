@@ -9,3 +9,4 @@ include mgarepo-example.conf
 include *.chlog
 include create-srpm mgarepo-ssh
 include youridb.sql
+include bash-completion/mgarepo
