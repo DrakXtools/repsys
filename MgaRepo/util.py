@@ -50,7 +50,7 @@ def execcmd(*cmd, **kwargs):
     if verbose:
         print("cmd: " + str(cmd).lstrip("(").rstrip(")").replace("', '", "' '"))
 
-    proc = subprocess.Popen(cmdargs, shell=False, stdout=stdout,
+    proc = subprocess.Popen(cmdargs, shell=False, stdout=stdout, stdin=kwargs.get("stdin"),
             stderr=stderr, env=env)
 
     output = ""
