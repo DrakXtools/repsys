@@ -107,7 +107,7 @@ def upload_binary(topdir, filename):
         filein = open(filepath, 'r')
     except Error as e:
         raise Error("Could not open file %s\n" % filepath)
-    status, output = execcmd(command, show=True, collecterr=True, stdin=filein)
+    status, output = execcmd(*command, show=True, collecterr=True, stdin=filein)
 
 def import_binaries(topdir, pkgname):
     """Import all binaries from a given package checkout
