@@ -1,5 +1,7 @@
+from MgaRepo import Error
 from MgaRepo.git import GIT
 from MgaRepo.svn import SVN
+import os
 
 def detectVCS(url):
     if ':' in url:
