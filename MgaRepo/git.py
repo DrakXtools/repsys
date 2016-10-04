@@ -90,13 +90,15 @@ class GIT(VCS):
         return None
 
     def status(self, path, **kwargs):
-        cmd = ["status", path + '@' if '@' in path else path]
+        cmd = ["status", "--porcelain", path + '@' if '@' in path else path]
         if kwargs.get("verbose"):
             cmd.append("-v")
         if kwargs.get("noignore"):
-            cmd.append("-u")
+            cmd.append("--ignored")
         if kwargs.get("quiet"):
-            cmd.append("-s")
+            cmd.append("-uno")
+        else:
+            cmd.append("-uall")
         status, output = self._execVcs(*cmd, **kwargs)
         if status == 0:
             return [(x[0], x[8:]) for x in output.splitlines()]
