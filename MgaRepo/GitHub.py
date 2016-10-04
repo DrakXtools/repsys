@@ -1,9 +1,10 @@
 from MgaRepo import Error, config
-from MgaRepo.rpmutil import detectVCS, get_pkg_tag, clone
+from MgaRepo.rpmutil import get_pkg_tag, clone
 from MgaRepo.util import execcmd
 from MgaRepo import layout
 from MgaRepo.git import GIT
 from MgaRepo.svn import SVN
+from MgaRepo.vcsutil import detectVCS
 from rpm import RPMTAG_SUMMARY, RPMTAG_URL
 import github
 import os

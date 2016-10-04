@@ -5,7 +5,7 @@ import urllib.parse
 
 from MgaRepo import Error, config
 from MgaRepo.svn import SVN
-from MgaRepo.rpmutil import detectVCS
+from MgaRepo.vcsutil import detectVCS
 
 __all__ = ["package_url", "checkout_url", "repository_url", "get_url_revision"]
 
