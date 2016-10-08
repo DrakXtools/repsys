@@ -1,5 +1,10 @@
+* 1.13.1
 - auomatically fallback to non-ssh (ie. svn:// rather than svn+ssh://) when
   authentication fails
+- move detectVCS() to separate module to prevent import order
+- fix 'mgarepo sync -d' for git-svn repos
+- update upload_binary() to properly use newer execcmd()
+- redirect stdin, as required for ssh session invoked through binrepo
 
 * 1.13.0
 - implement 'clone' command with support for quick git-svn cloning
