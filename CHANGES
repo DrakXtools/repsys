@@ -1,5 +1,10 @@
+* 1.13.2
+- Corrections for 'putsrpm' command
+- Fix rpm command for unpacking source RPMs
+- Fix typo in CHANGES
+
 * 1.13.1
-- auomatically fallback to non-ssh (ie. svn:// rather than svn+ssh://) when
+- automatically fallback to non-ssh (ie. svn:// rather than svn+ssh://) when
   authentication fails
 - move detectVCS() to separate module to prevent import order
 - fix 'mgarepo sync -d' for git-svn repos
