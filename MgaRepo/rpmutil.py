@@ -214,7 +214,7 @@ def put_srpm(srpmfile, markrelease=False, striplog=True, branch=None,
     else:
         pkgurl = layout.package_url(srpm.name, distro=branch,
                 mirrored=False)
-    svn = detectVCS(pkgdirurl)
+    svn = detectVCS(pkgurl)
     print("Importing package to %s" % pkgurl)
     try:
         if srpm.epoch:

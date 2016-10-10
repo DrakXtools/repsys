@@ -14,9 +14,11 @@ class SRPM:
             self.epoch = None
 
     def unpack(self, topdir):
-        args ["rpm", "-i", "--nodeps", "--define", "_sourcedir", topdir+"/SOURCES",
-        "--define", "_specdir", topdir + "/SPECS", "--define", "_patchdir",
-        topdir+"/SOURCES", self.filename]
+        args = ["rpm", "-i", "--nodeps", 
+              "--define", "'_sourcedir "+topdir+"/SOURCES'",
+              "--define", "'_specdir " + topdir + "/SPECS'", 
+              "--define", "'_patchdir " + topdir+"/SOURCES'", 
+              self.filename]
         execcmd(args)
 
 # vim:et:ts=4:sw=4
