@@ -15,9 +15,9 @@ class SRPM:
 
     def unpack(self, topdir):
         args = ["rpm", "-i", "--nodeps", 
-              "--define", "'_sourcedir "+topdir+"/SOURCES'",
-              "--define", "'_specdir " + topdir + "/SPECS'", 
-              "--define", "'_patchdir " + topdir+"/SOURCES'", 
+              "--define", "_sourcedir {0}/SOURCES".format(topdir),
+              "--define", "_specdir {0}/SPECS".format(topdir),
+              "--define", "_patchdir {0}/SOURCES".format(topdir),
               self.filename]
         execcmd(args)
 
