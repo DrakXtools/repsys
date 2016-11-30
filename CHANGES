@@ -1,3 +1,6 @@
+* 1.13.3
+- fix $SVN_SSH not necessarily properly being set, breaking non-ssh fallback
+
 * 1.13.2
 - Corrections for 'putsrpm' command
 - Fix rpm command for unpacking source RPMs
