@@ -200,4 +200,13 @@ def maintdb_get(package):
         raise Exception('Package cannot be found in maintdb')
     return content.rstrip('\n')
 
+def get_repsys_cmd_path(cmd):
+    repsys = config.get("global", "mgarepo-cmd")
+    if repsys:
+        dir = os.path.dirname(repsys)
+        path = os.path.join(dir, cmd)
+        if os.path.exists(path):
+            return path
+    return cmd
+
 # vim:et:ts=4:sw=4

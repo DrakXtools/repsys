@@ -1,5 +1,5 @@
 from MgaRepo import Error, SilentError, config
-from MgaRepo.util import execcmd, get_auth
+from MgaRepo.util import execcmd, get_auth, get_repsys_cmd_path
 from MgaRepo import layout
 from xml.etree import ElementTree
 import sys
@@ -26,7 +26,7 @@ class VCS(object):
     vcs_name = None
     def __init__(self, path, url):
         self.vcs_command = None
-        self.vcs_wrapper = "mga-ssh"
+        self.vcs_wrapper = get_repsys_cmd_path("mgarepo-ssh")
         self.vcs_supports = {'clone' : False}
         self.vcs_type = None
         self.env_defaults = None
@@ -43,6 +43,8 @@ class VCS(object):
     def _execVcs(self, *args, **kwargs):
         localcmds = ("add", "revert", "cleanup", "mv")
         cmd = self.vcs_command + list(args)
+        if self.env_defaults:
+            self._set_env()
         kwargs["collecterr"] = kwargs.get("collecterr", False)
         if kwargs.get("show"):
             if not kwargs.get("local"):
@@ -87,27 +89,20 @@ class VCS(object):
             raise
 
     def _set_env(self):
-        wrapper = "mgarepo-ssh"
-        repsys = config.get("global", "mgarepo-cmd")
-        if repsys:
-            dir = os.path.dirname(repsys)
-            path = os.path.join(dir, wrapper)
-            if os.path.exists(path):
-                wrapper = path
-        defaults = {"SVN_SSH": wrapper}
-        os.environ.update(defaults)
-        raw = config.get("global", "svn-env")
-        if raw:
-            for line in raw.split("\n"):
-                env = line.strip()
-                if not env:
-                    continue
-                try:
-                    name, value = env.split("=", 1)
-                except ValueError:
-                    sys.stderr.write("invalid svn environment line: %r\n" % env)
-                    continue
-                os.environ[name] = value
+        os.environ.update(self.env_defaults)
+        if self.vcs_name:
+            raw = config.get("global", "%s-env" % self.vcs_name)
+            if raw:
+                for line in raw.split("\n"):
+                    env = line.strip()
+                    if not env:
+                        continue
+                    try:
+                        name, value = env.split("=", 1)
+                    except ValueError:
+                        sys.stderr.write("invalid %s environment line: %r\n" % (self.vcs_name, env))
+                        continue
+                    os.environ[name] = value
 
     def _execVcs_success(self, *args, **kwargs):
         status, output = self._execVcs(*args, **kwargs)
