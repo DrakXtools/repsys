@@ -1,3 +1,6 @@
+* 1.13.4
+- document 'github clone' command
+
 * 1.13.3
 - fix $SVN_SSH not necessarily properly being set, breaking non-ssh fallback
 
