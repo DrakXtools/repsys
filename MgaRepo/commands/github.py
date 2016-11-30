@@ -15,6 +15,7 @@ Options:
 Examples:
     mgarepo github import existingpkg
     mgarepo github import svn://svn.mageia.org/svn/packages/cauldron/existingpkg
+    mgarepo github clone importedpkg
 """
 def github_clone(pkg, **kwargs):
     github = GitHub()
