@@ -1,3 +1,6 @@
+* 1.14.0
+- revert from 'mgarepo' fork name to original 'repsys' name
+
 * 1.13.4
 - document 'github clone' command
 
