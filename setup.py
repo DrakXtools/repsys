@@ -4,13 +4,13 @@ import sys
 import re
 
 verpat = re.compile("VERSION *= *\"(.*)\"")
-data = open("mgarepo").read()
+data = open("repsys").read()
 m = verpat.search(data)
 if not m:
     sys.exit("error: can't find VERSION")
 VERSION = m.group(1)
 
-setup(name="mgarepo",
+setup(name="repsys",
       version = VERSION,
       description = "Tools for Mageia repository access and management",
       author = "Gustavo Niemeyer",
@@ -18,16 +18,16 @@ setup(name="mgarepo",
       url = "https://wiki.mageia.org/en/Mgarepo",
       license = "GPL",
       long_description = """Tools for Mageia repository access and management, based on repsys.""",
-      packages = ["MgaRepo", "MgaRepo.cgi", "MgaRepo.commands",
-          "MgaRepo.plugins"],
-      scripts = ["mgarepo", "mgarepo-ssh"],
+      packages = ["RepSys", "RepSys.cgi", "RepSys.commands",
+          "RepSys.plugins"],
+      scripts = ["repsys", "repsys-ssh"],
       data_files = [
-	      ("/usr/share/mgarepo/",
+	      ("/usr/share/repsys/",
               ["create-srpm"]),
               ("share/bash-completion/completions",
-               ["bash-completion/mgarepo"]),
-	      ("/etc/", ["mgarepo.conf"]),
-          ("share/man/man8/", ["mgarepo.8"])],
+               ["bash-completion/repsys"]),
+	      ("/etc/", ["repsys.conf"]),
+          ("share/man/man8/", ["repsys.8"])],
       install_requires=['PyGithub>=1.27.1', 'httplib2', 'rpm-python']
       )
 

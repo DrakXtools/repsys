@@ -1,0 +1,99 @@
+#!/usr/bin/python3
+from RepSys import Error, plugins, config
+from RepSys.command import *
+import getopt
+import sys
+
+VERSION="1.13.4"
+
+HELP = """\
+Usage: repsys COMMAND [COMMAND ARGUMENTS]
+
+Tool to access and manage a package repository structure.
+
+Useful commands:
+    co            checkout a package
+    clone         clone a package repository
+    ci            commit changes
+    sync          add-remove all file changes from the .spec
+    submit        submit a package for build
+    putsrpm       import a source package to the repository
+    getspec       print the spec
+    rpmlog        print the RPM changelog
+    getsrpm       create the source RPM
+    buildrpm      build rpm from local package repository checkout
+    maintdb       interact with the maintainer db
+    create        create the structure of a new package
+    changed       show changes not submitted
+    authoremail   print the e-mail of a given author
+    switch        relocate to mirror or upstream repository
+    markrelease   create a tag for a given package revision and version
+    upload        add a file to binrepo
+    del           remove a file from binrepo
+    up            update the working copy and synchronize all binaries
+    obsolete      move a package in obsolete directory
+
+Run "repsys COMMAND --help" and "man 8 repsys" for more information.
+
+Written by Gustavo Niemeyer <gustavo@niemeyer.net>
+"""
+
+command_aliases = {"import": "putsrpm", "commit": "ci", "checkout": "co"}
+
+def plugin_help(opt, val, parser, mode):
+    if parser is None:
+        prog = sys.argv[0]
+        print("Use %s --help-plugin <plugin name>" % prog)
+        print("Available plugins:")
+        print()
+        for name in plugins.list():
+            print(name)
+    else:
+        print(plugins.help(parser))
+    raise SystemExit
+
+def parse_options():
+    parser = OptionParser(help=HELP, version="%prog "+VERSION)
+    parser.disable_interspersed_args()
+    parser.add_option("--debug", action="store_true")
+    parser.add_option("--help-plugins", action="callback", callback=plugin_help)
+    parser.add_option("--help-plugin", type="string", dest="__ignore",
+            action="callback", callback=plugin_help)
+    opts, args = parser.parse_args()
+    del opts.__ignore
+    if len(args) < 1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+    opts.command = args[0]
+    opts.argv = args
+    return opts
+
+def dispatch_command(command, argv, debug=0):
+    sys.argv = argv
+    try:
+        command = command_aliases[command]
+    except KeyError:
+        pass
+    if debug:
+        config.set("global", "verbose", "yes")
+    try:
+        repsys_module = __import__("RepSys.commands."+command)
+        commands_module = getattr(repsys_module, "commands")
+        command_module = getattr(commands_module, command)
+    except (ImportError, AttributeError):
+        etype, exc, tb = sys.exc_info()
+        if tb.tb_next is None and not debug:
+            raise Error("invalid command '%s'" % command)
+        raise
+    command_module.main()
+    
+if __name__ == "__main__":
+    try:
+        plugins.load()
+    except Error as e:
+        sys.stderr.write("plugin initialization error: %s\n" % e)
+        sys.exit(1)
+    config.set("global", "repsys-cmd", sys.argv[0])
+    do_command(parse_options, dispatch_command)
+
+# vim:et:ts=4:sw=4

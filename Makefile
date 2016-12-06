@@ -1,4 +1,4 @@
-PACKAGE = mgarepo
+PACKAGE = repsys
 VERSION = 1.13.2
 .PHONY: all $(DIRS) clean
 

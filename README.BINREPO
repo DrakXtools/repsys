@@ -15,7 +15,7 @@ but instead of having SOURCES and SPECS, it will only have a SOURCES
 directory. Every copy/move operation should happen in both repositories.
 
 In order to allow deceasing binaries from older distributions, each stable
-distro will have its own subversion repository for binary files.  mgarepo
+distro will have its own subversion repository for binary files.  repsys
 knows how to access these binrepos by checking which URL defined in the
 "[binrepo]" section of the configuration file matches the path-part of the
 repository being accessed.  (see open issues)
@@ -29,7 +29,7 @@ conversion.
 Mapping repositories states
 ---------------------------
 
-In order to allow the use of `mgarepo {getsrpm,co} -r REV`, mgarepo will have
+In order to allow the use of `repsys {getsrpm,co} -r REV`, repsys will have
 to use a reference in the text repo which will be used to know in what
 state was the binrepo when a binary was uploaded.
 
@@ -41,7 +41,7 @@ numbers is needed.
 
 When a binary is uploaded to the binrepo, the file `sha1.lst` is updated to
 have the files's hash and commited in the main text repo. This file will be
-used as the reference when the user uses -r REV on mgarepo. mgarepo will
+used as the reference when the user uses -r REV on repsys. repsys will
 checkout the package in the main text repo with -r REV and then will use
 the "Last Changed Date" of `sha1.lst` to checkout the binrepo part. Thus,
 `sha1.lst` should be always commited to the main text repository *after* the
@@ -57,7 +57,7 @@ Computation of `sha1.lst` is unlikely to be an issue:
 - it can be computed in parallel to the binrepo commit, and probably finish
   before that, thus ready by the time `sha1.lst` should be commited
 - users don't need to verify the SHA1s "everytime", but the build system
-  does, thus Repsys can default to not verify and avoid wasting users' time
+  does, thus RepSys can default to not verify and avoid wasting users' time
 
 The use of `sha1.lst` has the valuable property of tying the state of the main
 repository and the binrepo.  With it, at getsrpm time of a package
@@ -162,14 +162,14 @@ would work like:
 Interesting use cases (first phase)
 ===================================
 
-mgarepo co 1/mutt
+repsys co 1/mutt
 ---------------------
 
-- mgarepo checkouts
+- repsys checkouts
   http://svn.mageia.org/svn/packages/updates/1/mutt/current to the
   mutt directory
 
-- mgarepo checkouts
+- repsys checkouts
   http://svn.mageia.org/svn/binrepo/updates/1/mutt/current/SOURCES
   into mutt/SOURCES-bin
 
@@ -187,7 +187,7 @@ markrelease of a package
 
 ::
 
-   $ mgarepo markrelease 
+   $ repsys markrelease
 
 - will copy current/ to releases/VERSION/RELEASE, as usual
 
@@ -208,34 +208,34 @@ upgrading to a newer version of the package
 
   $ cd bla/SOURCES/
   $ wget http://prdownloads.sourceforge.net/bla/bla-1.6.tar.bz2
-  $ mgarepo upload bla-1.6.0.tar.bz2
+  $ repsys upload bla-1.6.0.tar.bz2
 
-- mgarepo notices this is a tarball (checking filename and/or file size)
+- repsys notices this is a tarball (checking filename and/or file size)
 
-- mgarepo will move the file to SOURCES-bin/, create the symlink, and svn-add
+- repsys will move the file to SOURCES-bin/, create the symlink, and svn-add
   it to the working copy
 
   $ # the user updates the spec
 
-  $ mgarepo rm SOURCES/bla-1.5.1.tar.bz2
+  $ repsys rm SOURCES/bla-1.5.1.tar.bz2
 
 - it will remove the symlink and run svn rm on
   SOURCES-bin/bla-1.6.0.tar.bz2::
 
   $ cd ../ # package top dir
-  $ mgarepo ci
+  $ repsys ci
 
-- mgarepo will commit the new tarball on SOURCES-bin/ and then on the rest
+- repsys will commit the new tarball on SOURCES-bin/ and then on the rest
   of the working copy
 
-mgarepo sync would perform these steps too.
+repsys sync would perform these steps too.
 
 importing a package
 -------------------
 
-  $ mgarepo putsrpm mypkg.src.rpm
+  $ repsys putsrpm mypkg.src.rpm
 
-- mgarepo will open the src.rpm
+- repsys will open the src.rpm
 
 - will look for tarballs inside SOURCES/ and import them to
   http://svn.mageia.org/svn/binrepo/cauldron/mypkg/current/SOURCES/
@@ -323,7 +323,7 @@ things more complicated:
   new packages?)
 - just a convenience, we don't need and shouldn't rely on externals for
   running the build system, while most people will use the repositories via
-  Repsys, so why spend time to implement and keep it?
+  RepSys, so why spend time to implement and keep it?
 - "svn co" works transparently, cool, but "svn co -r N" does not, otherwise
   every change in the binrepo would require svn:externals to be updated in
   the respective package;
@@ -338,7 +338,7 @@ Use of "external" xdelta to save space on binaries
 --------------------------------------------------
 
 But how? First idea is this could be done by defining a protocol and
-assuming repository manipulation with mgarepo (for ease).  Repsys could
+assuming repository manipulation with repsys (for ease).  RepSys could
 xdelta tarballs and add it to SVN with a special filename, then use it when
 checking out.  Would require a policy/algorithm on when to ditch old whole
 binaries, too (i.e.  hopefully wouldn't need to be handled manually by the

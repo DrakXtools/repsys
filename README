@@ -1,11 +1,11 @@
-mgarepo is the tool used to manage RPM packages in a subversion repository
-on Mageia. It is a fork of the repsys tool used by Mandriva.
+repsys is the tool used to manage RPM packages in both subversion, git-svn
+& git repositories on Mandrake Linux derived GNU/Linux distributions.
 It is used to create, tag releases, generate .src.rpm, generate changelog,
 and request new package releases for build. It mostly acts as a interface
 to svn(1) commands and small task scripts run that on the build system side
 over ssh(1).
 
-For more information, see mgarepo(8)
+For more information, see repsys(8)
 
-The discussion on the development of mageiarepo takes place on the
-Mageia developers mailing list.
+The discussion on the development of repsys currently takes place at
+#mandrake-cooker @ irc.freenode.net

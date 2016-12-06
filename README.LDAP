@@ -1,7 +1,7 @@
-A Repsys plugin for obtaining users from a LDAP server.
+A RepSys plugin for obtaining users from a LDAP server.
 
 In order to enable the plugin, the user must define the following 
-options in the [global] section of mgarepo.conf:
+options in the [global] section of repsys.conf:
 
     ldap-uri [required if ldap-server is unset]
         the URI of the server, you can refer to more than one server by
@@ -52,8 +52,8 @@ options in the [global] section of mgarepo.conf:
         Note that only the first value of the attributes will be 
         used.
 
-When the searched option is not found, it will try in mgarepo.conf. All
-the values found.  (including from mgarepo.conf) will be cached between
+When the searched option is not found, it will try in repsys.conf. All
+the values found.  (including from repsys.conf) will be cached between
 each configuration access.
 
 This plugin requires the package python-ldap.

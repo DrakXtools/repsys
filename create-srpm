@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 
-from MgaRepo import Error, config, plugins, layout
-from MgaRepo.mirror import strip_username
-from MgaRepo.rpmutil import get_srpm
-from MgaRepo.cgiutil import get_targets
-from MgaRepo.util import mapurl, execcmd, get_helper
-from MgaRepo.binrepo import file_hash
+from RepSys import Error, config, plugins, layout
+from RepSys.mirror import strip_username
+from RepSys.rpmutil import get_srpm
+from RepSys.cgiutil import get_targets
+from RepSys.util import mapurl, execcmd, get_helper
+from RepSys.binrepo import file_hash
 import sys
 import os
 import pwd
