@@ -1,3 +1,7 @@
+- as some usernames in svn no longer exists, get old usermap conversion txt
+  file from svn.mageia.org again as previously to fill out the blanks,
+  otherwise git-svn username conversion will fail
+
 * 1.14.0
 - revert from 'mgarepo' fork name to original 'repsys' name
 

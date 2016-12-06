@@ -638,11 +638,23 @@ class UserTagParser(HTMLParser):
                 if user and name and user+".html" == self.userpage:
                     self.usermap[user] = "%s <%s@%s>" % (name, user, self.defaultmail)
 
+    def add_missing_usermaps(self):
+        # This user map is from 2013-08-24, so it's rather dated, but some
+        # users seem to have been removed since, resulting in svn username
+        # conversion failing due to not finding username in usermap file
+        f = urlopen("http://gitweb.mageia.org/software/infrastructure/svn-git-migration/plain/metadata/mageia-user-map.txt")
+        for user in f.read().decode("UTF-8").splitlines():
+            username, namemail = user.split(" = ")
+            if username not in self.usermap:
+                self.usermap[username] = namemail
+        f.close()
+
     def get_user_map(self):
         f = urlopen(self.url)
         userhtml = f.read().decode("UTF-8")
         f.close()
         self.feed(userhtml)
+        self.add_missing_usermaps()
         return self.usermap
 
     def get_user_map_file(self):
