@@ -1,3 +1,4 @@
+* 1.14.1
 - as some usernames in svn no longer exists, get old usermap conversion txt
   file from svn.mageia.org again as previously to fill out the blanks,
   otherwise git-svn username conversion will fail
