@@ -440,7 +440,7 @@ class VCS(object):
 
     @property
     def path(self):
-        return self._path
+        return self._path.strip(self.vcs_dirname)
 
     @property
     def url(self):
