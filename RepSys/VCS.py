@@ -215,12 +215,16 @@ class VCS(object):
             targetpath = self.path
         vcs = getattr(self, "vcs")
         for vcs in getattr(self, "vcs"):
-            if os.path.lexists(join(targetpath, vcs[1])):
-                raise Error("target path %s already contains %s repository, aborting..." % (targetpath, vcs[0]))
+            if os.path.lexists(os.path.join(targetpath, vcs[1])):
+                raise Error("target path %s already contains %s repository, aborting..." \
+                        % (targetpath, vcs[0]))
 
         if self.vcs_supports['clone']:
             cmd = ["clone", url, targetpath]
-            return self._execVcs_success(*cmd, **kwargs)
+            if self.url.split(':')[0].find("svn") < 0:
+                return self._execVcs_success(*cmd, **kwargs)
+            else:
+                return False
         else:
             raise Error("%s doesn't support 'clone'" % self.vcs_name)
 
