@@ -41,6 +41,7 @@ class VCS(object):
             self._path = layout.package_name(layout.remove_current(url))
         else:
             self._path = path
+
         # FIXME
         self._url = None
         self.__url = url
@@ -212,7 +213,7 @@ class VCS(object):
         if not url:
             url = self.url
         if not targetpath:
-            targetpath = self.path
+            targetpath = self.path.rstrip(self.vcs_dirname)
         vcs = getattr(self, "vcs")
         for vcs in getattr(self, "vcs"):
             if os.path.lexists(os.path.join(targetpath, vcs[1])):
