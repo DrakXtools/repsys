@@ -2,6 +2,7 @@ from RepSys import Error, SilentError, config
 from RepSys.util import execcmd, get_auth, get_repsys_cmd_path
 from RepSys import layout
 from xml.etree import ElementTree
+import uuid
 import sys
 import os
 import re
@@ -17,14 +18,18 @@ class VCSLogEntry(object):
 
     def __lt__(self, other):
         return (self.date < other.date)
-    
+
     def __eq__(self,other):
         return (self.date == other.date)
 
 class VCS(object):
-    vcs_dirname = None
-    vcs_name = None
-    def __init__(self, path, url):
+    _id    = None
+    _defs = {}
+    _data = {}
+    def __init__(self, path, url,*kwargs):
+        self._id   = uuid.uuid4() # for example. or randint(). or x+1.
+        self._data = {}.update(kwargs)
+
         self.vcs_command = None
         self.vcs_wrapper = get_repsys_cmd_path("repsys-ssh")
         self.vcs_supports = {'clone' : False}
@@ -39,6 +44,25 @@ class VCS(object):
         # FIXME
         self._url = None
         self.__url = url
+        setattr(VCS, "vcs", list())
+
+    def __settattr__(self, name, value):
+        if name in self._defs:
+            if issubclass(value.__class__, self._defs[name]):
+                self._data[name] = value
+
+                # more stuff goes here, specially indexing dependencies, so we can
+                # do Index(some_class, name_of_property, some.object) to find all
+                # objects of some_class or its children where
+                # given property == some.object
+
+            else:
+                raise Exception('Some misleading message')
+        else:
+            self.__dict__[name] = value
+
+    def __gettattr__(self, name):
+        return self._data[name]
 
     def _execVcs(self, *args, **kwargs):
         localcmds = ("add", "revert", "cleanup", "mv")
@@ -73,7 +97,7 @@ class VCS(object):
                            "https://wiki.mageia.org/en/Packagers_ssh"
                            " for more information.")
                 elif "authorization failed" in e.args:
-                    msg = ("Note that repsys does not support any HTTP "
+                     msg = ("Note that repsys does not support any HTTP "
                            "authenticated access.")
             if kwargs.get("show") and \
                     not config.getbool("global", "verbose", 0):
@@ -130,7 +154,7 @@ class VCS(object):
                         raise Error("invalid revision provided")
             if ret:
                 cmd_args.extend(("-r", str(ret)))
-        
+
     def add(self, path, **kwargs):
         cmd = ["add", path + '@' if '@' in path else path]
         return self._execVcs_success(noauth=1, *cmd, **kwargs)
@@ -184,7 +208,16 @@ class VCS(object):
         self._add_revision(cmd, kwargs, optional=1)
         return self._execVcs_success(*cmd, **kwargs)
 
-    def clone(self, url, targetpath, **kwargs):
+    def clone(self, url=None, targetpath=None, **kwargs):
+        if not url:
+            url = self.url
+        if not targetpath:
+            targetpath = self.path
+        vcs = getattr(self, "vcs")
+        for vcs in getattr(self, "vcs"):
+            if os.path.lexists(join(targetpath, vcs[1])):
+                raise Error("target path %s already contains %s repository, aborting..." % (targetpath, vcs[0]))
+
         if self.vcs_supports['clone']:
             cmd = ["clone", url, targetpath]
             return self._execVcs_success(*cmd, **kwargs)
@@ -198,7 +231,7 @@ class VCS(object):
         self._add_revision(cmd, kwargs)
         status, output = self._execVcs(local=True, *cmd, **kwargs)
         return output
- 
+
     def propset(self, propname, value, targets, **kwargs):
         cmd = ["propset", propname, value, targets]
         return self._execVcs_success(*cmd, **kwargs)
@@ -218,7 +251,7 @@ class VCS(object):
                 if line.startswith("Last Changed Rev: "):
                     return int(line.split()[3])
         return None
-          
+
     def info(self, path, **kwargs):
         cmd = ["info", path + '@' if '@' in path else path]
         status, output = self._execVcs(local=True, noerror=True, *cmd, **kwargs)
@@ -236,7 +269,7 @@ class VCS(object):
             if pair != ['']:
                 info[pair[0]]=pair[1]
         return info
-          
+
     def ls(self, path, **kwargs):
         cmd = ["ls", path + '@' if '@' in path else path]
         status, output = self._execVcs(*cmd, **kwargs)
@@ -289,7 +322,7 @@ class VCS(object):
             return [x.split() for x in output.split()]
         return None
 
-    def merge(self, url1, url2=None, rev1=None, rev2=None, path=None, 
+    def merge(self, url1, url2=None, rev1=None, rev2=None, path=None,
             **kwargs):
         cmd = ["merge"]
         if rev1 and rev2 and not url2:

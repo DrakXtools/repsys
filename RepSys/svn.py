@@ -16,6 +16,9 @@ class SVN(VCS):
     vcs_name = "svn"
     def __init__(self, path=None, url=None):
         VCS.__init__(self, path, url)
+        vcs = getattr(VCS, "vcs")
+        vcs.append((self.vcs_name, self.vcs_dirname))
+        setattr(VCS,"vcs", vcs)
         self.vcs_command = config.get("global", "svn-command", ["svn"])
         self.env_defaults = {"SVN_SSH": self.vcs_wrapper}
 
