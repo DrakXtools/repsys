@@ -46,10 +46,7 @@ class GIT(VCS):
         return True
 
     def clone(self, url=None, targetpath=None, fullnames=True, **kwargs):
-        if url.split(':')[0].find("svn") < 0:
-            return VCS.clone(self, url, **kwargs)
-        else:
-            return False
+        return VCS.clone(self, show=True, **kwargs)
 
     def status(self, path, **kwargs):
         cmd = ["status", "--porcelain", path + '@' if '@' in path else path]
