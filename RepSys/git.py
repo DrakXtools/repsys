@@ -29,6 +29,12 @@ class GIT(VCS):
         self.vcs_supports['clone'] = True
         self.env_defaults = {"GIT_SSH": self.vcs_wrapper}
 
+    def verifyrepo(self):
+        cmd = ["ls-remote", "-h", self.url, "refs/heads/master"]
+        status, output = self._execVcs(*cmd, shownoerror=True)
+        if status != 0:
+            raise Error("repository %s doesn't exist: %s" % (self.url))
+
     def configget(self, key="", location="--local"):
         cmd = ["config", location, "--get-regexp", key]
         config = None
@@ -46,6 +52,7 @@ class GIT(VCS):
         return True
 
     def clone(self, url=None, targetpath=None, fullnames=True, **kwargs):
+        self.verifyrepo()
         return VCS.clone(self, show=True, **kwargs)
 
     def status(self, path, **kwargs):
