@@ -17,7 +17,7 @@ Examples:
 """
 def fedpkg_clone(pkg, **kwargs):
     fedpkg = GitFedora(pkg)
-    fedpkg.clone_repository(pkg)
+    fedpkg.clone_repository()
 
 def parse_options():
     parser = OptionParser(help=HELP)
