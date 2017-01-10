@@ -14,6 +14,7 @@ import string
 import glob
 import sys
 import os
+from os.path import join
 
 def get_spec(pkgdirurl, targetdir=".", submit=False):
     svn = detectVCS(pkgdirurl)
@@ -379,19 +380,29 @@ def build_rpm(build_cmd="b",
         macros = [],
         **rpmargs):
     top = os.getcwd()
+    vcs = detectVCS(top)
     topdir = "_topdir %s" % top
     builddir = "_builddir %s/%s" % (top, "BUILD")
     rpmdir = "_rpmdir %s/%s" % (top, "RPMS")
-    sourcedir = "_sourcedir %s/%s" % (top, "SOURCES")
-    specdir = "_specdir %s/%s" % (top, "SPECS")
     srcrpmdir = "_srcrpmdir %s/%s" % (top, "SRPMS")
-    patchdir = "_patchdir %s/%s" % (top, "SOURCES")
+    specsdir = join(top, "SPECS")
 
-    build = os.path.join(top, "BUILD")
+    # fedora & abf layout
+    if vcs.vcs_name == "git" and not os.path.exists(specsdir):
+        sourcedir = "_sourcedir " + top
+        specdir = "_specdir " + top
+        patchdir = "_patchdir " + top
+        specsdir = top
+    else:
+        # mageia layout
+        sourcedir = "_sourcedir %s/%s" % (top, "SOURCES")
+        specdir = "_specdir %s/%s" % (top, "SPECS")
+        patchdir = "_patchdir %s/%s" % (top, "SOURCES")
+
+    build = join(top, "BUILD")
     if not os.path.exists(build):
         os.mkdir(build)
-    specsdir = os.path.join(top, "SPECS")
-    speclist = glob.glob(os.path.join(specsdir, "*.spec"))
+    speclist = glob.glob(join(specsdir, "*.spec"))
     if not speclist:
         raise Error("no spec files found")
     spec = speclist[0]
@@ -401,7 +412,6 @@ def build_rpm(build_cmd="b",
     # building. This way we avoid modifying files in repository.
     # TODO: implement support for external changelog in rpm
     if svnlog:
-        vcs = detectVCS(top)
         specsdir = tempfile.mkdtemp()
         shutil.copy(spec, specsdir)
         specdir = "_specdir "+specsdir
