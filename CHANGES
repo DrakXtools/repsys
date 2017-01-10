@@ -1,3 +1,4 @@
+- remove vcs suffix properly for local repo path
 - support newer format of fedpkg 'sources' file
 
 * 1.14.2
