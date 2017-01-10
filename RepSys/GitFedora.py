@@ -3,6 +3,7 @@ from RepSys.rpmutil import get_pkg_tag, clone
 from RepSys.util import execcmd
 from RepSys.git import GIT
 from os.path import join
+import re
 
 class GitFedora(object):
     binrepo = "https://src.fedoraproject.org/repo/pkgs/"
@@ -26,8 +27,21 @@ class GitFedora(object):
         downloader = config.get("global", "download-command",
                 "wget -c -O '$dest' $url").strip("'$dest' $url").split()
         for line in f.readlines():
-            checksum, source = line.split()
-            cmd = downloader + [join(self._git.path,source), join(self.binrepo,self._package,source,checksum,source)]
+            fields = line.split()
+            binurl = self.binrepo+"/"+self._package+"/"
+            if len(fields) == 2:
+                checksum, source = fields
+                binurl += source+"/"
+            else:
+                pattern = re.compile(r'^(.*) \((.*)\) = (.*)')
+                match = pattern.match(line)
+                hashtype = match.group(1)
+                source = match.group(2)
+                checksum = match.group(3)
+                binurl += source+"/"+hashtype.lower()+"/"
+
+            binurl += checksum+"/"+source
+            cmd = downloader + [join(self._git.path,source), binurl]
         f.close()
 
         status, output = execcmd(cmd, show=True)
