@@ -1,3 +1,5 @@
+- support newer format of fedpkg 'sources' file
+
 * 1.14.2
 - add support for cloning fedora repos with downloading of sources with
   'repsys fedpkg clone <pkg>'
