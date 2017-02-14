@@ -33,6 +33,12 @@ class SVN(VCS):
                     pass
         return url
 
+    @property
+    def url(self):
+        if not self._url:
+            self._url = self.drop_ssh_if_no_auth(self._URL or self.info2(self._path)["URL"])
+        return self._url
+
 class SVNLook(VCSLook):
     def __init__(self, repospath, txn=None, rev=None):
         VCSLook.__init__(self, repospath, txn, rev)

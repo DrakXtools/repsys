@@ -1,11 +1,10 @@
 from RepSys import Error, config
 from RepSys.util import execcmd
-from RepSys.VCS import *
-from RepSys.GIT import *
-from RepSys.svn import SVN
+from RepSys.VCS import VCS
+from RepSys.git import GIT
 from RepSys.log import UserTagParser
 from os.path import basename, dirname, abspath, lexists, join
-from os import chdir, getcwd
+from os import chdir, environ, getcwd
 from tempfile import mkstemp
 import sys
 import re
@@ -26,10 +25,12 @@ class GITSVN(GIT):
         self.env_defaults = {"GIT_SSH": self.vcs_wrapper}
 
     def clone(self, url=None, targetpath=None, fullnames=True, **kwargs):
-        if not VCS.clone(url, targetpath, **kwargs):
+        if not VCS.clone(self, url, targetpath, **kwargs):
             self.init(url, targetpath, fullnames=True, **kwargs)
-            if not GIT.clone(self, url, targetpath, fullnames, **kwargs):
-                return self.update(targetpath, clone=True, **kwargs)
+            return self.update(targetpath, clone=True, **kwargs)
+
+    def verifyrepo(self):
+        return True
 
     def init(self, url, targetpath, fullnames=True, branch=None, **kwargs):
         # verify repo url
@@ -43,7 +44,7 @@ class GITSVN(GIT):
 
         cmd = ["svn", "init", url, abspath(targetpath)]
         self._execVcs(*cmd, **kwargs)
-        os.environ.update({"GIT_WORK_TREE" : abspath(targetpath), "GIT_DIR" : join(abspath(targetpath),".git")})
+        environ.update({"GIT_WORK_TREE" : abspath(targetpath), "GIT_DIR" : join(abspath(targetpath),".git")})
 
         if fullnames:
             usermap = UserTagParser()
@@ -84,7 +85,7 @@ class GITSVN(GIT):
         return None
 
     def update(self, targetpath, clone=False, **kwargs):
-        os.environ.update({"GIT_WORK_TREE" : abspath(targetpath), "GIT_DIR" : join(abspath(targetpath),".git")})
+        environ.update({"GIT_WORK_TREE" : abspath(targetpath), "GIT_DIR" : join(abspath(targetpath),".git")})
 
         if not clone:
             cmd = ["svn", "log", "--oneline", "--limit=1"]
@@ -165,5 +166,23 @@ class GITSVN(GIT):
         cmd = ["push"] + list(args)
         status, output = self._execVcs(*cmd, **kwargs)
         return status, output
+
+    def drop_ssh_if_no_auth(self, url):
+        if url and url.startswith("svn+ssh://"):
+            cmd = ["svn", "info", "--non-interactive", "--no-newline", "--show-item", "url", url]
+            status, output = self._execVcs(*cmd, local=True, noerror=True, show=False)
+            if status == 1 and (("E170013" in output) or ("E210002" in output)):
+                url = url.replace("svn+ssh://", "svn://")
+                status, output = execcmd(*cmd, local=True, noerror=True, show=False)
+                if status == 0 and output == url:
+                    pass
+        return url
+
+    @property
+    def url(self):
+        print("self.URL: " + self._URL)
+        if not self._url:
+            self._url = self.drop_ssh_if_no_auth(self._URL or self.info2(self._path)["URL"])
+        return self._url
 
 # vim:et:ts=4:sw=4

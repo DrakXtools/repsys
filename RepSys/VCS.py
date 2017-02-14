@@ -44,7 +44,7 @@ class VCS(object):
 
         # FIXME
         self._url = None
-        self.__url = url
+        self._URL = url
         setattr(VCS, "vcs", list())
 
     def __settattr__(self, name, value):
@@ -445,7 +445,7 @@ class VCS(object):
     @property
     def url(self):
         if not self._url:
-            self._url = self.drop_ssh_if_no_auth(self.__url or self.info2(self._path)["URL"])
+            self._url = self.drop_ssh_if_no_auth(self._URL)
         return self._url
 
 class VCSLook(object):

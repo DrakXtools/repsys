@@ -4,6 +4,7 @@ from RepSys.simplerpm import SRPM
 from RepSys.util import execcmd, CommandError
 from RepSys.git import GIT
 from RepSys.svn import SVN
+from RepSys.gitsvn import GITSVN
 from RepSys.vcsutil import detectVCS
 from RepSys.command import default_parent
 import rpm
@@ -627,8 +628,13 @@ def clone(pkgdirurl, path=None, revision=None, branch=None, distro=None, backpor
     if path is None:
         path = layout.package_name(pkgdirurl)
     mirror.info(current, write=True)
-    git = GIT()
-    git.clone(current, path, fullnames=fullnames, show=1)
+    vcs = detectVCS(pkgdirurl)
+
+    if type(vcs) == SVN:
+        git = GITSVN(url=pkgdirurl)
+    else:
+        git = vcs
+    git.clone(current, path, fullnames=fullnames)
     if not spec and bindownload:
         binrepo.download_binaries(path)
 
