@@ -11,7 +11,8 @@ _repsys_actions()
 {
  COMPREPLY=( $( compgen -W 'co ci sync \
  submit putsrpm getspec rpmlog getsrpm maintdb create changed \
- authoremail switch markrelease upload del up obsolete' -- $cur ) )
+ authoremail switch markrelease upload del up obsolete checkout \
+ commit import' -- $cur ) )
 }
  
 _repsys()
@@ -43,11 +44,11 @@ _repsys()
     if [[ "$cur" == -* ]]; then
        # possible options for the command
        case $command in
-          co)
+          co|checkout)
                   options="-r --distribution \
                            --branch --spec --no-mirror"
           ;;
-          ci)
+          ci|commit)
                   options="-m -F"
           ;;
           sync)
@@ -56,7 +57,7 @@ _repsys()
 	  submit)
 	          options="-t -l -r -s -i -a --distro --define"
           ;;
-          putsrpm) 
+          putsrpm|import)
                   options="-l -t -b -d -c -s -n"
           ;;
           getsrpm)
