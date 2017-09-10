@@ -11,7 +11,7 @@ _repsys_actions()
 {
  COMPREPLY=( $( compgen -W 'co ci sync \
  submit putsrpm getspec rpmlog getsrpm maintdb create changed \
- authoremail switch upload del up obsolete' -- $cur ) )
+ authoremail switch markrelease upload del up obsolete' -- $cur ) )
 }
  
 _repsys()
@@ -64,6 +64,9 @@ _repsys()
           ;;
 	  changed)
                   options="-a -s -M"
+          ;;
+	  markrelease)
+                  options="-f -r -v -n"
           ;;
           obsolete)
                   options="-m"
