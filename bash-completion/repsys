@@ -80,11 +80,11 @@ _repsys()
                     _filedir 'src.rpm'
                     return 0
                     ;;
-                @(del|upload))
+                del|upload)
                     _filedir
                     return 0
                     ;;
-                @(co|checkout|getspec|rpmlog|getsrpm|changed|obsolete))
+                co|checkout|getspec|rpmlog|getsrpm|changed|obsolete)
                     _cauldron_packages
                     return 0
                     ;;
@@ -92,7 +92,7 @@ _repsys()
                     COMPREPLY=( $( compgen -W "get set" -- $cur ) )
                     return 0
                     ;;
-                @(sync|ci|commit))
+                sync|ci|commit)
                     _filedir -d
                     return 0
                     ;;
