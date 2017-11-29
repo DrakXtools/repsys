@@ -1,3 +1,4 @@
+- allow maintdb get <package> without packagers credentials
 - add a progress bar for git-svn cloning
 
 * 1.14.3

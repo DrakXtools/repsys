@@ -31,9 +31,15 @@ def parse_options():
 
 def maintdb(maintdb_args):
     host = config.get("maintdb", "host", "maintdb.mageia.org")
-    maintdb_helper = get_helper("maintdb")
-    command = ["ssh", host, maintdb_helper] + maintdb_args
-    execcmd(command, show=True)
+    if (maintdb_args[0] == 'get' and len(maintdb_args)>=2):
+        import urllib.request
+        page=urllib.request.urlopen('http://'+host+'/'+maintdb_args[1])
+        rep = page.read().decode('utf8')
+        print(rep)
+    else:
+        maintdb_helper = get_helper("maintdb")
+        command = ["ssh", host, maintdb_helper] + maintdb_args
+        execcmd(command, show=True)
     sys.exit(0)
 
 def main():
