@@ -180,7 +180,6 @@ class GITSVN(GIT):
 
     @property
     def url(self):
-        print("self.URL: " + self._URL)
         if not self._url:
             self._url = self.drop_ssh_if_no_auth(self._URL or self.info2(self._path)["URL"])
         return self._url
