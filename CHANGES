@@ -1,3 +1,5 @@
+- add support for cloning ABF repos with downloading of source using
+  'repsys abf clone <pkg>'
 - allow maintdb get <package> without packagers credentials
 - add a progress bar for git-svn cloning
 
