@@ -33,6 +33,14 @@ class SVN(VCS):
                     pass
         return url
 
+    def update(self, path, **kwargs):
+        cmd = ["update", path + '@' if '@' in path else path]
+        self._add_revision(cmd, kwargs, optional=1)
+        status, output = self._execVcs(*cmd, **kwargs)
+        if status == 0:
+            return [x.split() for x in output.split()]
+        return None
+
     @property
     def url(self):
         if not self._url:
