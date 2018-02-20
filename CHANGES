@@ -1,3 +1,5 @@
+- add a progress bar for git-svn cloning
+
 * 1.14.3
 - remove vcs suffix properly for local repo path
 - support newer format of fedpkg 'sources' file

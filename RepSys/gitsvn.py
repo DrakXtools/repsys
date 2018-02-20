@@ -9,6 +9,7 @@ from tempfile import mkstemp
 import sys
 import re
 import time
+import progressbar
 from xml.etree import ElementTree
 import subprocess
 
@@ -131,6 +132,7 @@ class GITSVN(GIT):
         for entry in logentries:
             revisions.append(int(entry.attrib["revision"]))
         revisions.sort()
+        commits = len(revisions)
 
         fetchcmd = ["svn", "fetch", "--log-window-size=1000"]
         gitconfig = self.configget("svn-remote.authorlog")
@@ -140,9 +142,16 @@ class GITSVN(GIT):
             fetchcmd.extend(("--authors-file", usermapfile))
         fetchcmd.append("")
 
+        commit = 0
+        bar = progressbar.ProgressBar(max_value=commits,redirect_stdout=True)
+        print("Fetching %d revisions in the range %d - %d" % (commits, revisions[0], revisions[-1]))
         while revisions:
-            fetchcmd[-1] = "-r%d"%revisions.pop(0)
+            rev = revisions.pop(0)
+            print("Fetching revision %d" % rev)
+            fetchcmd[-1] = "-r%d"%rev
             self._execVcs(*fetchcmd, **kwargs)
+            commit += 1
+            bar.update(commit)
         if gitconfig:
             usermap.cleanup()
 
