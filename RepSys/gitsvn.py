@@ -134,6 +134,11 @@ class GITSVN(GIT):
         revisions.sort()
         commits = len(revisions)
 
+        # we're already at latest revision
+        if lastrev == str(revisions[0]):
+            print("At revision %s." % lastrev)
+            return None
+
         fetchcmd = ["svn", "fetch", "--log-window-size=1000"]
         gitconfig = self.configget("svn-remote.authorlog")
         if gitconfig:
