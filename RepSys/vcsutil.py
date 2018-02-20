@@ -1,5 +1,6 @@
 from RepSys import Error
 from RepSys.git import GIT
+from RepSys.gitsvn import GITSVN
 from RepSys.svn import SVN
 import os
 
@@ -19,7 +20,7 @@ def detectVCS(url):
     elif os.path.exists(url) and os.path.isdir(url):
         while True:
             url = os.path.abspath(url)
-            for vcs in (SVN, GIT):
+            for vcs in (SVN, GITSVN, GIT):
                 vcsdir = os.path.join(url, vcs.vcs_dirname)
                 if os.path.exists(vcsdir) and os.path.isdir(vcsdir):
                     return vcs(path=url)

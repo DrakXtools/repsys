@@ -14,10 +14,10 @@ from xml.etree import ElementTree
 import subprocess
 
 class GITSVN(GIT):
-    vcs_dirname = ".git"
+    vcs_dirname = ".git/svn"
     vcs_name = "git"
     def __init__(self, path=None, url=None):
-        VCS.__init__(self, path, url)
+        GIT.__init__(self, path, url)
         vcs = getattr(VCS, "vcs")
         vcs.append((self.vcs_name, self.vcs_dirname))
         setattr(VCS,"vcs", vcs)

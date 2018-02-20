@@ -15,7 +15,7 @@ import string
 import glob
 import sys
 import os
-from os.path import join
+from os.path import exists, isdir, join
 
 def get_spec(pkgdirurl, targetdir=".", submit=False):
     svn = detectVCS(pkgdirurl)
@@ -653,7 +653,8 @@ def ispkgtopdir(path=None, vcs_dirname=None):
     if not vcs_dirname:
         vcs = detectVCS(path)
         vcs_dirname = vcs.vcs_dirname
-    return (vcs_dirname in names and "SPECS" in names and "SOURCES" in names)
+    return [exists(join(path,x)) and isdir(join(path,x)) for x in
+            (vcs_dirname, "SPECS", "SOURCES")]
 
 def sync(dryrun=False, commit=False, download=False):
     topdir = getpkgtopdir()
