@@ -159,6 +159,7 @@ class GITSVN(GIT):
             bar.update(commit)
         if gitconfig:
             usermap.cleanup()
+        bar.finish()
 
         cmd = ["svn", "rebase", "--log-window-size=1000", "--local", "--fetch-all", "git-svn"]
         status, output = self._execVcs(*cmd, **kwargs)
