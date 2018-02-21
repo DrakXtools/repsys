@@ -455,6 +455,12 @@ def build_rpm(build_cmd="b",
                 if use_dnf:
                     pkg_mgr_base = ["dnf"]
                     pkg_mgr_builddep = pkg_mgr_base + ["--assume-yes", "--setopt=install_weak_deps=False", "builddep"]
+                elif vcs.vcs_name == "osc":
+                    pkg_mgr_base = ["zypper"]
+                    #pkg_mgr_builddep = pkg_mgr_base + ["install", "--no-recommends", "-C"]
+                    pkg_mgr_builddep = pkg_mgr_base + ["source-install", "-d"]
+                    specpkg = rpm.spec(spec)
+                    spec = specpkg.sourceHeader[rpm.RPMTAG_NAME].decode("utf-8")
                 else:
                     pkg_mgr_base = ["urpmi"]
                     pkg_mgr_builddep = pkg_mgr_base + ["--auto", "--buildrequires", "--no-recommends"]
@@ -468,6 +474,13 @@ def build_rpm(build_cmd="b",
                     cmd_base = ["sudo"] + pkg_mgr_builddep
                 else:
                     cmd_base = pkg_mgr_builddep
+                # XXX: Should we install buildrequires the more "conventional" way, use
+                # zypper's own functinoality for or should we support both?
+                #if vcs.vcs_name == "osc":
+                #    specpkg = rpm.spec(spec)
+                #    buildrequires = specpkg.sourceHeader[rpm.RPMTAG_REQUIRES]
+                #    cmd = cmd_base + [b.decode("utf-8") for b in buildrequires]
+                #else:
                 cmd = cmd_base + [spec]
                 status, output = execcmd(*cmd, show=verbose, collecter=True, noerror=True)
 
