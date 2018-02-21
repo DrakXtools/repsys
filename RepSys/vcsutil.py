@@ -5,8 +5,8 @@ from RepSys.svn import SVN
 import os
 
 def detectVCS(url):
-    if ':' in url:
-        protocol,uri = url.split(":")
+    if '://' in url:
+        protocol,uri = url.split("://")
         if "svn" in protocol:
             return SVN(url=url)
         elif "git" in protocol:
