@@ -106,6 +106,11 @@ class GITSVN(GIT):
             if retval:
                 return retval
 
+            # we're already at latest revision
+            if revision[0][1:] == lastrev:
+                print("At revision %s." % lastrev)
+                return None
+
         #cmd = ["config", "--get-regexp", '^svn-remote.svn.(url|fetch)']
         cmd = ["config", "--get", "svn-remote.svn.url"]
         retval, result = self._execVcs(*cmd)
@@ -133,11 +138,6 @@ class GITSVN(GIT):
             revisions.append(int(entry.attrib["revision"]))
         revisions.sort()
         commits = len(revisions)
-
-        # we're already at latest revision
-        if lastrev == str(revisions[0]):
-            print("At revision %s." % lastrev)
-            return None
 
         fetchcmd = ["svn", "fetch", "--log-window-size=1000"]
         gitconfig = self.configget("svn-remote.authorlog")
