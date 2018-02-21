@@ -389,7 +389,7 @@ def build_rpm(build_cmd="b",
     specsdir = join(top, "SPECS")
 
     # fedora & abf layout
-    if vcs.vcs_name == "git" and not os.path.exists(specsdir):
+    if (vcs.vcs_name == "git" or vcs.vcs_name == "osc") and not os.path.exists(specsdir):
         sourcedir = "_sourcedir " + top
         specdir = "_specdir " + top
         patchdir = "_patchdir " + top
