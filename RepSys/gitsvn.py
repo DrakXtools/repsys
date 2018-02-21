@@ -148,11 +148,18 @@ class GITSVN(GIT):
         fetchcmd.append("")
 
         commit = 0
-        bar = progressbar.ProgressBar(max_value=commits,redirect_stdout=True)
-        print("Fetching %d revisions in the range %d - %d" % (commits, revisions[0], revisions[-1]))
+        currev = progressbar.FormatCustomText(
+            'Fetching r%(rev)d', dict(rev=0))
+
+        widgets = [currev, ' ',
+                progressbar.Counter(), '/%d ' % commits,
+                progressbar.Bar(left='[', right=']'), ' ',
+                progressbar.Percentage(), ' ',
+                progressbar.ETA()]
+        bar = progressbar.ProgressBar(min_value=1, max_value=commits,redirect_stdout=True, widgets=widgets)
         while revisions:
             rev = revisions.pop(0)
-            print("Fetching revision %d" % rev)
+            currev.update_mapping(rev=rev)
             fetchcmd[-1] = "-r%d"%rev
             self._execVcs(*fetchcmd, **kwargs)
             commit += 1
