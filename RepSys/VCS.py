@@ -213,7 +213,8 @@ class VCS(object):
         if not url:
             url = self.url
         if not targetpath:
-            targetpath = self.path.rstrip(self.vcs_dirname)
+            targetpath = self.path
+
         vcs = getattr(self, "vcs")
         for vcs in getattr(self, "vcs"):
             if os.path.lexists(os.path.join(targetpath, vcs[1])):
