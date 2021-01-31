@@ -28,7 +28,7 @@ setup(name="repsys",
                ["bash-completion/repsys"]),
 	      ("/etc/", ["repsys.conf"]),
           ("share/man/man8/", ["repsys.8"])],
-      install_requires=['PyGithub>=1.27.1', 'httplib2', 'rpm-python', 'progressbar2', "PyYAML"]
+      install_requires=['PyGithub>=1.27.1', 'httplib2', 'rpm', 'progressbar2', "PyYAML"]
       )
 
 # vim:ts=4:sw=4:et
