@@ -75,7 +75,7 @@ class VCS(object):
             if not kwargs.get("local"):
                kwargs["collecterr"] = True
         else:
-            if self.vcs_command is "svn" and args[0] not in localcmds:
+            if self.vcs_command == "svn" and args[0] not in localcmds:
                 cmd.append("--non-interactive")
             else:
                 if args[0] == "mv":

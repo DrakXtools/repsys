@@ -24,7 +24,7 @@ def execcmd(*cmd, **kwargs):
             ("execcmd is implemented to handle collecterr=True only if show=True")
     # split command args
     if isinstance(cmd[0], str):
-        if len(cmd) is 1:
+        if len(cmd) == 1:
             cmdargs = shlex.split(cmd[0])
         else:
             cmdargs = cmd[:]
